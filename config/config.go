@@ -28,7 +28,6 @@ type Config struct {
 // with default values.
 func DefaultConfig() *Config {
 	return &Config{
-		BindAddr:   ":4040",
 		EricAddr:   ":4001",
 		Database:   "transactions",
 		Collection: "payments",

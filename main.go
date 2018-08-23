@@ -13,8 +13,11 @@ import (
 	"github.com/justinas/alice"
 )
 
+// Namespace:
+var namespace = "payments.api.ch.gov.uk"
+
 func main() {
-	log.Namespace = "payments.api.ch.gov.uk"
+	log.Namespace = namespace
 
 	cfg := config.Get()
 
@@ -24,11 +27,11 @@ func main() {
 	public.Register(router)
 	private.Register(router)
 
-	log.Info("Starting payments.api.ch.gov.uk service")
+	log.Info("Starting " + namespace)
 	err := http.ListenAndServe(cfg.BindAddr, chain.Then(router))
 
 	if err != nil {
 		log.Error(err)
 	}
-	log.Trace("Exiting payments.api.ch.gov.uk service")
+	log.Trace("Exiting " + namespace)
 }
