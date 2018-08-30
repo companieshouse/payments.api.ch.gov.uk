@@ -29,7 +29,7 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		EricAddr:   ":4001",
-		Database:   "transactions",
+		Database:   "payments",
 		Collection: "payments",
 	}
 }
