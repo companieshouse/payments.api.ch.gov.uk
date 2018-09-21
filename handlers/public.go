@@ -189,7 +189,7 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 
 	c := session.DB("transactions").C("payments")
 
-	if err := c.Insert(paymentResource); err != nil {
+	if err = c.Insert(paymentResource); err != nil {
 		log.ErrorR(req, fmt.Errorf("Error writing to MongoDB: %s", err))
 		w.WriteHeader(http.StatusInternalServerError) // 500
 		return
