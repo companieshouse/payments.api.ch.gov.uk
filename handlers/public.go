@@ -165,6 +165,7 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 		} else {
 			log.ErrorR(req, fmt.Errorf("Unexpected format in Eric-Authorised-User: %s", user))
 			w.WriteHeader(http.StatusInternalServerError) // 500
+			return
 		}
 	}
 	paymentResource.CreatedBy = CreatedBy{
