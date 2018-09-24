@@ -78,7 +78,7 @@ var client http.Client
 
 func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 	if req.Body == nil {
-		log.ErrorR(req, fmt.Errorf("Request Body Empty"))
+		log.ErrorR(req, fmt.Errorf("request body empty"))
 		w.WriteHeader(http.StatusBadRequest) // 400
 		return
 	}
@@ -87,7 +87,7 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 	var b createPaymentResource
 	err := requestDecoder.Decode(&b)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("Request Body Invalid"))
+		log.ErrorR(req, fmt.Errorf("request body invalid"))
 		w.WriteHeader(http.StatusBadRequest) // 400
 		return
 	}
@@ -96,13 +96,13 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 
 	cfg, err := config.Get()
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("Error getting config: [%s]", err))
+		log.ErrorR(req, fmt.Errorf("error getting config: [%s]", err))
 		w.WriteHeader(http.StatusInternalServerError) // 500
 		return
 	}
 	url, err := url.Parse(resource)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("Error parsing resource: [%s]", err))
+		log.ErrorR(req, fmt.Errorf("error parsing resource: [%s]", err))
 		w.WriteHeader(http.StatusBadRequest) // 400
 		return
 	}
@@ -116,27 +116,27 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	if !matched {
-		log.ErrorR(req, fmt.Errorf("Invalid resource domain: %s", url.Host))
+		log.ErrorR(req, fmt.Errorf("invalid resource domain: %s", url.Host))
 		w.WriteHeader(http.StatusBadRequest) // 400
 		return
 	}
 
 	resourceReq, err := http.NewRequest("GET", resource, nil)
 	if err != nil {
-		log.ErrorR(resourceReq, fmt.Errorf("Failed to create Resource Request: [%s]", err))
+		log.ErrorR(resourceReq, fmt.Errorf("failed to create Resource Request: [%s]", err))
 		w.WriteHeader(http.StatusInternalServerError) // 500
 		return
 	}
 	resp, err := client.Do(resourceReq)
 	if err != nil {
-		log.ErrorR(resourceReq, fmt.Errorf("Error getting Cost Resource: [%s]", err))
+		log.ErrorR(resourceReq, fmt.Errorf("error getting Cost Resource: [%s]", err))
 		w.WriteHeader(http.StatusInternalServerError) // 500
 		return
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.ErrorR(resourceReq, fmt.Errorf("Error reading Cost Resource: [%s]", err))
+		log.ErrorR(resourceReq, fmt.Errorf("error reading Cost Resource: [%s]", err))
 		w.WriteHeader(http.StatusInternalServerError) // 500
 		return
 	}
@@ -146,7 +146,7 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 	paymentResource := &PaymentResource{}
 	err = json.Unmarshal(body, paymentResource)
 	if err != nil {
-		log.ErrorR(resourceReq, fmt.Errorf("Error reading Cost Resource: [%s]", err))
+		log.ErrorR(resourceReq, fmt.Errorf("error reading Cost Resource: [%s]", err))
 		w.WriteHeader(http.StatusInternalServerError) // 500
 		return
 	}
@@ -163,7 +163,7 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 		} else if v[0] == " surname" {
 			surname = v[1]
 		} else {
-			log.ErrorR(req, fmt.Errorf("Unexpected format in Eric-Authorised-User: %s", user))
+			log.ErrorR(req, fmt.Errorf("unexpected format in Eric-Authorised-User: %s", user))
 			w.WriteHeader(http.StatusInternalServerError) // 500
 			return
 		}
@@ -181,7 +181,7 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 	// Write to DB
 	session, err := data.GetMongoSession()
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("Error connecting to MongoDB: %s", err))
+		log.ErrorR(req, fmt.Errorf("error connecting to MongoDB: %s", err))
 		w.WriteHeader(http.StatusInternalServerError) // 500
 		return
 	}
@@ -190,7 +190,7 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 	c := session.DB("transactions").C("payments")
 
 	if err = c.Insert(paymentResource); err != nil {
-		log.ErrorR(req, fmt.Errorf("Error writing to MongoDB: %s", err))
+		log.ErrorR(req, fmt.Errorf("error writing to MongoDB: %s", err))
 		w.WriteHeader(http.StatusInternalServerError) // 500
 		return
 	}
@@ -199,7 +199,7 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(paymentResource)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("Error writing response: %s", err))
+		log.ErrorR(req, fmt.Errorf("error writing response: %s", err))
 		w.WriteHeader(http.StatusInternalServerError) // 500
 		return
 	}
