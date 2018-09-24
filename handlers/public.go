@@ -204,6 +204,5 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// TODO Add tests
 	// log.Trace("TODO log successful creation with details") // TODO
 }
