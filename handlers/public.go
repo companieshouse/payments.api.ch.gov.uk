@@ -37,8 +37,7 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 
 	requestDecoder := json.NewDecoder(req.Body)
 	var incomingPaymentResourceRequest data.IncomingPaymentResourceRequest
-	err := requestDecoder.Decode(&incomingPaymentResourceRequest)
-	if err != nil {
+	if requestDecoder.Decode(&incomingPaymentResourceRequest) != nil {
 		log.ErrorR(req, fmt.Errorf("Request Body Invalid"))
 		w.WriteHeader(http.StatusBadRequest) // 400
 		return
@@ -96,8 +95,7 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 	// TODO save cost resource and ensure all mandatory fields are present:
 
 	paymentResource := &data.PaymentResource{}
-	err = json.Unmarshal(body, paymentResource)
-	if err != nil {
+	if json.Unmarshal(body, paymentResource) != nil {
 		log.ErrorR(resourceReq, fmt.Errorf("Error reading Cost Resource: [%s]", err))
 		w.WriteHeader(http.StatusInternalServerError) // 500
 		return
