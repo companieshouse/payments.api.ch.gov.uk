@@ -52,7 +52,7 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError) // 500
 		return
 	}
-	url, err := url.Parse(resource)
+	parsedUrl, err := url.Parse(resource)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("Error parsing resource: [%s]", err))
 		w.WriteHeader(http.StatusBadRequest) // 400
@@ -62,13 +62,13 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 	whitelist := strings.Split(cfg.DomainWhitelist, ",")
 	matched := false
 	for _, domain := range whitelist {
-		if url.Host == domain {
+		if parsedUrl.Host == domain {
 			matched = true
 			break
 		}
 	}
 	if !matched {
-		log.ErrorR(req, fmt.Errorf("Invalid resource domain: %s", url.Host))
+		log.ErrorR(req, fmt.Errorf("Invalid resource domain: %s", parsedUrl.Host))
 		w.WriteHeader(http.StatusBadRequest) // 400
 		return
 	}
