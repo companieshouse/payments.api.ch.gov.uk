@@ -1,7 +1,5 @@
 package data
 
-// FIXME Bad package name?
-
 import (
 	"fmt"
 
