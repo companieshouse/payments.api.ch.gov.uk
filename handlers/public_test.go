@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
+	"github.com/companieshouse/payments.api.ch.gov.uk/data"
 	. "github.com/smartystreets/goconvey/convey"
 	"gopkg.in/jarcoal/httpmock.v1"
 )
@@ -77,7 +78,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		var paymentResource createPaymentResource
+		var paymentResource data.IncomingPaymentResourceRequest
 		jsonResponse, _ := httpmock.NewJsonResponder(500, paymentResource)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 		createPaymentSession(w, req)
