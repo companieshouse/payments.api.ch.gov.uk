@@ -22,12 +22,14 @@ func Register(r *pat.Router) {
 	r.Post("/payments", createPaymentSession).Name("create-payment")
 }
 
+// Return a 200 response if service is running
 func getHealthCheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
 var client http.Client
 
+// Create a payment session and return a journey URL for the calling app to redirect to
 func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 	if req.Body == nil {
 		log.ErrorR(req, fmt.Errorf("request body empty"))
