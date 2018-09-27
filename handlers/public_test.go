@@ -40,13 +40,13 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
 		w := httptest.NewRecorder()
-		createPaymentSession(w, req)
+		getPaymentResource(w, req, "http://dummy-resource")
 		So(w.Code, ShouldEqual, 400)
 	})
 
 	cfg.DomainWhitelist = "dummy-resource"
 
-	Convey("Error gettting cost resource", t, func() {
+	Convey("Error getting cost resource", t, func() {
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
@@ -66,7 +66,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("GET", "http://dummy-resource", httpmock.NewStringResponder(500, "string"))
-		createPaymentSession(w, req)
+		getPaymentResource(w, req, "http://dummy-resource")
 		So(w.Code, ShouldEqual, 500)
 	})
 
