@@ -45,61 +45,8 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	resource := incomingPaymentResourceRequest.Resource
-
-	cfg, err := config.Get()
+	paymentResource, err := getPaymentResource(w, req, incomingPaymentResourceRequest.Resource)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error getting config: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	parsedURL, err := url.Parse(resource)
-	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error parsing resource: [%v]", err))
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	whitelist := strings.Split(cfg.DomainWhitelist, ",")
-	matched := false
-	for _, domain := range whitelist {
-		if parsedURL.Host == domain {
-			matched = true
-			break
-		}
-	}
-	if !matched {
-		log.ErrorR(req, fmt.Errorf("invalid resource domain: %s", parsedURL.Host))
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	resourceReq, err := http.NewRequest("GET", resource, nil)
-	if err != nil {
-		log.ErrorR(resourceReq, fmt.Errorf("failed to create Resource Request: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	resp, err := client.Do(resourceReq)
-	if err != nil {
-		log.ErrorR(resourceReq, fmt.Errorf("error getting Cost Resource: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.ErrorR(resourceReq, fmt.Errorf("error reading Cost Resource: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	// TODO save cost resource and ensure all mandatory fields are present:
-
-	paymentResource := &data.PaymentResource{}
-	if json.Unmarshal(body, paymentResource) != nil {
-		log.ErrorR(resourceReq, fmt.Errorf("error reading Cost Resource: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -130,7 +77,8 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 	paymentResource.CreatedAt = time.Now()
 	paymentResource.Reference = incomingPaymentResourceRequest.Reference
 
-	if data.CreatePaymentResourceDB(paymentResource) != nil {
+	err = data.CreatePaymentResourceDB(paymentResource)
+	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing to MongoDB: %v", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -146,4 +94,65 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// log.Trace("TODO log successful creation with details") // TODO
+}
+
+func getPaymentResource(w http.ResponseWriter, req *http.Request, resource string) (*data.PaymentResource, error) {
+
+	cfg, err := config.Get()
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error getting config: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return nil, err
+	}
+	parsedURL, err := url.Parse(resource)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error parsing resource: [%v]", err))
+		w.WriteHeader(http.StatusBadRequest)
+		return nil, err
+	}
+
+	whitelist := strings.Split(cfg.DomainWhitelist, ",")
+	matched := false
+	for _, domain := range whitelist {
+		if parsedURL.Host == domain {
+			matched = true
+			break
+		}
+	}
+	if !matched {
+		log.ErrorR(req, fmt.Errorf("invalid resource domain: %s", parsedURL.Host))
+		w.WriteHeader(http.StatusBadRequest)
+		return nil, err
+	}
+
+	resourceReq, err := http.NewRequest("GET", resource, nil)
+	if err != nil {
+		log.ErrorR(resourceReq, fmt.Errorf("failed to create Resource Request: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return nil, err
+	}
+	resp, err := client.Do(resourceReq)
+	if err != nil {
+		log.ErrorR(resourceReq, fmt.Errorf("error getting Cost Resource: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.ErrorR(resourceReq, fmt.Errorf("error reading Cost Resource: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return nil, err
+	}
+
+	// TODO save cost resource and ensure all mandatory fields are present:
+
+	paymentResource := &data.PaymentResource{}
+	err = json.Unmarshal(body, paymentResource)
+	if err != nil {
+		log.ErrorR(resourceReq, fmt.Errorf("error reading Cost Resource: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return nil, err
+	}
+	return paymentResource, nil
 }
