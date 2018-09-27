@@ -9,8 +9,8 @@ import (
 
 var session *mgo.Session
 
-// GetMongoSession gets a MongoDB Session
-func GetMongoSession() (*mgo.Session, error) {
+// getMongoSession gets a MongoDB Session
+func getMongoSession() (*mgo.Session, error) {
 	if session == nil {
 		var err error
 		cfg, err := config.Get()
@@ -23,4 +23,19 @@ func GetMongoSession() (*mgo.Session, error) {
 		}
 	}
 	return session.Copy(), nil
+}
+
+// CreatePaymentResourceDB writes a new payment resource to the DB
+func CreatePaymentResourceDB(paymentResource *PaymentResource) error {
+
+	paymentSession, err := getMongoSession()
+	if err != nil {
+		return err
+	}
+	defer paymentSession.Close()
+
+	c := paymentSession.DB("transactions").C("payments")
+
+	return c.Insert(paymentResource)
+
 }

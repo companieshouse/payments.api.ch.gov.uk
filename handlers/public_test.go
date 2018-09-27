@@ -9,9 +9,30 @@ import (
 	"testing"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
+	"github.com/companieshouse/payments.api.ch.gov.uk/data"
+	"github.com/gorilla/pat"
 	. "github.com/smartystreets/goconvey/convey"
 	"gopkg.in/jarcoal/httpmock.v1"
 )
+
+func TestUnitRegisterRoutes(t *testing.T) {
+	Convey("Register routes", t, func() {
+		router := pat.New()
+		Register(router)
+		So(router.GetRoute("get-healthcheck"), ShouldNotBeNil)
+		So(router.GetRoute("create-payment"), ShouldNotBeNil)
+	})
+}
+
+func TestUnitGetHealthCheck(t *testing.T) {
+	Convey("Get HealthCheck", t, func() {
+		req, err := http.NewRequest("GET", "", nil)
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		getHealthCheck(w, req)
+		So(w.Code, ShouldEqual, 200)
+	})
+}
 
 func TestUnitCreatePaymentSession(t *testing.T) {
 	cfg, _ := config.Get()
@@ -39,13 +60,13 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
 		w := httptest.NewRecorder()
-		createPaymentSession(w, req)
+		getPaymentResource(w, req, "http://dummy-resource")
 		So(w.Code, ShouldEqual, 400)
 	})
 
 	cfg.DomainWhitelist = "dummy-resource"
 
-	Convey("Error gettting cost resource", t, func() {
+	Convey("Error getting cost resource", t, func() {
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
@@ -65,7 +86,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("GET", "http://dummy-resource", httpmock.NewStringResponder(500, "string"))
-		createPaymentSession(w, req)
+		getPaymentResource(w, req, "http://dummy-resource")
 		So(w.Code, ShouldEqual, 500)
 	})
 
@@ -77,7 +98,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		var paymentResource createPaymentResource
+		var paymentResource data.IncomingPaymentResourceRequest
 		jsonResponse, _ := httpmock.NewJsonResponder(500, paymentResource)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 		createPaymentSession(w, req)

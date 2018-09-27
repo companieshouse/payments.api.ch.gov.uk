@@ -16,138 +16,37 @@ import (
 	"github.com/gorilla/pat"
 )
 
-type createPaymentResource struct {
-	RedirectURI string `json:"redirect_uri"`
-	Reference   string `json:"reference"`
-	Resource    string `json:"resource"`
-	State       string `json:"state"`
-}
-
-// PaymentResource is the payment details to be stored in the DB and returned in the response
-type PaymentResource struct {
-	//	ID                      string    `json:"id"                                  bson:"_id"`                                 // TODO implement
-	Amount                  string    `json:"amount"                              bson:"amount"`                              // TODO implement
-	AvailablePaymentMethods []string  `json:"available_payment_methods,omitempty" bson:"available_payment_methods,omitempty"` // TODO implement
-	CompletedAt             time.Time `json:"completed_at,omitempty"              bson:"completed_at,omitempty"`              // TODO implement
-	CreatedAt               time.Time `json:"created_at,omitempty"                bson:"created_at,omitempty"`
-	CreatedBy               CreatedBy `json:"created_by"                          bson:"created_by"`
-	Description             string    `json:"description"                         bson:"description"`              // TODO implement
-	Links                   Links     `json:"links"                               bson:"links"`                    // TODO implement
-	PaymentMethod           string    `json:"payment_method,omitempty"            bson:"payment_method,omitempty"` // TODO implement
-	Reference               string    `json:"reference,omitempty"                 bson:"reference,omitempty"`      // TODO implement
-	Status                  string    `json:"status"                              bson:"status"`                   // TODO implement
-}
-
-// CreatedBy is the user who is creating the payment session
-type CreatedBy struct {
-	Email    string `bson:"email"`
-	Forename string `bson:"forename"`
-	ID       string `bson:"id"`
-	Surname  string `bson:"surname"`
-}
-
-// Links is a set of URLs related to the resource, including self
-type Links struct {
-	Journey  string `json:"journey"`
-	Resource string `json:"resource"`
-	Self     string `json:"self"`
-}
-
-//Data is a representation of the top level data retrieved from the Transaction API
-type Data struct {
-	CompanyName string            `json:"company_name"`
-	Filings     map[string]Filing `json:"filings"`
-}
-
-//Filing is a representation of the Filing subsection of data retrieved from the Transaction API
-type Filing struct {
-	Description string `json:"description"`
-}
-
 // Register defines the route mappings
 func Register(r *pat.Router) {
 	r.Get("/healthcheck", getHealthCheck).Name("get-healthcheck")
 	r.Post("/payments", createPaymentSession).Name("create-payment")
 }
 
+// Return a 200 response if service is running
 func getHealthCheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
 var client http.Client
 
+// Create a payment session and return a journey URL for the calling app to redirect to
 func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 	if req.Body == nil {
 		log.ErrorR(req, fmt.Errorf("request body empty"))
-		w.WriteHeader(http.StatusBadRequest) // 400
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	requestDecoder := json.NewDecoder(req.Body)
-	var b createPaymentResource
-	err := requestDecoder.Decode(&b)
-	if err != nil {
+	var incomingPaymentResourceRequest data.IncomingPaymentResourceRequest
+	if requestDecoder.Decode(&incomingPaymentResourceRequest) != nil {
 		log.ErrorR(req, fmt.Errorf("request body invalid"))
-		w.WriteHeader(http.StatusBadRequest) // 400
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	resource := b.Resource
-
-	cfg, err := config.Get()
+	paymentResource, err := getPaymentResource(w, req, incomingPaymentResourceRequest.Resource)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error getting config: [%s]", err))
-		w.WriteHeader(http.StatusInternalServerError) // 500
-		return
-	}
-	url, err := url.Parse(resource)
-	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error parsing resource: [%s]", err))
-		w.WriteHeader(http.StatusBadRequest) // 400
-		return
-	}
-
-	whitelist := strings.Split(cfg.DomainWhitelist, ",")
-	matched := false
-	for _, domain := range whitelist {
-		if url.Host == domain {
-			matched = true
-			break
-		}
-	}
-	if !matched {
-		log.ErrorR(req, fmt.Errorf("invalid resource domain: %s", url.Host))
-		w.WriteHeader(http.StatusBadRequest) // 400
-		return
-	}
-
-	resourceReq, err := http.NewRequest("GET", resource, nil)
-	if err != nil {
-		log.ErrorR(resourceReq, fmt.Errorf("failed to create Resource Request: [%s]", err))
-		w.WriteHeader(http.StatusInternalServerError) // 500
-		return
-	}
-	resp, err := client.Do(resourceReq)
-	if err != nil {
-		log.ErrorR(resourceReq, fmt.Errorf("error getting Cost Resource: [%s]", err))
-		w.WriteHeader(http.StatusInternalServerError) // 500
-		return
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.ErrorR(resourceReq, fmt.Errorf("error reading Cost Resource: [%s]", err))
-		w.WriteHeader(http.StatusInternalServerError) // 500
-		return
-	}
-
-	// TODO save cost resource and ensure all mandatory fields are present:
-
-	paymentResource := &PaymentResource{}
-	err = json.Unmarshal(body, paymentResource)
-	if err != nil {
-		log.ErrorR(resourceReq, fmt.Errorf("error reading Cost Resource: [%s]", err))
-		w.WriteHeader(http.StatusInternalServerError) // 500
 		return
 	}
 
@@ -164,11 +63,11 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 			surname = v[1]
 		} else {
 			log.ErrorR(req, fmt.Errorf("unexpected format in Eric-Authorised-User: %s", user))
-			w.WriteHeader(http.StatusInternalServerError) // 500
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	}
-	paymentResource.CreatedBy = CreatedBy{
+	paymentResource.CreatedBy = data.CreatedBy{
 		ID:       req.Header.Get("Eric-Identity"),
 		Email:    email,
 		Forename: forename,
@@ -176,22 +75,12 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 	}
 
 	paymentResource.CreatedAt = time.Now()
-	paymentResource.Reference = b.Reference
+	paymentResource.Reference = incomingPaymentResourceRequest.Reference
 
-	// Write to DB
-	session, err := data.GetMongoSession()
+	err = data.CreatePaymentResourceDB(paymentResource)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error connecting to MongoDB: %s", err))
-		w.WriteHeader(http.StatusInternalServerError) // 500
-		return
-	}
-	defer session.Close()
-
-	c := session.DB("transactions").C("payments")
-
-	if err = c.Insert(paymentResource); err != nil {
-		log.ErrorR(req, fmt.Errorf("error writing to MongoDB: %s", err))
-		w.WriteHeader(http.StatusInternalServerError) // 500
+		log.ErrorR(req, fmt.Errorf("error writing to MongoDB: %v", err))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -199,10 +88,71 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(paymentResource)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error writing response: %s", err))
-		w.WriteHeader(http.StatusInternalServerError) // 500
+		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	// log.Trace("TODO log successful creation with details") // TODO
+}
+
+func getPaymentResource(w http.ResponseWriter, req *http.Request, resource string) (*data.PaymentResource, error) {
+
+	cfg, err := config.Get()
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error getting config: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return nil, err
+	}
+	parsedURL, err := url.Parse(resource)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error parsing resource: [%v]", err))
+		w.WriteHeader(http.StatusBadRequest)
+		return nil, err
+	}
+
+	whitelist := strings.Split(cfg.DomainWhitelist, ",")
+	matched := false
+	for _, domain := range whitelist {
+		if parsedURL.Host == domain {
+			matched = true
+			break
+		}
+	}
+	if !matched {
+		log.ErrorR(req, fmt.Errorf("invalid resource domain: %s", parsedURL.Host))
+		w.WriteHeader(http.StatusBadRequest)
+		return nil, err
+	}
+
+	resourceReq, err := http.NewRequest("GET", resource, nil)
+	if err != nil {
+		log.ErrorR(resourceReq, fmt.Errorf("failed to create Resource Request: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return nil, err
+	}
+	resp, err := client.Do(resourceReq)
+	if err != nil {
+		log.ErrorR(resourceReq, fmt.Errorf("error getting Cost Resource: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.ErrorR(resourceReq, fmt.Errorf("error reading Cost Resource: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return nil, err
+	}
+
+	// TODO save cost resource and ensure all mandatory fields are present:
+
+	paymentResource := &data.PaymentResource{}
+	err = json.Unmarshal(body, paymentResource)
+	if err != nil {
+		log.ErrorR(resourceReq, fmt.Errorf("error reading Cost Resource: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return nil, err
+	}
+	return paymentResource, nil
 }
