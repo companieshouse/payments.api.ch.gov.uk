@@ -7,7 +7,8 @@ import (
 	"github.com/companieshouse/chs.go/log"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
-	"github.com/companieshouse/payments.api.ch.gov.uk/handlers"
+	"github.com/companieshouse/payments.api.ch.gov.uk/handlers/private" //Private API handling
+	"github.com/companieshouse/payments.api.ch.gov.uk/handlers/public"  //Public API handling
 
 	eric "github.com/companieshouse/eric/chain" // Identity bridge
 
@@ -30,7 +31,8 @@ func main() {
 
 	chain = eric.Register(chain)
 
-	handlers.Register(router)
+	private.Register(router)
+	public.Register(router)
 
 	log.Info("Starting " + namespace)
 	err = http.ListenAndServe(cfg.BindAddr, chain.Then(router))
