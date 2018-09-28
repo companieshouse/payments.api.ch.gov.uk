@@ -1,18 +1,13 @@
-package private
+package handlers
 
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/data"
-	"github.com/gorilla/pat"
-	"net/http"
 )
-
-// Register defines the route mappings
-func Register(r *pat.Router) {
-	r.Post("/private/paymentjourney", createExternalPaymentJourney).Name("create-paymentjourney")
-}
 
 func createExternalPaymentJourney(w http.ResponseWriter, req *http.Request) {
 	if req.Body == nil {
