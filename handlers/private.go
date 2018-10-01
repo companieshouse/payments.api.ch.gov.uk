@@ -25,7 +25,7 @@ func createExternalPaymentJourney(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if incomingExternalPaymentJourneyRequest.PaymentMethod != "GovPay" {
-		log.ErrorR(req, fmt.Errorf("Payment Method not Recognised"))
+		log.ErrorR(req, fmt.Errorf("payment method not recognised: %v", incomingExternalPaymentJourneyRequest.PaymentMethod))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -34,7 +34,10 @@ func createExternalPaymentJourney(w http.ResponseWriter, req *http.Request) {
 	//TODO: Return next_url from GovPay, hardcoded at the moment
 	paymentJourney.NextUrl = "http://gov.uk/paymentjourney"
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(paymentJourney)
-	return
-
+	err := json.NewEncoder(w).Encode(paymentJourney)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
