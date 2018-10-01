@@ -12,15 +12,7 @@ import (
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/data"
-
-	"github.com/gorilla/pat"
 )
-
-// Register defines the route mappings
-func Register(r *pat.Router) {
-	r.Get("/healthcheck", getHealthCheck).Name("get-healthcheck")
-	r.Post("/payments", createPaymentSession).Name("create-payment")
-}
 
 // Return a 200 response if service is running
 func getHealthCheck(w http.ResponseWriter, r *http.Request) {
