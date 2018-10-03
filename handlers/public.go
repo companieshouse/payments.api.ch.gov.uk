@@ -16,8 +16,7 @@ import (
 	"github.com/gorilla/pat"
 )
 
-// PaymentService contains the DAO for access to the database
-type PaymentService struct {
+type paymentService struct {
 	DAO dao.DAO
 }
 
@@ -26,11 +25,11 @@ func Register(r *pat.Router, cfg config.Config) {
 	m := &dao.Mongo{
 		URL: cfg.MongoDBURL,
 	}
-	paymentService := &PaymentService{
+	p := &paymentService{
 		DAO: m,
 	}
 	r.Get("/healthcheck", getHealthCheck).Name("get-healthcheck")
-	r.Post("/payments", paymentService.createPaymentSession).Name("create-payment")
+	r.Post("/payments", p.createPaymentSession).Name("create-payment")
 }
 
 // Return a 200 response if service is running
@@ -39,7 +38,7 @@ func getHealthCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 // Create a payment session and return a journey URL for the calling app to redirect to
-func (service *PaymentService) createPaymentSession(w http.ResponseWriter, req *http.Request) {
+func (service *paymentService) createPaymentSession(w http.ResponseWriter, req *http.Request) {
 	if req.Body == nil {
 		log.ErrorR(req, fmt.Errorf("request body empty"))
 		w.WriteHeader(http.StatusBadRequest)

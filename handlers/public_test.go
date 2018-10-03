@@ -37,8 +37,8 @@ func TestUnitGetHealthCheck(t *testing.T) {
 	})
 }
 
-func createMockPaymentService(dao *dao.MockDAO) PaymentService {
-	return PaymentService{
+func createMockPaymentService(dao *dao.MockDAO) paymentService {
+	return paymentService{
 		DAO: dao,
 	}
 }
