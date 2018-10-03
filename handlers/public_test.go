@@ -120,6 +120,28 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(w.Code, ShouldEqual, 500)
 	})
 
+	Convey("Error Creating DB Resource", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock)
+		mock.EXPECT().CreatePaymentResourceDB(gomock.Any()).Return(fmt.Errorf("error"))
+
+		req, err := http.NewRequest("Get", "", nil)
+		So(err, ShouldBeNil)
+
+		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
+		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
+		w := httptest.NewRecorder()
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		var paymentResource models.PaymentResource
+		jsonResponse, _ := httpmock.NewJsonResponder(200, paymentResource)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+
+		mockPaymentService.createPaymentSession(w, req)
+		So(w.Code, ShouldEqual, 500)
+	})
+
 	Convey("Valid request", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock)
