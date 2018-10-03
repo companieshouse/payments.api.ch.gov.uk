@@ -128,7 +128,8 @@ func getPaymentResource(w http.ResponseWriter, req *http.Request, resource strin
 		}
 	}
 	if !matched {
-		log.ErrorR(req, fmt.Errorf("invalid resource domain: %s", parsedURL.Host))
+		err = fmt.Errorf("invalid resource domain: %s", parsedURL.Host)
+		log.ErrorR(req, err)
 		w.WriteHeader(http.StatusBadRequest)
 		return nil, err
 	}
