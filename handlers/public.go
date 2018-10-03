@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -84,6 +86,7 @@ func (service *paymentService) createPaymentSession(w http.ResponseWriter, req *
 
 	paymentResource.CreatedAt = time.Now()
 	paymentResource.Reference = incomingPaymentResourceRequest.Reference
+	paymentResource.PaymentResourceID = generateRandomId()
 
 	err = service.DAO.CreatePaymentResourceDB(paymentResource)
 	if err != nil {
@@ -166,4 +169,12 @@ func getPaymentResource(w http.ResponseWriter, req *http.Request, resource strin
 		return nil, err
 	}
 	return paymentResource, nil
+}
+
+func generateRandomId() (i string) {
+	ranNumber := strconv.Itoa(1000000 + rand.Intn(9000000))
+	now := time.Now()
+	nanos := now.UnixNano()
+	millis := strconv.FormatInt((nanos / 1000000), 10)
+	return ranNumber + millis
 }
