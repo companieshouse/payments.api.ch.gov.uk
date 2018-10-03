@@ -11,15 +11,26 @@ import (
 
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
-	"github.com/companieshouse/payments.api.ch.gov.uk/data"
-
+	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
+	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/gorilla/pat"
 )
 
+// PaymentService contains the DAO for access to the database
+type PaymentService struct {
+	DAO dao.DAO
+}
+
 // Register defines the route mappings
-func Register(r *pat.Router) {
+func Register(r *pat.Router, cfg config.Config) {
+	m := &dao.Mongo{
+		URL: cfg.MongoDBURL,
+	}
+	paymentService := &PaymentService{
+		DAO: m,
+	}
 	r.Get("/healthcheck", getHealthCheck).Name("get-healthcheck")
-	r.Post("/payments", createPaymentSession).Name("create-payment")
+	r.Post("/payments", paymentService.createPaymentSession).Name("create-payment")
 }
 
 // Return a 200 response if service is running
@@ -27,10 +38,8 @@ func getHealthCheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-var client http.Client
-
 // Create a payment session and return a journey URL for the calling app to redirect to
-func createPaymentSession(w http.ResponseWriter, req *http.Request) {
+func (service *PaymentService) createPaymentSession(w http.ResponseWriter, req *http.Request) {
 	if req.Body == nil {
 		log.ErrorR(req, fmt.Errorf("request body empty"))
 		w.WriteHeader(http.StatusBadRequest)
@@ -38,7 +47,7 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 	}
 
 	requestDecoder := json.NewDecoder(req.Body)
-	var incomingPaymentResourceRequest data.IncomingPaymentResourceRequest
+	var incomingPaymentResourceRequest models.IncomingPaymentResourceRequest
 	if requestDecoder.Decode(&incomingPaymentResourceRequest) != nil {
 		log.ErrorR(req, fmt.Errorf("request body invalid"))
 		w.WriteHeader(http.StatusBadRequest)
@@ -67,7 +76,7 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	paymentResource.CreatedBy = data.CreatedBy{
+	paymentResource.CreatedBy = models.CreatedBy{
 		ID:       req.Header.Get("Eric-Identity"),
 		Email:    email,
 		Forename: forename,
@@ -77,7 +86,7 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 	paymentResource.CreatedAt = time.Now()
 	paymentResource.Reference = incomingPaymentResourceRequest.Reference
 
-	err = data.CreatePaymentResourceDB(paymentResource)
+	err = service.DAO.CreatePaymentResourceDB(paymentResource)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing to MongoDB: %v", err))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -96,7 +105,7 @@ func createPaymentSession(w http.ResponseWriter, req *http.Request) {
 	// log.Trace("TODO log successful creation with details") // TODO
 }
 
-func getPaymentResource(w http.ResponseWriter, req *http.Request, resource string) (*data.PaymentResource, error) {
+func getPaymentResource(w http.ResponseWriter, req *http.Request, resource string) (*models.PaymentResource, error) {
 
 	cfg, err := config.Get()
 	if err != nil {
@@ -131,6 +140,8 @@ func getPaymentResource(w http.ResponseWriter, req *http.Request, resource strin
 		w.WriteHeader(http.StatusInternalServerError)
 		return nil, err
 	}
+
+	var client http.Client
 	resp, err := client.Do(resourceReq)
 	if err != nil {
 		log.ErrorR(resourceReq, fmt.Errorf("error getting Cost Resource: [%v]", err))
@@ -147,7 +158,7 @@ func getPaymentResource(w http.ResponseWriter, req *http.Request, resource strin
 
 	// TODO save cost resource and ensure all mandatory fields are present:
 
-	paymentResource := &data.PaymentResource{}
+	paymentResource := &models.PaymentResource{}
 	err = json.Unmarshal(body, paymentResource)
 	if err != nil {
 		log.ErrorR(resourceReq, fmt.Errorf("error reading Cost Resource: [%v]", err))

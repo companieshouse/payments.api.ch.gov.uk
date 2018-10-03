@@ -30,7 +30,7 @@ func main() {
 
 	chain = eric.Register(chain)
 
-	handlers.Register(router)
+	handlers.Register(router, *cfg)
 
 	log.Info("Starting " + namespace)
 	err = http.ListenAndServe(cfg.BindAddr, chain.Then(router))
