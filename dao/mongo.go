@@ -1,13 +1,19 @@
-package data
+package dao
 
 import (
 	"fmt"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
+	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	mgo "gopkg.in/mgo.v2"
 )
 
 var session *mgo.Session
+
+// Mongo represents a simplistic MongoDB configuration.
+type Mongo struct {
+	URL string
+}
 
 // getMongoSession gets a MongoDB Session
 func getMongoSession() (*mgo.Session, error) {
@@ -26,7 +32,7 @@ func getMongoSession() (*mgo.Session, error) {
 }
 
 // CreatePaymentResourceDB writes a new payment resource to the DB
-func CreatePaymentResourceDB(paymentResource *PaymentResource) error {
+func (m *Mongo) CreatePaymentResourceDB(paymentResource *models.PaymentResource) error {
 
 	paymentSession, err := getMongoSession()
 	if err != nil {

@@ -9,7 +9,9 @@ import (
 	"testing"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
-	"github.com/companieshouse/payments.api.ch.gov.uk/data"
+	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
+	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/golang/mock/gomock"
 	"github.com/gorilla/pat"
 	. "github.com/smartystreets/goconvey/convey"
 	"gopkg.in/jarcoal/httpmock.v1"
@@ -18,7 +20,8 @@ import (
 func TestUnitRegisterRoutes(t *testing.T) {
 	Convey("Register routes", t, func() {
 		router := pat.New()
-		Register(router)
+		cfg, _ := config.Get()
+		Register(router, *cfg)
 		So(router.GetRoute("get-healthcheck"), ShouldNotBeNil)
 		So(router.GetRoute("create-payment"), ShouldNotBeNil)
 	})
@@ -34,24 +37,34 @@ func TestUnitGetHealthCheck(t *testing.T) {
 	})
 }
 
+func createMockPaymentService(dao *dao.MockDAO) paymentService {
+	return paymentService{
+		DAO: dao,
+	}
+}
+
 func TestUnitCreatePaymentSession(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
 	reqBody := []byte("{\"redirect_uri\": \"dummy-redirect-uri\",\"resource\": \"http://dummy-resource\",\"state\": \"dummy-state\",\"reference\": \"dummy-reference\"}")
 
 	Convey("Empty Request Body", t, func() {
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl))
 		req, err := http.NewRequest("GET", "", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		createPaymentSession(w, req)
+		mockPaymentService.createPaymentSession(w, req)
 		So(w.Code, ShouldEqual, 400)
 	})
 
 	Convey("Invalid Request Body", t, func() {
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl))
 		req, err := http.NewRequest("GET", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader([]byte("invalid_body")))
 		w := httptest.NewRecorder()
-		createPaymentSession(w, req)
+		mockPaymentService.createPaymentSession(w, req)
 		So(w.Code, ShouldEqual, 400)
 	})
 
@@ -67,6 +80,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 	cfg.DomainWhitelist = "dummy-resource"
 
 	Convey("Error getting cost resource", t, func() {
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl))
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
@@ -74,7 +88,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("GET", "http://dummy-resource", httpmock.NewErrorResponder(fmt.Errorf("error")))
-		createPaymentSession(w, req)
+		mockPaymentService.createPaymentSession(w, req)
 		So(w.Code, ShouldEqual, 500)
 	})
 
@@ -91,6 +105,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 	})
 
 	Convey("Invalid user header", t, func() {
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl))
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
@@ -98,11 +113,55 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		var paymentResource data.IncomingPaymentResourceRequest
+		var paymentResource models.IncomingPaymentResourceRequest
 		jsonResponse, _ := httpmock.NewJsonResponder(500, paymentResource)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
-		createPaymentSession(w, req)
+		mockPaymentService.createPaymentSession(w, req)
 		So(w.Code, ShouldEqual, 500)
+	})
+
+	Convey("Error Creating DB Resource", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock)
+		mock.EXPECT().CreatePaymentResourceDB(gomock.Any()).Return(fmt.Errorf("error"))
+
+		req, err := http.NewRequest("Get", "", nil)
+		So(err, ShouldBeNil)
+
+		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
+		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
+		w := httptest.NewRecorder()
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		var paymentResource models.PaymentResource
+		jsonResponse, _ := httpmock.NewJsonResponder(200, paymentResource)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+
+		mockPaymentService.createPaymentSession(w, req)
+		So(w.Code, ShouldEqual, 500)
+	})
+
+	Convey("Valid request", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock)
+		mock.EXPECT().CreatePaymentResourceDB(gomock.Any())
+
+		req, err := http.NewRequest("Get", "", nil)
+		So(err, ShouldBeNil)
+
+		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
+		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
+		w := httptest.NewRecorder()
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		var paymentResource models.PaymentResource
+		jsonResponse, _ := httpmock.NewJsonResponder(200, paymentResource)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+
+		mockPaymentService.createPaymentSession(w, req)
+		So(w.Code, ShouldEqual, 200)
 	})
 
 }
