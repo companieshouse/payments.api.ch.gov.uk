@@ -33,7 +33,7 @@ func Register(r *pat.Router, cfg config.Config) {
 }
 
 // Return a 200 response if service is running
-func getHealthCheck(w http.ResponseWriter, r *http.Request) {
+func getHealthCheck(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
