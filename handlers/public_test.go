@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"testing"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
@@ -162,6 +163,17 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 		mockPaymentService.createPaymentSession(w, req)
 		So(w.Code, ShouldEqual, 200)
+	})
+
+	Convey("Valid generated PaymentResource ID", t, func() {
+		generatedID := generateID()
+
+		// Generated ID should be 20 characters
+		So(len(generatedID), ShouldEqual, 20)
+
+		// Generated ID should contain only numbers
+		re := regexp.MustCompile("^[0-9]*$")
+		So(re.MatchString(generatedID), ShouldEqual, true)
 	})
 
 }
