@@ -86,7 +86,7 @@ func (service *paymentService) createPaymentSession(w http.ResponseWriter, req *
 
 	paymentResource.CreatedAt = time.Now()
 	paymentResource.Reference = incomingPaymentResourceRequest.Reference
-	paymentResource.ID = generateRandomID()
+	paymentResource.ID = generateID()
 
 	journeyURL := fmt.Sprintf("https://payments.companieshouse.gov.uk/payments/%s/pay", paymentResource.ID)
 	paymentResource.Links = models.Links{
@@ -177,10 +177,9 @@ func getPaymentResource(w http.ResponseWriter, req *http.Request, resource strin
 	return paymentResource, nil
 }
 
-func generateRandomID() (i string) {
-	ranNumber := strconv.Itoa(1000000 + rand.Intn(9000000))
-	now := time.Now()
-	nanos := now.UnixNano()
-	millis := strconv.FormatInt((nanos / 1000000), 10)
+// Generates a string of 20 numbers made up of 8 random numbers, followed by 12 numbers derived from the current time
+func generateID() (i string) {
+	ranNumber := strconv.Itoa(10000000 + rand.Intn(90000000))
+	millis := strconv.FormatInt((time.Now().UnixNano() / int64(time.Millisecond)), 10)
 	return ranNumber + millis
 }
