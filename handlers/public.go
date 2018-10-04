@@ -173,7 +173,7 @@ func getPaymentResource(w http.ResponseWriter, req *http.Request, resource strin
 
 // Generates a string of 20 numbers made up of 7 random numbers, followed by 13 numbers derived from the current time
 func generateID() (i string) {
-	ranNumber := strconv.Itoa(1000000 + rand.Intn(900000))
-	millis := strconv.FormatInt((time.Now().UnixNano() / int64(time.Millisecond)), 10)
+	ranNumber := fmt.Sprintf("%07d", rand.Intn(9999999))
+	millis := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
 	return ranNumber + millis
 }
