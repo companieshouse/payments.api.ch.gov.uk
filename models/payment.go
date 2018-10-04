@@ -12,7 +12,7 @@ type IncomingPaymentResourceRequest struct {
 
 // PaymentResource is the payment details to be stored in the DB and returned in the response
 type PaymentResource struct {
-	PaymentResourceID       string    `json:"payment_resource_id"                 bson:"payment_resource_id"`
+	ID                      string    `json:"_id"                                 bson:"_id"`
 	Amount                  string    `json:"amount"                              bson:"amount"`
 	AvailablePaymentMethods []string  `json:"available_payment_methods,omitempty" bson:"available_payment_methods,omitempty"`
 	CompletedAt             time.Time `json:"completed_at,omitempty"              bson:"completed_at,omitempty"`
