@@ -88,6 +88,11 @@ func (service *paymentService) createPaymentSession(w http.ResponseWriter, req *
 	paymentResource.Reference = incomingPaymentResourceRequest.Reference
 	paymentResource.ID = generateRandomID()
 
+	journeyURL := fmt.Sprintf("https://payments.companieshouse.gov.uk/payments/%s/pay", paymentResource.ID)
+	paymentResource.Links = models.Links{
+		Journey: journeyURL,
+	}
+
 	err = service.DAO.CreatePaymentResourceDB(paymentResource)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing to MongoDB: %v", err))
@@ -97,6 +102,7 @@ func (service *paymentService) createPaymentSession(w http.ResponseWriter, req *
 
 	// Add data to response
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Location", journeyURL)
 	err = json.NewEncoder(w).Encode(paymentResource)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
