@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"unicode"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
@@ -162,6 +163,22 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 		mockPaymentService.createPaymentSession(w, req)
 		So(w.Code, ShouldEqual, 200)
+	})
+
+	Convey("Valid generated PaymentResource ID", t, func() {
+		generatedID := generateID()
+
+		// Generated ID should be 20 characters
+		So(len(generatedID), ShouldEqual, 20)
+
+		// Generated ID should contain only numbers
+		allNumbers := true
+		for _, char := range generatedID {
+			if !unicode.IsNumber(char) {
+				allNumbers = false
+			}
+		}
+		So(allNumbers, ShouldEqual, true)
 	})
 
 }
