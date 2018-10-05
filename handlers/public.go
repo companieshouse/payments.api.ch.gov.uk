@@ -56,6 +56,7 @@ func (service *paymentService) createPaymentSession(w http.ResponseWriter, req *
 
 	paymentResource, err := getPaymentResource(w, req, incomingPaymentResourceRequest.Resource)
 	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error getting payment resource: [%v]", err))
 		return
 	}
 
