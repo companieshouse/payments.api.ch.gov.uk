@@ -17,11 +17,11 @@ func Register(r *pat.Router, cfg config.Config) {
 	p := &service.PaymentService{
 		DAO: m,
 	}
+
 	r.Get("/healthcheck", healthCheck).Name("get-healthcheck")
 	r.Post("/payments", p.CreatePaymentSession).Name("create-payment")
 }
 
-// Return a 200 response if service is running
 func healthCheck(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
