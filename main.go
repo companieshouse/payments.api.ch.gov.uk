@@ -1,37 +1,42 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/companieshouse/chs.go/log"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
-	"github.com/companieshouse/payments.api.ch.gov.uk/handlers/private"
-	"github.com/companieshouse/payments.api.ch.gov.uk/handlers/public"
+	"github.com/companieshouse/payments.api.ch.gov.uk/handlers"
+
+	eric "github.com/companieshouse/eric/chain" // Identity bridge
 
 	"github.com/gorilla/pat"
 	"github.com/justinas/alice"
 )
 
-// Namespace:
-var namespace = "payments.api.ch.gov.uk"
-
 func main() {
+	namespace := "payments.api.ch.gov.uk"
 	log.Namespace = namespace
 
-	cfg := config.Get()
+	cfg, err := config.Get()
+	if err != nil {
+		log.Error(fmt.Errorf("error configuring service: %s. Exiting", err), nil)
+		return
+	}
 
 	router := pat.New()
 	chain := alice.New()
 
-	public.Register(router)
-	private.Register(router)
+	chain = eric.Register(chain)
+
+	handlers.Register(router, *cfg)
 
 	log.Info("Starting " + namespace)
-	err := http.ListenAndServe(cfg.BindAddr, chain.Then(router))
-
+	err = http.ListenAndServe(cfg.BindAddr, chain.Then(router))
 	if err != nil {
 		log.Error(err)
 	}
+
 	log.Trace("Exiting " + namespace)
 }
