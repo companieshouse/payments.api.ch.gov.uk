@@ -47,8 +47,9 @@ func (service *paymentService) createPaymentSession(w http.ResponseWriter, req *
 
 	requestDecoder := json.NewDecoder(req.Body)
 	var incomingPaymentResourceRequest models.IncomingPaymentResourceRequest
-	if requestDecoder.Decode(&incomingPaymentResourceRequest) != nil {
-		log.ErrorR(req, fmt.Errorf("request body invalid"))
+	err := requestDecoder.Decode(&incomingPaymentResourceRequest)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("request body invalid: [%v]", err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
