@@ -5,7 +5,7 @@ import (
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
-	"gopkg.in/mgo.v2"
+	"github.com/globalsign/mgo"
 )
 
 var session *mgo.Session
