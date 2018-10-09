@@ -22,7 +22,7 @@ type Config struct {
 	APIKey             string `env:"CHS_API_KEY"          flag:"api-key"                flagDesc:"API key used to authenticate for internal API calls"`
 	DomainWhitelist    string `env:"DOMAIN_WHITELIST"     flag:"domain-whitelist"       flagDesc:"List of Valid Domains"`
 	PaymentServiceURL  string `env:"PAYMENT_SERVICE_URL"  flag:"payment-service-url"    flagDesc:"Base URL for the Payment Service"`
-	PaymentServicePath string `env:"PAYMENT_SERVICE_PATH" flag:"payment-service-path"   flagDesc:"Path used to start a payment journey gon the Payment Service"`
+	PaymentServicePath string `env:"PAYMENT_SERVICE_PATH" flag:"payment-service-path"   flagDesc:"Path used to start a payment journey on the Payment Service"`
 }
 
 // DefaultConfig returns a pointer to a Config instance that has been populated
