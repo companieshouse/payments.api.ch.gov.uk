@@ -57,7 +57,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(w.Code, ShouldEqual, 400)
 	})
 
-	cfg.DomainWhitelist = "dummy-resource"
+	cfg.DomainWhitelist = "http://dummy-resource"
 
 	Convey("Error getting cost resource", t, func() {
 		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl))
