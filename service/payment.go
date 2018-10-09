@@ -39,7 +39,14 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 		return
 	}
 
-	paymentResource, err := getPaymentResource(w, req, incomingPaymentResourceRequest.Resource)
+	cfg, err := config.Get()
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error getting config: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	paymentResource, err := getPaymentResource(w, req, incomingPaymentResourceRequest.Resource, cfg)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error getting payment resource: [%v]", err))
 		return
@@ -73,13 +80,6 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	paymentResource.Reference = incomingPaymentResourceRequest.Reference
 	paymentResource.ID = generateID()
 
-	cfg, err := config.Get()
-	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error getting config: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	journeyURL := cfg.PaymentServiceURL + paymentResource.ID + cfg.PaymentServicePath
 	paymentResource.Links = models.Links{
 		Journey: journeyURL,
@@ -104,14 +104,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	// log.Trace("TODO log successful creation with details") // TODO
 }
 
-func getPaymentResource(w http.ResponseWriter, req *http.Request, resource string) (*models.PaymentResource, error) {
-
-	cfg, err := config.Get()
-	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error getting config: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return nil, err
-	}
+func getPaymentResource(w http.ResponseWriter, req *http.Request, resource string, cfg *config.Config) (*models.PaymentResource, error) {
 	parsedURL, err := url.Parse(resource)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error parsing resource: [%v]", err))
