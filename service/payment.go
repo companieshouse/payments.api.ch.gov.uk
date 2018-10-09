@@ -4,10 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -71,7 +69,6 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 
 	paymentResource.CreatedAt = time.Now()
 	paymentResource.Reference = incomingPaymentResourceRequest.Reference
-	paymentResource.ID = generateID()
 
 	cfg, err := config.Get()
 	if err != nil {
@@ -166,12 +163,4 @@ func getPaymentResource(w http.ResponseWriter, req *http.Request, resource strin
 		return nil, err
 	}
 	return paymentResource, nil
-}
-
-// Generates a string of 20 numbers made up of 7 random numbers, followed by 13 numbers derived from the current time
-func generateID() (i string) {
-	rand.Seed(time.Now().UTC().UnixNano())
-	ranNumber := fmt.Sprintf("%07d", rand.Intn(9999999))
-	millis := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
-	return ranNumber + millis
 }
