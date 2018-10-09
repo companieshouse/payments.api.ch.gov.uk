@@ -103,11 +103,12 @@ func getPaymentResource(w http.ResponseWriter, req *http.Request, resource strin
 		w.WriteHeader(http.StatusBadRequest)
 		return nil, err
 	}
+	resourceDomain := strings.Join([]string{parsedURL.Scheme, parsedURL.Host}, "://")
 
 	whitelist := strings.Split(cfg.DomainWhitelist, ",")
 	matched := false
 	for _, domain := range whitelist {
-		if parsedURL.Host == domain {
+		if resourceDomain == domain {
 			matched = true
 			break
 		}
