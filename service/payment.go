@@ -73,6 +73,18 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	paymentResource.Reference = incomingPaymentResourceRequest.Reference
 	paymentResource.ID = generateID()
 
+	cfg, err := config.Get()
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error getting config: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	journeyURL := cfg.PaymentServiceURL + paymentResource.ID + cfg.PaymentServicePath
+	paymentResource.Links = models.Links{
+		Journey: journeyURL,
+	}
+
 	err = service.DAO.CreatePaymentResourceDB(paymentResource)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing to MongoDB: %v", err))
