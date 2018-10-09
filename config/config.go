@@ -14,13 +14,15 @@ var mtx sync.Mutex
 
 // Config defines the configuration options for this service.
 type Config struct {
-	BindAddr        string `env:"BIND_ADDR"            flag:"bind-addr"           flagDesc:"Bind address"`
-	EricAddr        string `env:"ERIC_LOCAL_URL"       flag:"eric-addr"           flagDesc:"Eric address"`
-	Collection      string `env:"MONGODB_COLLECTION"   flag:"mongodb-collection"  flagDesc:"MongoDB collection for data"`
-	Database        string `env:"MONGODB_DATABASE"     flag:"mongodb-database"    flagDesc:"MongoDB database for data"`
-	MongoDBURL      string `env:"MONGODB_URL"          flag:"mongodb-url"         flagDesc:"MongoDB server URL"`
-	APIKey          string `env:"CHS_API_KEY"          flag:"api-key"             flagDesc:"API key used to authenticate for internal API calls"`
-	DomainWhitelist string `env:"DOMAIN_WHITELIST"     flag:"domain-whitelist"    flagDesc:"List of Valid Domains"`
+	BindAddr           string `env:"BIND_ADDR"            flag:"bind-addr"              flagDesc:"Bind address"`
+	EricAddr           string `env:"ERIC_LOCAL_URL"       flag:"eric-addr"              flagDesc:"Eric address"`
+	Collection         string `env:"MONGODB_COLLECTION"   flag:"mongodb-collection"     flagDesc:"MongoDB collection for data"`
+	Database           string `env:"MONGODB_DATABASE"     flag:"mongodb-database"       flagDesc:"MongoDB database for data"`
+	MongoDBURL         string `env:"MONGODB_URL"          flag:"mongodb-url"            flagDesc:"MongoDB server URL"`
+	APIKey             string `env:"CHS_API_KEY"          flag:"api-key"                flagDesc:"API key used to authenticate for internal API calls"`
+	DomainWhitelist    string `env:"DOMAIN_WHITELIST"     flag:"domain-whitelist"       flagDesc:"List of Valid Domains"`
+	PaymentServiceURL  string `env:"PAYMENT_SERVICE_URL"  flag:"payment-service-url"    flagDesc:"Base URL for the Payment Service"`
+	PaymentServicePath string `env:"PAYMENT_SERVICE_PATH" flag:"payment-service-path"   flagDesc:"Path for the Payment Service"`
 }
 
 // DefaultConfig returns a pointer to a Config instance that has been populated
