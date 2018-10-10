@@ -145,7 +145,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
 		mockPaymentService.CreatePaymentSession(w, req)
-		So(w.Code, ShouldEqual, 200)
+		So(w.Code, ShouldEqual, 201)
 
 		responseByteArray := w.Body.Bytes()
 		var createdPaymentResource models.PaymentResource
