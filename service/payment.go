@@ -95,6 +95,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	// Add data to response
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Location", journeyURL)
 	err = json.NewEncoder(w).Encode(paymentResource)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
