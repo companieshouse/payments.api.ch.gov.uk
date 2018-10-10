@@ -158,6 +158,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 		expectedJourneyURL := fmt.Sprintf("https://payments.companieshouse.gov.uk/payments/%s/pay", createdPaymentResource.ID)
 		So(createdPaymentResource.Links.Journey, ShouldEqual, expectedJourneyURL)
+		So(w.Header().Get("Location"), ShouldEqual, expectedJourneyURL)
 
 		So(createdPaymentResource.CreatedBy, ShouldNotBeEmpty)
 	})
