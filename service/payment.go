@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -37,7 +39,14 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 		return
 	}
 
-	paymentResource, err := getPaymentResource(w, req, incomingPaymentResourceRequest.Resource)
+	cfg, err := config.Get()
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error getting config: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	paymentResource, err := getPaymentResource(w, req, incomingPaymentResourceRequest.Resource, cfg)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error getting payment resource: [%v]", err))
 		return
@@ -69,6 +78,12 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 
 	paymentResource.CreatedAt = time.Now()
 	paymentResource.Reference = incomingPaymentResourceRequest.Reference
+	paymentResource.ID = generateID()
+
+	journeyURL := cfg.PaymentServiceURL + paymentResource.ID + cfg.PaymentServicePath
+	paymentResource.Links = models.Links{
+		Journey: journeyURL,
+	}
 
 	err = service.DAO.CreatePaymentResourceDB(paymentResource)
 	if err != nil {
@@ -89,31 +104,25 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	// log.Trace("TODO log successful creation with details") // TODO
 }
 
-func getPaymentResource(w http.ResponseWriter, req *http.Request, resource string) (*models.PaymentResource, error) {
-
-	cfg, err := config.Get()
-	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error getting config: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return nil, err
-	}
+func getPaymentResource(w http.ResponseWriter, req *http.Request, resource string, cfg *config.Config) (*models.PaymentResource, error) {
 	parsedURL, err := url.Parse(resource)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error parsing resource: [%v]", err))
 		w.WriteHeader(http.StatusBadRequest)
 		return nil, err
 	}
+	resourceDomain := strings.Join([]string{parsedURL.Scheme, parsedURL.Host}, "://")
 
 	whitelist := strings.Split(cfg.DomainWhitelist, ",")
 	matched := false
 	for _, domain := range whitelist {
-		if parsedURL.Host == domain {
+		if resourceDomain == domain {
 			matched = true
 			break
 		}
 	}
 	if !matched {
-		err = fmt.Errorf("invalid resource domain: %s", parsedURL.Host)
+		err = fmt.Errorf("invalid resource domain: %s", resourceDomain)
 		log.ErrorR(req, err)
 		w.WriteHeader(http.StatusBadRequest)
 		return nil, err
@@ -151,4 +160,12 @@ func getPaymentResource(w http.ResponseWriter, req *http.Request, resource strin
 		return nil, err
 	}
 	return paymentResource, nil
+}
+
+// Generates a string of 20 numbers made up of 7 random numbers, followed by 13 numbers derived from the current time
+func generateID() (i string) {
+	rand.Seed(time.Now().UTC().UnixNano())
+	ranNumber := fmt.Sprintf("%07d", rand.Intn(9999999))
+	millis := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
+	return ranNumber + millis
 }

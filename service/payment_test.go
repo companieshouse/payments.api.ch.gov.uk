@@ -2,10 +2,12 @@ package service
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"testing"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
@@ -52,11 +54,11 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
 		w := httptest.NewRecorder()
-		getPaymentResource(w, req, "http://dummy-resource")
+		getPaymentResource(w, req, "http://dummy-resource", cfg)
 		So(w.Code, ShouldEqual, 400)
 	})
 
-	cfg.DomainWhitelist = "dummy-resource"
+	cfg.DomainWhitelist = "http://dummy-resource"
 
 	Convey("Error getting cost resource", t, func() {
 		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl))
@@ -79,7 +81,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("GET", "http://dummy-resource", httpmock.NewStringResponder(500, "string"))
-		getPaymentResource(w, req, "http://dummy-resource")
+		getPaymentResource(w, req, "http://dummy-resource", cfg)
 		So(w.Code, ShouldEqual, 500)
 	})
 
@@ -121,6 +123,9 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(w.Code, ShouldEqual, 500)
 	})
 
+	cfg.PaymentServiceURL = "https://payments.companieshouse.gov.uk/payments/"
+	cfg.PaymentServicePath = "/pay"
+
 	Convey("Valid request", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock)
@@ -141,6 +146,29 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 		mockPaymentService.CreatePaymentSession(w, req)
 		So(w.Code, ShouldEqual, 201)
+
+		responseByteArray := w.Body.Bytes()
+		var createdPaymentResource models.PaymentResource
+		if err := json.Unmarshal(responseByteArray, &createdPaymentResource); err != nil {
+			panic(err)
+		}
+
+		So(createdPaymentResource.ID, ShouldNotBeEmpty)
+		So(createdPaymentResource.Links.Journey, ShouldNotBeEmpty)
+
+		expectedJourneyURL := fmt.Sprintf("https://payments.companieshouse.gov.uk/payments/%s/pay", createdPaymentResource.ID)
+		So(createdPaymentResource.Links.Journey, ShouldEqual, expectedJourneyURL)
+
+		So(createdPaymentResource.CreatedBy, ShouldNotBeEmpty)
+	})
+
+	Convey("Valid generated PaymentResource ID", t, func() {
+		generatedID := generateID()
+		// Generated ID should be 20 characters
+		So(len(generatedID), ShouldEqual, 20)
+		// Generated ID should contain only numbers
+		re := regexp.MustCompile("^[0-9]*$")
+		So(re.MatchString(generatedID), ShouldEqual, true)
 	})
 
 }
