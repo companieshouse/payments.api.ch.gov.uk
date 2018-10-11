@@ -26,10 +26,10 @@ type PaymentResource struct {
 
 // CreatedBy is the user who is creating the payment session
 type CreatedBy struct {
-	Email    string `bson:"email"`
-	Forename string `bson:"forename"`
-	ID       string `bson:"id"`
-	Surname  string `bson:"surname"`
+	Email    string `json:"email"    bson:"email"`
+	Forename string `json:"forename" bson:"forename"`
+	ID       string `json:"id"       bson:"id"`
+	Surname  string `json:"surname"  bson:"surname"`
 }
 
 // Links is a set of URLs related to the resource, including self
