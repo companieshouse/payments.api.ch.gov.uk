@@ -4,3 +4,4 @@ group: api
 weight: 900	
 routes:	
    1: ^/payments
+   2: ^/private/paymentjourney
