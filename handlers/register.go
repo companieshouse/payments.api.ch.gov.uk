@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
@@ -19,4 +21,8 @@ func Register(r *pat.Router, cfg config.Config) {
 	r.Get("/healthcheck", healthCheck).Name("get-healthcheck")
 	r.Post("/payments", p.CreatePaymentSession).Name("create-payment")
 	r.Post("/private/paymentjourney", service.CreateExternalPaymentJourney).Name("create-paymentjourney")
+}
+
+func healthCheck(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }

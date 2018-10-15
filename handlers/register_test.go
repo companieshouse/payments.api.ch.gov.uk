@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
@@ -17,5 +19,15 @@ func TestUnitRegisterRoutes(t *testing.T) {
 		So(router.GetRoute("get-healthcheck"), ShouldNotBeNil)
 		So(router.GetRoute("create-payment"), ShouldNotBeNil)
 		So(router.GetRoute("create-paymentjourney"), ShouldNotBeNil)
+	})
+}
+
+func TestUnitGetHealthCheck(t *testing.T) {
+	Convey("Get HealthCheck", t, func() {
+		req, err := http.NewRequest("GET", "", nil)
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		healthCheck(w, req)
+		So(w.Code, ShouldEqual, 200)
 	})
 }
