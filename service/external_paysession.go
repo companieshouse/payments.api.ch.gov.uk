@@ -13,7 +13,7 @@ import (
 // CreateExternalPaymentJourney creates an external payment session with a Payment Provider that is given, e.g: GovPay
 func CreateExternalPaymentJourney(w http.ResponseWriter, req *http.Request) {
 	if req.Body == nil {
-		log.ErrorR(req, fmt.Errorf("Request Body Empty"))
+		log.ErrorR(req, fmt.Errorf("request body empty"))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -21,7 +21,7 @@ func CreateExternalPaymentJourney(w http.ResponseWriter, req *http.Request) {
 	requestDecoder := json.NewDecoder(req.Body)
 	var incomingExternalPaymentJourneyRequest models.IncomingExternalPaymentJourneyRequest
 	if requestDecoder.Decode(&incomingExternalPaymentJourneyRequest) != nil {
-		log.ErrorR(req, fmt.Errorf("Request Body Invalid"))
+		log.ErrorR(req, fmt.Errorf("request body invalid: %v", incomingExternalPaymentJourneyRequest))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -36,11 +36,11 @@ func CreateExternalPaymentJourney(w http.ResponseWriter, req *http.Request) {
 	//TODO: Return next_url from GovPay, hardcoded at the moment
 	paymentJourney.NextURL = "http://gov.uk/paymentjourney"
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 	err := json.NewEncoder(w).Encode(paymentJourney)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusCreated)
 }

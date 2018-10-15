@@ -47,6 +47,6 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBodyCorrectPayment))
 		w := httptest.NewRecorder()
 		CreateExternalPaymentJourney(w, req)
-		So(w.Code, ShouldEqual, 200)
+		So(w.Code, ShouldEqual, 201)
 	})
 }
