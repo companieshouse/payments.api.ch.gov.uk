@@ -36,7 +36,7 @@ func CreateExternalPaymentJourney(w http.ResponseWriter, req *http.Request) {
 	//TODO: Return next_url from GovPay, hardcoded at the moment
 	paymentJourney.NextURL = "http://gov.uk/paymentjourney"
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	err := json.NewEncoder(w).Encode(paymentJourney)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
