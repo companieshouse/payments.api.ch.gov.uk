@@ -41,7 +41,6 @@ func CreateExternalPaymentJourney(w http.ResponseWriter, req *http.Request) {
 	err = json.NewEncoder(w).Encode(paymentJourney)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
-		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 }
