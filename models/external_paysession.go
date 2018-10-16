@@ -6,7 +6,7 @@ type IncomingExternalPaymentJourneyRequest struct {
 	Resource      string `json:"resource"`
 }
 
-// ExternalPaymentJourney returns the URL required to access external payment provider session
+// ExternalPaymentJourney contains the URL required to access external payment provider session
 type ExternalPaymentJourney struct {
 	NextURL string `json:"NextURL"`
 }

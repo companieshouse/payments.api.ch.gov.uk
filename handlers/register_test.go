@@ -18,7 +18,7 @@ func TestUnitRegisterRoutes(t *testing.T) {
 		Register(router, *cfg)
 		So(router.GetRoute("get-healthcheck"), ShouldNotBeNil)
 		So(router.GetRoute("create-payment"), ShouldNotBeNil)
-		So(router.GetRoute("create-paymentjourney"), ShouldNotBeNil)
+		So(router.GetRoute("create-payment-journey"), ShouldNotBeNil)
 	})
 }
 

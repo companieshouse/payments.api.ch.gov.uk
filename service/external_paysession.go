@@ -20,8 +20,9 @@ func CreateExternalPaymentJourney(w http.ResponseWriter, req *http.Request) {
 
 	requestDecoder := json.NewDecoder(req.Body)
 	var incomingExternalPaymentJourneyRequest models.IncomingExternalPaymentJourneyRequest
-	if requestDecoder.Decode(&incomingExternalPaymentJourneyRequest) != nil {
-		log.ErrorR(req, fmt.Errorf("request body invalid: %v", incomingExternalPaymentJourneyRequest))
+	err := requestDecoder.Decode(&incomingExternalPaymentJourneyRequest)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("request body invalid: [%v]", err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -37,7 +38,7 @@ func CreateExternalPaymentJourney(w http.ResponseWriter, req *http.Request) {
 	paymentJourney.NextURL = "http://gov.uk/paymentjourney"
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	err := json.NewEncoder(w).Encode(paymentJourney)
+	err = json.NewEncoder(w).Encode(paymentJourney)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
 		w.WriteHeader(http.StatusInternalServerError)
