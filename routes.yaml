@@ -5,3 +5,4 @@ weight: 900
 routes:	
    1: ^/payments
    2: ^/private/payments/.*
+   3: ^/payments/payment/.*

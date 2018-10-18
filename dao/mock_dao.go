@@ -33,14 +33,39 @@ func (m *MockDAO) EXPECT() *MockDAOMockRecorder {
 	return m.recorder
 }
 
-// CreatePaymentResourceDB mocks base method
-func (m *MockDAO) CreatePaymentResourceDB(paymentResource *models.PaymentResource) error {
-	ret := m.ctrl.Call(m, "CreatePaymentResourceDB", paymentResource)
+// CreatePaymentResource mocks base method
+func (m *MockDAO) CreatePaymentResource(arg0 *models.PaymentResource) error {
+	ret := m.ctrl.Call(m, "CreatePaymentResource", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// CreatePaymentResourceDB indicates an expected call of CreatePaymentResourceDB
-func (mr *MockDAOMockRecorder) CreatePaymentResourceDB(paymentResource interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePaymentResourceDB", reflect.TypeOf((*MockDAO)(nil).CreatePaymentResourceDB), paymentResource)
+// CreatePaymentResource indicates an expected call of CreatePaymentResource
+func (mr *MockDAOMockRecorder) CreatePaymentResource(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePaymentResource", reflect.TypeOf((*MockDAO)(nil).CreatePaymentResource), arg0)
+}
+
+// GetPaymentResource mocks base method
+func (m *MockDAO) GetPaymentResource(arg0 string) (models.PaymentResource, error) {
+	ret := m.ctrl.Call(m, "GetPaymentResource", arg0)
+	ret0, _ := ret[0].(models.PaymentResource)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPaymentResource indicates an expected call of GetPaymentResource
+func (mr *MockDAOMockRecorder) GetPaymentResource(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaymentResource", reflect.TypeOf((*MockDAO)(nil).GetPaymentResource), arg0)
+}
+
+// UpdatePaymentAmount mocks base method
+func (m *MockDAO) UpdatePaymentAmount(arg0 *models.PaymentResource, arg1 string) error {
+	ret := m.ctrl.Call(m, "UpdatePaymentAmount", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdatePaymentAmount indicates an expected call of UpdatePaymentAmount
+func (mr *MockDAOMockRecorder) UpdatePaymentAmount(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePaymentAmount", reflect.TypeOf((*MockDAO)(nil).UpdatePaymentAmount), arg0, arg1)
 }
