@@ -21,6 +21,7 @@ func Register(r *pat.Router, cfg config.Config) {
 
 	r.Get("/healthcheck", healthCheck).Name("get-healthcheck")
 	r.Post("/payments", p.CreatePaymentSession).Name("create-payment")
+	r.Patch("/private/payments/{payment_id}", service.CreateExternalPaymentJourney).Name("create-payment-journey")
 }
 
 func healthCheck(w http.ResponseWriter, _ *http.Request) {

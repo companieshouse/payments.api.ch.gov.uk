@@ -40,7 +40,7 @@ func (m *Mongo) CreatePaymentResourceDB(paymentResource *models.PaymentResource)
 	}
 	defer paymentSession.Close()
 
-	c := paymentSession.DB("transactions").C("payments")
+	c := paymentSession.DB("payments").C("payments")
 
 	return c.Insert(paymentResource)
 
