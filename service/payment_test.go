@@ -18,9 +18,10 @@ import (
 	"gopkg.in/jarcoal/httpmock.v1"
 )
 
-func createMockPaymentService(dao *dao.MockDAO) PaymentService {
+func createMockPaymentService(dao *dao.MockDAO, config *config.Config) PaymentService {
 	return PaymentService{
-		DAO: dao,
+		DAO:    dao,
+		Config: *config,
 	}
 }
 
@@ -31,7 +32,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 	reqBody := []byte("{\"redirect_uri\": \"dummy-redirect-uri\",\"resource\": \"http://dummy-resource\",\"state\": \"dummy-state\",\"reference\": \"dummy-reference\"}")
 
 	Convey("Empty Request Body", t, func() {
-		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl))
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
 		req, err := http.NewRequest("GET", "", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
@@ -40,7 +41,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 	})
 
 	Convey("Invalid Request Body", t, func() {
-		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl))
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
 		req, err := http.NewRequest("GET", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader([]byte("invalid_body")))
@@ -61,7 +62,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 	cfg.DomainWhitelist = "http://dummy-resource"
 
 	Convey("Error getting cost resource", t, func() {
-		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl))
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
@@ -86,7 +87,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 	})
 
 	Convey("Invalid user header", t, func() {
-		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl))
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
@@ -103,7 +104,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 	Convey("Error Creating DB Resource", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock)
+		mockPaymentService := createMockPaymentService(mock, cfg)
 		mock.EXPECT().CreatePaymentResourceDB(gomock.Any()).Return(fmt.Errorf("error"))
 
 		req, err := http.NewRequest("Get", "", nil)
@@ -123,12 +124,11 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(w.Code, ShouldEqual, 500)
 	})
 
-	cfg.PaymentServiceURL = "https://payments.companieshouse.gov.uk/payments/"
-	cfg.PaymentServicePath = "/pay"
+	cfg.PaymentsWebURL = "https://payments.companieshouse.gov.uk"
 
 	Convey("Valid request", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock)
+		mockPaymentService := createMockPaymentService(mock, cfg)
 		mock.EXPECT().CreatePaymentResourceDB(gomock.Any())
 
 		req, err := http.NewRequest("Get", "", nil)
