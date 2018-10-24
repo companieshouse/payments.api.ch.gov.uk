@@ -19,7 +19,8 @@ import (
 
 // PaymentService contains the DAO for db access
 type PaymentService struct {
-	DAO dao.DAO
+	DAO    dao.DAO
+	Config config.Config
 }
 
 // CreatePaymentSession creates a payment session and returns a journey URL for the calling app to redirect to
@@ -39,7 +40,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 		return
 	}
 
-	paymentResource, err := getPaymentResource(w, req, incomingPaymentResourceRequest.Resource)
+	paymentResource, err := getPaymentResource(w, req, incomingPaymentResourceRequest.Resource, &service.Config)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error getting payment resource: [%v]", err))
 		return
@@ -73,6 +74,11 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	paymentResource.Reference = incomingPaymentResourceRequest.Reference
 	paymentResource.ID = generateID()
 
+	journeyURL := service.Config.PaymentsWebURL + "/payments/" + paymentResource.ID + "/pay"
+	paymentResource.Links = models.Links{
+		Journey: journeyURL,
+	}
+
 	err = service.DAO.CreatePaymentResourceDB(paymentResource)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing to MongoDB: %v", err))
@@ -82,7 +88,9 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 
 	// Add data to response
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Location", journeyURL)
 	w.WriteHeader(http.StatusCreated)
+
 	err = json.NewEncoder(w).Encode(paymentResource)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
@@ -92,14 +100,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	// log.Trace("TODO log successful creation with details") // TODO
 }
 
-func getPaymentResource(w http.ResponseWriter, req *http.Request, resource string) (*models.PaymentResource, error) {
-
-	cfg, err := config.Get()
-	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error getting config: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return nil, err
-	}
+func getPaymentResource(w http.ResponseWriter, req *http.Request, resource string, cfg *config.Config) (*models.PaymentResource, error) {
 	parsedURL, err := url.Parse(resource)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error parsing resource: [%v]", err))

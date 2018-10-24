@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -17,9 +18,10 @@ import (
 	"gopkg.in/jarcoal/httpmock.v1"
 )
 
-func createMockPaymentService(dao *dao.MockDAO) PaymentService {
+func createMockPaymentService(dao *dao.MockDAO, config *config.Config) PaymentService {
 	return PaymentService{
-		DAO: dao,
+		DAO:    dao,
+		Config: *config,
 	}
 }
 
@@ -30,7 +32,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 	reqBody := []byte("{\"redirect_uri\": \"dummy-redirect-uri\",\"resource\": \"http://dummy-resource\",\"state\": \"dummy-state\",\"reference\": \"dummy-reference\"}")
 
 	Convey("Empty Request Body", t, func() {
-		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl))
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
 		req, err := http.NewRequest("GET", "", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
@@ -39,7 +41,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 	})
 
 	Convey("Invalid Request Body", t, func() {
-		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl))
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
 		req, err := http.NewRequest("GET", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader([]byte("invalid_body")))
@@ -53,14 +55,14 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
 		w := httptest.NewRecorder()
-		getPaymentResource(w, req, "http://dummy-resource")
+		getPaymentResource(w, req, "http://dummy-resource", cfg)
 		So(w.Code, ShouldEqual, 400)
 	})
 
 	cfg.DomainWhitelist = "http://dummy-resource"
 
 	Convey("Error getting cost resource", t, func() {
-		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl))
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
@@ -80,12 +82,12 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("GET", "http://dummy-resource", httpmock.NewStringResponder(500, "string"))
-		getPaymentResource(w, req, "http://dummy-resource")
+		getPaymentResource(w, req, "http://dummy-resource", cfg)
 		So(w.Code, ShouldEqual, 500)
 	})
 
 	Convey("Invalid user header", t, func() {
-		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl))
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
@@ -102,7 +104,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 	Convey("Error Creating DB Resource", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock)
+		mockPaymentService := createMockPaymentService(mock, cfg)
 		mock.EXPECT().CreatePaymentResourceDB(gomock.Any()).Return(fmt.Errorf("error"))
 
 		req, err := http.NewRequest("Get", "", nil)
@@ -122,9 +124,11 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(w.Code, ShouldEqual, 500)
 	})
 
+	cfg.PaymentsWebURL = "https://payments.companieshouse.gov.uk"
+
 	Convey("Valid request", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock)
+		mockPaymentService := createMockPaymentService(mock, cfg)
 		mock.EXPECT().CreatePaymentResourceDB(gomock.Any())
 
 		req, err := http.NewRequest("Get", "", nil)
@@ -142,6 +146,21 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 		mockPaymentService.CreatePaymentSession(w, req)
 		So(w.Code, ShouldEqual, 201)
+
+		responseByteArray := w.Body.Bytes()
+		var createdPaymentResource models.PaymentResource
+		if err := json.Unmarshal(responseByteArray, &createdPaymentResource); err != nil {
+			panic(err)
+		}
+
+		So(createdPaymentResource.ID, ShouldNotBeEmpty)
+		So(createdPaymentResource.Links.Journey, ShouldNotBeEmpty)
+
+		expectedJourneyURL := fmt.Sprintf("https://payments.companieshouse.gov.uk/payments/%s/pay", createdPaymentResource.ID)
+		So(createdPaymentResource.Links.Journey, ShouldEqual, expectedJourneyURL)
+		So(w.Header().Get("Location"), ShouldEqual, expectedJourneyURL)
+
+		So(createdPaymentResource.CreatedBy, ShouldNotBeEmpty)
 	})
 
 	Convey("Valid generated PaymentResource ID", t, func() {

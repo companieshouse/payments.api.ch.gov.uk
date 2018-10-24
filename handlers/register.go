@@ -15,7 +15,8 @@ func Register(r *pat.Router, cfg config.Config) {
 		URL: cfg.MongoDBURL,
 	}
 	p := &service.PaymentService{
-		DAO: m,
+		DAO:    m,
+		Config: cfg,
 	}
 
 	r.Get("/healthcheck", healthCheck).Name("get-healthcheck")
