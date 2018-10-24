@@ -6,7 +6,6 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/globalsign/mgo"
-	"github.com/globalsign/mgo/bson"
 )
 
 var session *mgo.Session
@@ -60,17 +59,4 @@ func (m *Mongo) GetPaymentResource(id string) (models.PaymentResource, error) {
 	err = c.FindId(id).One(&resource)
 
 	return resource, err
-}
-
-// UpdatePaymentAmount updates the amount in a payment resource in the DB
-func (m *Mongo) UpdatePaymentAmount(paymentResource *models.PaymentResource, amount string) error {
-	paymentSession, err := getMongoSession()
-	if err != nil {
-		return err
-	}
-	defer paymentSession.Close()
-
-	query := bson.M{"$set": bson.M{"amount": amount}}
-	c := paymentSession.DB("payments").C("payments")
-	return c.UpdateId(paymentResource.ID, query)
 }

@@ -20,7 +20,7 @@ func Register(r *pat.Router, cfg config.Config) {
 
 	r.Get("/healthcheck", healthCheck).Name("get-healthcheck")
 	r.Post("/payments", p.CreatePaymentSession).Name("create-payment")
-	r.Get("/payments/payment/{payment_id}", p.GetPaymentSession).Name("get-payment")
+	r.Get("/payments/{payment_id}", p.GetPaymentSession).Name("get-payment")
 	r.Patch("/private/payments/{payment_id}", service.CreateExternalPaymentJourney).Name("create-payment-journey")
 }
 
