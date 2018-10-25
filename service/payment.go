@@ -132,14 +132,7 @@ func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *htt
 		return
 	}
 
-	cfg, err := config.Get()
-	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error getting config: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	costs, err := getCosts(w, req, paymentResource.Links.Resource, cfg)
+	costs, err := getCosts(w, req, paymentResource.Links.Resource, &service.Config)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error getting payment resource: [%v]", err))
 		return

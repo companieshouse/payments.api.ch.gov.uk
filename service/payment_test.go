@@ -62,6 +62,23 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 	cfg.DomainWhitelist = "http://dummy-resource"
 
+	Convey("Invalid cost", t, func() {
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
+		req, err := http.NewRequest("Get", "", nil)
+		So(err, ShouldBeNil)
+		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		costArray := []models.CostResource{{Amount: "x"}}
+		jsonResponse, _ := httpmock.NewJsonResponder(500, costArray)
+
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		w := httptest.NewRecorder()
+		mockPaymentService.CreatePaymentSession(w, req)
+		So(w.Code, ShouldEqual, 500)
+	})
+
 	Convey("Error getting cost resource", t, func() {
 		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
 		req, err := http.NewRequest("Get", "", nil)
@@ -216,6 +233,7 @@ func TestUnitGetPayment(t *testing.T) {
 		mockPaymentService.GetPaymentSession(w, req)
 		So(w.Code, ShouldEqual, 400)
 	})
+
 	Convey("Payment ID not found", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
@@ -229,6 +247,7 @@ func TestUnitGetPayment(t *testing.T) {
 		mockPaymentService.GetPaymentSession(w, req)
 		So(w.Code, ShouldEqual, 403)
 	})
+
 	Convey("Error getting payment from DB", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
@@ -242,6 +261,7 @@ func TestUnitGetPayment(t *testing.T) {
 		mockPaymentService.GetPaymentSession(w, req)
 		So(w.Code, ShouldEqual, 500)
 	})
+
 	Convey("Error getting payment resource", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
@@ -255,8 +275,32 @@ func TestUnitGetPayment(t *testing.T) {
 		mockPaymentService.GetPaymentSession(w, req)
 		So(w.Code, ShouldEqual, 400)
 	})
+
 	cfg.DomainWhitelist = "http://dummy-resource"
 	reqBody := []byte("{\"redirect_uri\": \"dummy-redirect-uri\",\"resource\": \"http://dummy-resource\",\"state\": \"dummy-state\",\"reference\": \"dummy-reference\"}")
+
+	Convey("Invalid cost", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(models.PaymentResource{Amount: "x", Links: models.Links{Resource: "http://dummy-resource"}}, nil)
+		req, err := http.NewRequest("Get", "", nil)
+		So(err, ShouldBeNil)
+		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
+		q := req.URL.Query()
+		q.Add(":payment_id", "1234")
+		req.URL.RawQuery = q.Encode()
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		costArray := []models.CostResource{{Amount: "x"}}
+		jsonResponse, _ := httpmock.NewJsonResponder(500, costArray)
+
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		w := httptest.NewRecorder()
+		mockPaymentService.GetPaymentSession(w, req)
+		So(w.Code, ShouldEqual, 500)
+	})
+
 	Convey("Amount mismatch", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
@@ -276,6 +320,7 @@ func TestUnitGetPayment(t *testing.T) {
 		mockPaymentService.GetPaymentSession(w, req)
 		So(w.Code, ShouldEqual, 403)
 	})
+
 	Convey("Get Payment session - success - Single cost", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
@@ -295,6 +340,7 @@ func TestUnitGetPayment(t *testing.T) {
 		mockPaymentService.GetPaymentSession(w, req)
 		So(w.Code, ShouldEqual, 200)
 	})
+
 	Convey("Get Payment session - success - Multiple costs", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
@@ -313,5 +359,14 @@ func TestUnitGetPayment(t *testing.T) {
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 		mockPaymentService.GetPaymentSession(w, req)
 		So(w.Code, ShouldEqual, 200)
+	})
+}
+
+func TestUnitGetTotalAmount(t *testing.T) {
+	Convey("Get Total Amount", t, func() {
+		costs := []models.CostResource{{Amount: "10"}, {Amount: "13"}}
+		amount, err := getTotalAmount(&costs)
+		So(err, ShouldBeNil)
+		So(amount, ShouldEqual, "23")
 	})
 }
