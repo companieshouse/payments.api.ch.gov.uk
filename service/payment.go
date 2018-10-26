@@ -120,12 +120,12 @@ func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *htt
 	}
 
 	paymentResource, err := service.DAO.GetPaymentResource(id)
+	if paymentResource == nil {
+		log.Info(fmt.Sprintf("payment session not found. id: %s", id))
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
 	if err != nil {
-		if paymentResource != nil {
-			log.Info(fmt.Sprintf("payment session not found. id: %s", id))
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
 		log.ErrorR(req, fmt.Errorf("error getting payment resource from db: [%v]", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return

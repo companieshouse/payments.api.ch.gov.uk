@@ -45,11 +45,12 @@ func (m *Mongo) CreatePaymentResource(paymentResource *models.PaymentResource) e
 }
 
 // GetPaymentResource gets a payment resource from the DB
+// If payment not found in DB, return nil
 func (m *Mongo) GetPaymentResource(id string) (*models.PaymentResource, error) {
 	var resource models.PaymentResource
 	paymentSession, err := getMongoSession()
 	if err != nil {
-		return nil, err
+		return &resource, err
 	}
 	defer paymentSession.Close()
 
@@ -57,8 +58,8 @@ func (m *Mongo) GetPaymentResource(id string) (*models.PaymentResource, error) {
 	err = c.FindId(id).One(&resource)
 
 	// If Payment not found in DB, return empty resource
-	if err != nil && err != mgo.ErrNotFound {
-		return nil, err
+	if err != nil && err == mgo.ErrNotFound {
+		return nil, nil
 	}
 
 	return &resource, err

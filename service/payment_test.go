@@ -13,7 +13,6 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
-	"github.com/globalsign/mgo"
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
 	"gopkg.in/jarcoal/httpmock.v1"
@@ -237,7 +236,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Payment ID not found", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource("invalid").Return(&models.PaymentResource{}, mgo.ErrNotFound)
+		mock.EXPECT().GetPaymentResource("invalid").Return(nil, nil)
 		req, err := http.NewRequest("Get", "", nil)
 		q := req.URL.Query()
 		q.Add(":payment_id", "invalid")
@@ -251,7 +250,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Error getting payment from DB", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource("1234").Return(nil, fmt.Errorf("error"))
+		mock.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResource{}, fmt.Errorf("error"))
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		q := req.URL.Query()
