@@ -362,10 +362,19 @@ func TestUnitGetPayment(t *testing.T) {
 }
 
 func TestUnitGetTotalAmount(t *testing.T) {
-	Convey("Get Total Amount", t, func() {
-		costs := []models.CostResource{{Amount: "10"}, {Amount: "13"}}
+	Convey("Get Total Amount - valid", t, func() {
+		costs := []models.CostResource{{Amount: "10"}, {Amount: "13"}, {Amount: "13.01"}}
 		amount, err := getTotalAmount(&costs)
 		So(err, ShouldBeNil)
-		So(amount, ShouldEqual, "23")
+		So(amount, ShouldEqual, "36.01")
 	})
+	Convey("Test invalid amounts", t, func() {
+		invalidAmounts := []string{"alpha", "12,", "12.", "12,00", "12.012", "a.9", "9.a"}
+		for _, amount := range invalidAmounts {
+			totalAmount, err := getTotalAmount(&[]models.CostResource{{Amount: amount}})
+			So(totalAmount, ShouldEqual, "")
+			So(err.Error(), ShouldEqual, fmt.Sprintf("amount [%s] format incorrect", amount))
+		}
+	})
+
 }

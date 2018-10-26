@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -15,6 +16,7 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/shopspring/decimal"
 )
 
 // PaymentService contains the DAO for db access
@@ -161,15 +163,21 @@ func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *htt
 }
 
 func getTotalAmount(costs *[]models.CostResource) (string, error) {
-	totalAmount := 0
-	for _, cost := range *costs {
-		amount, err := strconv.Atoi(cost.Amount)
-		if err != nil {
-			return "", err
-		}
-		totalAmount += amount
+	r, err := regexp.Compile(`^\d+(\.\d{2})?$`)
+	if err != nil {
+		return "", err
 	}
-	return strconv.Itoa(totalAmount), nil
+	var totalAmount decimal.Decimal
+	for _, cost := range *costs {
+		matched := r.MatchString(cost.Amount)
+		if !matched {
+			return "", fmt.Errorf("amount [%s] format incorrect", cost.Amount)
+		}
+
+		amount, _ := decimal.NewFromString(cost.Amount)
+		totalAmount = totalAmount.Add(amount)
+	}
+	return totalAmount.String(), nil
 }
 
 func getCosts(w http.ResponseWriter, req *http.Request, resource string, cfg *config.Config) (*[]models.CostResource, error) {
