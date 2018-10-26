@@ -237,7 +237,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Payment ID not found", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource("invalid").Return(models.PaymentResource{}, mgo.ErrNotFound)
+		mock.EXPECT().GetPaymentResource("invalid").Return(&models.PaymentResource{}, mgo.ErrNotFound)
 		req, err := http.NewRequest("Get", "", nil)
 		q := req.URL.Query()
 		q.Add(":payment_id", "invalid")
@@ -251,7 +251,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Error getting payment from DB", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource("1234").Return(models.PaymentResource{}, fmt.Errorf("error"))
+		mock.EXPECT().GetPaymentResource("1234").Return(nil, fmt.Errorf("error"))
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		q := req.URL.Query()
@@ -265,7 +265,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Error getting payment resource", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource("1234").Return(models.PaymentResource{}, nil)
+		mock.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResource{}, nil)
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		q := req.URL.Query()
@@ -282,7 +282,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Invalid cost", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(models.PaymentResource{Amount: "x", Links: models.Links{Resource: "http://dummy-resource"}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{Amount: "x", Links: models.Links{Resource: "http://dummy-resource"}}, nil)
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
@@ -304,7 +304,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Amount mismatch", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(models.PaymentResource{Amount: "100", Links: models.Links{Resource: "http://dummy-resource"}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{Amount: "100", Links: models.Links{Resource: "http://dummy-resource"}}, nil)
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
@@ -324,7 +324,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Get Payment session - success - Single cost", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(models.PaymentResource{Amount: "10", Links: models.Links{Resource: "http://dummy-resource"}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{Amount: "10", Links: models.Links{Resource: "http://dummy-resource"}}, nil)
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
@@ -344,7 +344,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Get Payment session - success - Multiple costs", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(models.PaymentResource{Amount: "23", Links: models.Links{Resource: "http://dummy-resource"}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{Amount: "23", Links: models.Links{Resource: "http://dummy-resource"}}, nil)
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))

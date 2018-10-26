@@ -46,9 +46,9 @@ func (mr *MockDAOMockRecorder) CreatePaymentResource(paymentResource interface{}
 }
 
 // GetPaymentResource mocks base method
-func (m *MockDAO) GetPaymentResource(arg0 string) (models.PaymentResource, error) {
+func (m *MockDAO) GetPaymentResource(arg0 string) (*models.PaymentResource, error) {
 	ret := m.ctrl.Call(m, "GetPaymentResource", arg0)
-	ret0, _ := ret[0].(models.PaymentResource)
+	ret0, _ := ret[0].(*models.PaymentResource)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

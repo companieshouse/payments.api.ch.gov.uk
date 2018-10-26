@@ -15,7 +15,6 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
-	"github.com/globalsign/mgo"
 )
 
 // PaymentService contains the DAO for db access
@@ -122,7 +121,7 @@ func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *htt
 
 	paymentResource, err := service.DAO.GetPaymentResource(id)
 	if err != nil {
-		if err == mgo.ErrNotFound {
+		if paymentResource != nil {
 			log.Info(fmt.Sprintf("payment session not found. id: %s", id))
 			w.WriteHeader(http.StatusForbidden)
 			return
