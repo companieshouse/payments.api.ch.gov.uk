@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -15,6 +16,7 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/shopspring/decimal"
 )
 
 // PaymentService contains the DAO for db access
@@ -40,9 +42,16 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 		return
 	}
 
-	paymentResource, err := getPaymentResource(w, req, incomingPaymentResourceRequest.Resource, &service.Config)
+	costs, err := getCosts(w, req, incomingPaymentResourceRequest.Resource, &service.Config)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error getting payment resource: [%v]", err))
+		return
+	}
+
+	totalAmount, err := getTotalAmount(costs)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error getting amount from costs: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -63,23 +72,26 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 			return
 		}
 	}
+
+	var paymentResource models.PaymentResource
 	paymentResource.CreatedBy = models.CreatedBy{
 		ID:       req.Header.Get("Eric-Identity"),
 		Email:    email,
 		Forename: forename,
 		Surname:  surname,
 	}
-
+	paymentResource.Amount = totalAmount
 	paymentResource.CreatedAt = time.Now()
 	paymentResource.Reference = incomingPaymentResourceRequest.Reference
 	paymentResource.ID = generateID()
 
 	journeyURL := service.Config.PaymentsWebURL + "/payments/" + paymentResource.ID + "/pay"
 	paymentResource.Links = models.Links{
-		Journey: journeyURL,
+		Journey:  journeyURL,
+		Resource: incomingPaymentResourceRequest.Resource,
 	}
 
-	err = service.DAO.CreatePaymentResourceDB(paymentResource)
+	err = service.DAO.CreatePaymentResource(&paymentResource)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing to MongoDB: %v", err))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -100,7 +112,75 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	// log.Trace("TODO log successful creation with details") // TODO
 }
 
-func getPaymentResource(w http.ResponseWriter, req *http.Request, resource string, cfg *config.Config) (*models.PaymentResource, error) {
+// GetPaymentSession retrieves the payment session
+func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *http.Request) {
+	id := req.URL.Query().Get(":payment_id")
+	if id == "" {
+		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	paymentResource, err := service.DAO.GetPaymentResource(id)
+	if paymentResource == nil {
+		log.Info(fmt.Sprintf("payment session not found. id: %s", id))
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error getting payment resource from db: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	costs, err := getCosts(w, req, paymentResource.Links.Resource, &service.Config)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error getting payment resource: [%v]", err))
+		return
+	}
+
+	totalAmount, err := getTotalAmount(costs)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error getting amount from costs: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if totalAmount != paymentResource.Amount {
+		log.Info(fmt.Sprintf("amount in payment resource [%s] different from db [%s] for id [%s].", totalAmount, paymentResource.Amount, paymentResource.ID))
+		// TODO Expire payment session
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	paymentResource.Costs = *costs
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(paymentResource)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
+		return
+	}
+}
+
+func getTotalAmount(costs *[]models.CostResource) (string, error) {
+	r, err := regexp.Compile(`^\d+(\.\d{2})?$`)
+	if err != nil {
+		return "", err
+	}
+	var totalAmount decimal.Decimal
+	for _, cost := range *costs {
+		matched := r.MatchString(cost.Amount)
+		if !matched {
+			return "", fmt.Errorf("amount [%s] format incorrect", cost.Amount)
+		}
+
+		amount, _ := decimal.NewFromString(cost.Amount)
+		totalAmount = totalAmount.Add(amount)
+	}
+	return totalAmount.String(), nil
+}
+
+func getCosts(w http.ResponseWriter, req *http.Request, resource string, cfg *config.Config) (*[]models.CostResource, error) {
 	parsedURL, err := url.Parse(resource)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error parsing resource: [%v]", err))
@@ -148,14 +228,14 @@ func getPaymentResource(w http.ResponseWriter, req *http.Request, resource strin
 
 	// TODO save cost resource and ensure all mandatory fields are present:
 
-	paymentResource := &models.PaymentResource{}
-	err = json.Unmarshal(body, paymentResource)
+	costs := &[]models.CostResource{}
+	err = json.Unmarshal(body, costs)
 	if err != nil {
 		log.ErrorR(resourceReq, fmt.Errorf("error reading Cost Resource: [%v]", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return nil, err
 	}
-	return paymentResource, nil
+	return costs, nil
 }
 
 // Generates a string of 20 numbers made up of 7 random numbers, followed by 13 numbers derived from the current time

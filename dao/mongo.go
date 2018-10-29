@@ -31,9 +31,8 @@ func getMongoSession() (*mgo.Session, error) {
 	return session.Copy(), nil
 }
 
-// CreatePaymentResourceDB writes a new payment resource to the DB
-func (m *Mongo) CreatePaymentResourceDB(paymentResource *models.PaymentResource) error {
-
+// CreatePaymentResource writes a new payment resource to the DB
+func (m *Mongo) CreatePaymentResource(paymentResource *models.PaymentResource) error {
 	paymentSession, err := getMongoSession()
 	if err != nil {
 		return err
@@ -43,5 +42,25 @@ func (m *Mongo) CreatePaymentResourceDB(paymentResource *models.PaymentResource)
 	c := paymentSession.DB("payments").C("payments")
 
 	return c.Insert(paymentResource)
+}
 
+// GetPaymentResource gets a payment resource from the DB
+// If payment not found in DB, return nil
+func (m *Mongo) GetPaymentResource(id string) (*models.PaymentResource, error) {
+	var resource models.PaymentResource
+	paymentSession, err := getMongoSession()
+	if err != nil {
+		return &resource, err
+	}
+	defer paymentSession.Close()
+
+	c := paymentSession.DB("payments").C("payments")
+	err = c.FindId(id).One(&resource)
+
+	// If Payment not found in DB, return empty resource
+	if err != nil && err == mgo.ErrNotFound {
+		return nil, nil
+	}
+
+	return &resource, err
 }
