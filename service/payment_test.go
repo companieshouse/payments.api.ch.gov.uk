@@ -24,7 +24,7 @@ var defaultCost = models.CostResource{
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
-	Links: models.Links{Self: "self"},
+	Links:                   models.Links{Self: "self"},
 }
 
 var defaultCostArray = []models.CostResource{
