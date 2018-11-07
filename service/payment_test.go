@@ -247,7 +247,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Error getting payment from DB", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResourceData{}, fmt.Errorf("error"))
+		mock.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResource{}, fmt.Errorf("error"))
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		q := req.URL.Query()
@@ -278,7 +278,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Invalid cost", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceData{Amount: "x", Links: models.Links{Resource: "http://dummy-resource"}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{"1234", models.PaymentResourceData{Amount: "x", Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
@@ -300,7 +300,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Amount mismatch", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceData{Amount: "100", Links: models.Links{Resource: "http://dummy-resource"}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{"1234", models.PaymentResourceData{Amount: "100", Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
@@ -320,7 +320,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Get Payment session - success - Single cost", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceData{Amount: "10", Links: models.Links{Resource: "http://dummy-resource"}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{"1234", models.PaymentResourceData{Amount: "10", Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
@@ -340,7 +340,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Get Payment session - success - Multiple costs", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceData{Amount: "23", Links: models.Links{Resource: "http://dummy-resource"}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{"1234", models.PaymentResourceData{Amount: "23", Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
