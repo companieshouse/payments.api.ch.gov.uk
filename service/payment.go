@@ -133,7 +133,7 @@ func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *htt
 		return
 	}
 
-	costs, err := getCosts(w, req, paymentResource.Links.Resource, &service.Config)
+	costs, err := getCosts(w, req, paymentResource.Data.Links.Resource, &service.Config)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error getting payment resource: [%v]", err))
 		return
@@ -146,16 +146,16 @@ func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *htt
 		return
 	}
 
-	if totalAmount != paymentResource.Amount {
-		log.Info(fmt.Sprintf("amount in payment resource [%s] different from db [%s] for id [%s].", totalAmount, paymentResource.Amount, id))
+	if totalAmount != paymentResource.Data.Amount {
+		log.Info(fmt.Sprintf("amount in payment resource [%s] different from db [%s] for id [%s].", totalAmount, paymentResource.Data.Amount, id))
 		// TODO Expire payment session
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
-	paymentResource.Costs = *costs
+	paymentResource.Data.Costs = *costs
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(paymentResource)
+	err = json.NewEncoder(w).Encode(paymentResource.Data)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
 		return
