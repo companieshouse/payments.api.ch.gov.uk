@@ -12,6 +12,6 @@ __JIRA Ticket Number__
 
 * [ ] I have added unit tests for new code that I have added
 * [ ] I have added/updated functional tests where appropriate
-* [ ] The code follows our [coding standards](https://github.com/companieshouse/styleguides/blob/master/java.md)
+* [ ] The code follows our [coding standards](https://github.com/companieshouse/styleguides/blob/master/go.md)
 
-__An exhaustive list of peer review checks can be read [here](https://github.com/companieshouse/styleguides/blob/master/java_review.md#developer-actions-prior-to-code-commitreview-started)__
+__An exhaustive list of peer review checks can be read [here](https://github.com/golang/go/wiki/CodeReviewComments)__
