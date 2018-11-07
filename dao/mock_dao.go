@@ -5,9 +5,10 @@
 package dao
 
 import (
+	reflect "reflect"
+
 	models "github.com/companieshouse/payments.api.ch.gov.uk/models"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
 // MockDAO is a mock of DAO interface
@@ -35,7 +36,7 @@ func (m *MockDAO) EXPECT() *MockDAOMockRecorder {
 
 // CreatePaymentResource mocks base method
 func (m *MockDAO) CreatePaymentResource(paymentResource *models.PaymentResource) error {
-	ret := m.ctrl.Call(m, "CreatePaymentResource", paymentResource)
+	ret := m.ctrl.Call(m, "CreatePaymentResource", paymentResource.Data)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -46,9 +47,9 @@ func (mr *MockDAOMockRecorder) CreatePaymentResource(paymentResource interface{}
 }
 
 // GetPaymentResource mocks base method
-func (m *MockDAO) GetPaymentResource(arg0 string) (*models.PaymentResource, error) {
+func (m *MockDAO) GetPaymentResource(arg0 string) (*models.PaymentResourceData, error) {
 	ret := m.ctrl.Call(m, "GetPaymentResource", arg0)
-	ret0, _ := ret[0].(*models.PaymentResource)
+	ret0, _ := ret[0].(*models.PaymentResourceData)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
