@@ -18,6 +18,19 @@ import (
 	"gopkg.in/jarcoal/httpmock.v1"
 )
 
+var defaultCost = models.CostResource{
+	Amount:                  "10",
+	AvailablePaymentMethods: []string{"method"},
+	ClassOfPayment:          []string{"class"},
+	Description:             "desc",
+	DescriptionIdentifier:   "identifier",
+	Links: models.Links{Self: "self"},
+}
+
+var defaultCostArray = []models.CostResource{
+	defaultCost,
+}
+
 func createMockPaymentService(dao *dao.MockDAO, config *config.Config) PaymentService {
 	return PaymentService{
 		DAO:    dao,
@@ -69,8 +82,9 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResource{{Amount: "x"}}
-		jsonResponse, _ := httpmock.NewJsonResponder(500, costArray)
+		costArray := []models.CostResource{defaultCost}
+		costArray[0].Amount = "x"
+		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 		w := httptest.NewRecorder()
@@ -98,7 +112,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("GET", "http://dummy-resource", httpmock.NewStringResponder(500, "string"))
+		httpmock.RegisterResponder("GET", "http://dummy-resource", httpmock.NewStringResponder(200, "string"))
 		getCosts(w, req, "http://dummy-resource", cfg)
 		So(w.Code, ShouldEqual, 500)
 	})
@@ -112,8 +126,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		var costArray []models.CostResource
-		jsonResponse, _ := httpmock.NewJsonResponder(500, costArray)
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCostArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 		mockPaymentService.CreatePaymentSession(w, req)
 		So(w.Code, ShouldEqual, 500)
@@ -133,8 +146,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		var costArray []models.CostResource
-		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCostArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
 		mockPaymentService.CreatePaymentSession(w, req)
@@ -157,8 +169,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		var costArray []models.CostResource
-		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCostArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 		mockPaymentService.CreatePaymentSession(w, req)
 		So(w.Code, ShouldEqual, 201)
@@ -186,7 +197,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResource{{Amount: "10"}, {Amount: "12"}}
+		costArray := []models.CostResource{defaultCost, defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
@@ -207,6 +218,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(w.Header().Get("Location"), ShouldEqual, expectedJourneyURL)
 
 		So(createdPaymentResource.CreatedBy, ShouldNotBeEmpty)
+		So(createdPaymentResource.Amount, ShouldEqual, "20")
 	})
 
 	Convey("Valid generated PaymentResource ID", t, func() {
@@ -291,8 +303,9 @@ func TestUnitGetPayment(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResource{{Amount: "x"}}
-		jsonResponse, _ := httpmock.NewJsonResponder(500, costArray)
+		costArray := []models.CostResource{defaultCost}
+		costArray[0].Amount = "x"
+		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 		w := httptest.NewRecorder()
@@ -313,7 +326,8 @@ func TestUnitGetPayment(t *testing.T) {
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResource{{Amount: "99"}}
+		costArray := []models.CostResource{defaultCost}
+		costArray[0].Amount = "99"
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 		mockPaymentService.GetPaymentSession(w, req)
@@ -333,7 +347,7 @@ func TestUnitGetPayment(t *testing.T) {
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResource{{Amount: "10"}}
+		costArray := []models.CostResource{defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 		mockPaymentService.GetPaymentSession(w, req)
@@ -343,7 +357,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Get Payment session - success - Multiple costs", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{Amount: "23", Links: models.Links{Resource: "http://dummy-resource"}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{Amount: "20", Links: models.Links{Resource: "http://dummy-resource"}}, nil)
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
@@ -353,7 +367,7 @@ func TestUnitGetPayment(t *testing.T) {
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResource{{Amount: "10"}, {Amount: "13"}}
+		costArray := []models.CostResource{defaultCost, defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 		mockPaymentService.GetPaymentSession(w, req)

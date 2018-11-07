@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -17,6 +18,7 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/shopspring/decimal"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // PaymentService contains the DAO for db access
@@ -219,14 +221,24 @@ func getCosts(w http.ResponseWriter, req *http.Request, resource string, cfg *co
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusBadGateway {
+			w.WriteHeader(http.StatusInternalServerError)
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+		err = errors.New("error getting Cost Resource")
+		log.ErrorR(resourceReq, err)
+		return nil, err
+	}
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.ErrorR(resourceReq, fmt.Errorf("error reading Cost Resource: [%v]", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return nil, err
 	}
-
-	// TODO save cost resource and ensure all mandatory fields are present:
 
 	costs := &[]models.CostResource{}
 	err = json.Unmarshal(body, costs)
@@ -235,6 +247,18 @@ func getCosts(w http.ResponseWriter, req *http.Request, resource string, cfg *co
 		w.WriteHeader(http.StatusInternalServerError)
 		return nil, err
 	}
+
+	// Validate that Costs are correctly populated
+	validate := validator.New()
+	for _, cost := range *costs {
+		err = validate.Struct(cost)
+		if err != nil {
+			// Assume that an invalid resource has been provided
+			w.WriteHeader(http.StatusBadRequest)
+			return nil, err
+		}
+	}
+
 	return costs, nil
 }
 
