@@ -3,6 +3,8 @@ package dao
 import (
 	"fmt"
 
+	"github.com/globalsign/mgo/bson"
+
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/globalsign/mgo"
@@ -63,4 +65,29 @@ func (m *Mongo) GetPaymentResource(id string) (*models.PaymentResource, error) {
 	}
 
 	return &resource, err
+}
+
+func (m *Mongo) PatchPaymentResource(id string, paymentUpdate *models.PaymentResourceData) error {
+	paymentSession, err := getMongoSession()
+	if err != nil {
+		return err
+	}
+	defer paymentSession.Close()
+
+	c := paymentSession.DB("payments").C("payments")
+
+	patchUpdate := make(bson.M)
+
+	// Patch only these fields
+	if paymentUpdate.PaymentMethod != "" {
+		patchUpdate["data.payment_method"] = paymentUpdate.PaymentMethod
+	}
+	if paymentUpdate.Status != "" {
+		patchUpdate["data.status"] = paymentUpdate.Status
+	}
+
+	updateCall := bson.M{"$set": patchUpdate}
+	c.UpdateId(id, updateCall)
+
+	return nil
 }

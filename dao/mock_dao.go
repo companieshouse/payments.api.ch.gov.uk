@@ -5,10 +5,9 @@
 package dao
 
 import (
-	reflect "reflect"
-
 	models "github.com/companieshouse/payments.api.ch.gov.uk/models"
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
 )
 
 // MockDAO is a mock of DAO interface
@@ -36,7 +35,7 @@ func (m *MockDAO) EXPECT() *MockDAOMockRecorder {
 
 // CreatePaymentResource mocks base method
 func (m *MockDAO) CreatePaymentResource(paymentResource *models.PaymentResource) error {
-	ret := m.ctrl.Call(m, "CreatePaymentResource", paymentResource.Data)
+	ret := m.ctrl.Call(m, "CreatePaymentResource", paymentResource)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -57,4 +56,16 @@ func (m *MockDAO) GetPaymentResource(arg0 string) (*models.PaymentResource, erro
 // GetPaymentResource indicates an expected call of GetPaymentResource
 func (mr *MockDAOMockRecorder) GetPaymentResource(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaymentResource", reflect.TypeOf((*MockDAO)(nil).GetPaymentResource), arg0)
+}
+
+// PatchPaymentResource mocks base method
+func (m *MockDAO) PatchPaymentResource(id string, paymentUpdate *models.PaymentResourceData) error {
+	ret := m.ctrl.Call(m, "PatchPaymentResource", id, paymentUpdate)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PatchPaymentResource indicates an expected call of PatchPaymentResource
+func (mr *MockDAOMockRecorder) PatchPaymentResource(id, paymentUpdate interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PatchPaymentResource", reflect.TypeOf((*MockDAO)(nil).PatchPaymentResource), id, paymentUpdate)
 }
