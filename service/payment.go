@@ -183,25 +183,8 @@ func getTotalAmount(costs *[]models.CostResource) (string, error) {
 }
 
 func getCosts(w http.ResponseWriter, req *http.Request, resource string, cfg *config.Config) (*[]models.CostResource, error) {
-	parsedURL, err := url.Parse(resource)
+	err := validateResource(resource, req, cfg)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error parsing resource: [%v]", err))
-		w.WriteHeader(http.StatusBadRequest)
-		return nil, err
-	}
-	resourceDomain := strings.Join([]string{parsedURL.Scheme, parsedURL.Host}, "://")
-
-	whitelist := strings.Split(cfg.DomainWhitelist, ",")
-	matched := false
-	for _, domain := range whitelist {
-		if resourceDomain == domain {
-			matched = true
-			break
-		}
-	}
-	if !matched {
-		err = fmt.Errorf("invalid resource domain: %s", resourceDomain)
-		log.ErrorR(req, err)
 		w.WriteHeader(http.StatusBadRequest)
 		return nil, err
 	}
@@ -248,15 +231,10 @@ func getCosts(w http.ResponseWriter, req *http.Request, resource string, cfg *co
 		return nil, err
 	}
 
-	// Validate that Costs are correctly populated
-	validate := validator.New()
-	for _, cost := range *costs {
-		err = validate.Struct(cost)
-		if err != nil {
-			// Assume that an invalid resource has been provided
-			w.WriteHeader(http.StatusBadRequest)
-			return nil, err
-		}
+	if err = validateCosts(costs); err != nil {
+		log.ErrorR(resourceReq, fmt.Errorf("invalid Cost Resource: [%v]", err))
+		w.WriteHeader(http.StatusBadRequest)
+		return nil, err
 	}
 
 	return costs, nil
@@ -268,4 +246,37 @@ func generateID() (i string) {
 	ranNumber := fmt.Sprintf("%07d", rand.Intn(9999999))
 	millis := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
 	return ranNumber + millis
+}
+
+func validateResource(resource string, req *http.Request, cfg *config.Config) error {
+	parsedURL, err := url.Parse(resource)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error parsing resource: [%v]", err))
+		return err
+	}
+	resourceDomain := strings.Join([]string{parsedURL.Scheme, parsedURL.Host}, "://")
+
+	whitelist := strings.Split(cfg.DomainWhitelist, ",")
+	matched := false
+	for _, domain := range whitelist {
+		if resourceDomain == domain {
+			matched = true
+			break
+		}
+	}
+	if !matched {
+		err = fmt.Errorf("invalid resource domain: %s", resourceDomain)
+		log.ErrorR(req, err)
+		return err
+	}
+	return err
+}
+
+func validateCosts(costs *[]models.CostResource) (err error) {
+	validate := validator.New()
+	for _, cost := range *costs {
+		err = validate.Struct(cost)
+		return err
+	}
+	return err
 }
