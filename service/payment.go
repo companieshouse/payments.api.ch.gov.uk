@@ -272,13 +272,13 @@ func validateResource(resource string, req *http.Request, cfg *config.Config) er
 	return err
 }
 
-func validateCosts(costs *[]models.CostResource) (err error) {
+func validateCosts(costs *[]models.CostResource) error {
 	validate := validator.New()
 	for _, cost := range *costs {
-		err = validate.Struct(cost)
+		err := validate.Struct(cost)
 		if err != nil {
 			return err
 		}
 	}
-	return err
+	return nil
 }
