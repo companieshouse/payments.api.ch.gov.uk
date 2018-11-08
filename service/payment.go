@@ -276,7 +276,9 @@ func validateCosts(costs *[]models.CostResource) (err error) {
 	validate := validator.New()
 	for _, cost := range *costs {
 		err = validate.Struct(cost)
-		return err
+		if err != nil {
+			return err
+		}
 	}
 	return err
 }
