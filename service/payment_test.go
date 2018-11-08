@@ -54,7 +54,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
-		CostResource, err, httpStatus := getCosts("http://dummy-resource", cfg)
+		CostResource, httpStatus, err := getCosts("http://dummy-resource", cfg)
 		So(CostResource, ShouldEqual, nil)
 		So(err, ShouldNotBeNil)
 		So(httpStatus, ShouldEqual, 400)
@@ -99,7 +99,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("GET", "http://dummy-resource", httpmock.NewStringResponder(500, "string"))
-		CostResource, err, httpStatus := getCosts("http://dummy-resource", cfg)
+		CostResource, httpStatus, err := getCosts("http://dummy-resource", cfg)
 		So(CostResource, ShouldEqual, nil)
 		So(err, ShouldNotBeNil)
 		So(httpStatus, ShouldEqual, 500)
@@ -440,5 +440,22 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 
 		mockPaymentService.PatchPaymentSession(w, req)
 		So(w.Code, ShouldEqual, 200)
+	})
+}
+
+func TestUnitGetTotalAmount(t *testing.T) {
+	Convey("Get Total Amount - valid", t, func() {
+		costs := []models.CostResource{{Amount: "10"}, {Amount: "13"}, {Amount: "13.01"}}
+		amount, err := getTotalAmount(&costs)
+		So(err, ShouldBeNil)
+		So(amount, ShouldEqual, "36.01")
+	})
+	Convey("Test invalid amounts", t, func() {
+		invalidAmounts := []string{"alpha", "12,", "12.", "12,00", "12.012", "a.9", "9.a"}
+		for _, amount := range invalidAmounts {
+			totalAmount, err := getTotalAmount(&[]models.CostResource{{Amount: amount}})
+			So(totalAmount, ShouldEqual, "")
+			So(err.Error(), ShouldEqual, fmt.Sprintf("amount [%s] format incorrect", amount))
+		}
 	})
 }

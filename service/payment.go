@@ -42,7 +42,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 		return
 	}
 
-	costs, err, httpStatus := getCosts(incomingPaymentResourceRequest.Resource, &service.Config)
+	costs, httpStatus, err := getCosts(incomingPaymentResourceRequest.Resource, &service.Config)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error getting payment resource: [%v]", err))
 		w.WriteHeader(httpStatus)
@@ -122,7 +122,7 @@ func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *htt
 		return
 	}
 
-	paymentSession, err, httpStatus := (*PaymentService).getPaymentSession(service, id)
+	paymentSession, httpStatus, err := (*PaymentService).getPaymentSession(service, id)
 	if err != nil {
 		w.WriteHeader(httpStatus)
 		log.ErrorR(req, err)
@@ -169,33 +169,33 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 	}
 }
 
-func (service *PaymentService) getPaymentSession(id string) (*models.PaymentResource, error, int) {
+func (service *PaymentService) getPaymentSession(id string) (*models.PaymentResource, int, error) {
 	paymentResource, err := service.DAO.GetPaymentResource(id)
 	if paymentResource == nil {
-		return nil, fmt.Errorf("payment session not found. id: %s", id), http.StatusForbidden
+		return nil, http.StatusForbidden, fmt.Errorf("payment session not found. id: %s", id)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("error getting payment resource from db: [%v]", err), http.StatusInternalServerError
+		return nil, http.StatusInternalServerError, fmt.Errorf("error getting payment resource from db: [%v]", err)
 	}
 
-	costs, err, httpStatus := getCosts(paymentResource.Data.Links.Resource, &service.Config)
+	costs, httpStatus, err := getCosts(paymentResource.Data.Links.Resource, &service.Config)
 	if err != nil {
-		return nil, fmt.Errorf("error getting payment resource: [%v]", err), httpStatus
+		return nil, httpStatus, fmt.Errorf("error getting payment resource: [%v]", err)
 	}
 
 	totalAmount, err := getTotalAmount(costs)
 	if err != nil {
-		return nil, fmt.Errorf("error getting amount from costs: [%v]", err), http.StatusInternalServerError
+		return nil, http.StatusInternalServerError, fmt.Errorf("error getting amount from costs: [%v]", err)
 	}
 
 	if totalAmount != paymentResource.Data.Amount {
 		// TODO Expire payment session
-		return nil, fmt.Errorf("amount in payment resource [%s] different from db [%s] for id [%s]", totalAmount, paymentResource.Data.Amount, paymentResource.ID), http.StatusForbidden
+		return nil, http.StatusForbidden, fmt.Errorf("amount in payment resource [%s] different from db [%s] for id [%s]", totalAmount, paymentResource.Data.Amount, paymentResource.ID)
 	}
 
 	paymentResource.Data.Costs = *costs
 
-	return paymentResource, nil, http.StatusOK
+	return paymentResource, http.StatusOK, nil
 }
 
 func getTotalAmount(costs *[]models.CostResource) (string, error) {
@@ -216,10 +216,10 @@ func getTotalAmount(costs *[]models.CostResource) (string, error) {
 	return totalAmount.String(), nil
 }
 
-func getCosts(resource string, cfg *config.Config) (*[]models.CostResource, error, int) {
+func getCosts(resource string, cfg *config.Config) (*[]models.CostResource, int, error) {
 	parsedURL, err := url.Parse(resource)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing resource: [%v]", err), http.StatusBadRequest
+		return nil, http.StatusBadRequest, fmt.Errorf("error parsing resource: [%v]", err)
 	}
 	resourceDomain := strings.Join([]string{parsedURL.Scheme, parsedURL.Host}, "://")
 
@@ -232,23 +232,23 @@ func getCosts(resource string, cfg *config.Config) (*[]models.CostResource, erro
 		}
 	}
 	if !matched {
-		return nil, fmt.Errorf("invalid resource domain: %s", resourceDomain), http.StatusBadRequest
+		return nil, http.StatusBadRequest, fmt.Errorf("invalid resource domain: %s", resourceDomain)
 	}
 
 	resourceReq, err := http.NewRequest("GET", resource, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Resource Request: [%v]", err), http.StatusInternalServerError
+		return nil, http.StatusInternalServerError, fmt.Errorf("failed to create Resource Request: [%v]", err)
 	}
 
 	var client http.Client
 	resp, err := client.Do(resourceReq)
 	if err != nil {
-		return nil, fmt.Errorf("error getting Cost Resource: [%v]", err), http.StatusInternalServerError
+		return nil, http.StatusInternalServerError, fmt.Errorf("error getting Cost Resource: [%v]", err)
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error reading Cost Resource: [%v]", err), http.StatusInternalServerError
+		return nil, http.StatusInternalServerError, fmt.Errorf("error reading Cost Resource: [%v]", err)
 	}
 
 	// TODO save cost resource and ensure all mandatory fields are present:
@@ -256,9 +256,9 @@ func getCosts(resource string, cfg *config.Config) (*[]models.CostResource, erro
 	costs := &[]models.CostResource{}
 	err = json.Unmarshal(body, costs)
 	if err != nil {
-		return nil, fmt.Errorf("error reading Cost Resource: [%v]", err), http.StatusInternalServerError
+		return nil, http.StatusInternalServerError, fmt.Errorf("error reading Cost Resource: [%v]", err)
 	}
-	return costs, nil, http.StatusOK
+	return costs, http.StatusOK, nil
 }
 
 // Generates a string of 20 numbers made up of 7 random numbers, followed by 13 numbers derived from the current time
