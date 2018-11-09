@@ -169,7 +169,7 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 	}
 }
 
-func (service *PaymentService) getPaymentSession(id string) (*models.PaymentResource, int, error) {
+func (service *PaymentService) getPaymentSession(id string) (*models.PaymentResourceData, int, error) {
 	paymentResource, err := service.DAO.GetPaymentResource(id)
 	if paymentResource == nil {
 		return nil, http.StatusForbidden, fmt.Errorf("payment session not found. id: %s", id)
@@ -195,7 +195,7 @@ func (service *PaymentService) getPaymentSession(id string) (*models.PaymentReso
 
 	paymentResource.Data.Costs = *costs
 
-	return paymentResource, http.StatusOK, nil
+	return &paymentResource.Data, http.StatusOK, nil
 }
 
 func getTotalAmount(costs *[]models.CostResource) (string, error) {
