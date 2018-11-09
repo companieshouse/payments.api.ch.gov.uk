@@ -235,6 +235,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 func TestUnitGetPayment(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	cfg, _ := config.Get()
+	defer resetConfig()
 
 	Convey("Payment ID missing", t, func() {
 		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
@@ -391,4 +392,76 @@ func TestUnitGetTotalAmount(t *testing.T) {
 		}
 	})
 
+}
+
+func TestUnitValidateResource(t *testing.T) {
+	cfg, _ := config.Get()
+	defer resetConfig()
+
+	Convey("Invalid Resource Domain", t, func() {
+		req, err := http.NewRequest("Get", "", nil)
+		So(err, ShouldBeNil)
+		err = validateResource("http://dummy-resource", req, cfg)
+		So(err.Error(), ShouldStartWith, "invalid resource domain")
+	})
+
+	cfg.DomainWhitelist = "http://dummy-resource"
+
+	Convey("Valid Resource Domain", t, func() {
+		req, err := http.NewRequest("Get", "", nil)
+		So(err, ShouldBeNil)
+		err = validateResource("http://dummy-resource", req, cfg)
+		So(err, ShouldBeNil)
+	})
+}
+
+func TestUnitValidateCosts(t *testing.T) {
+	Convey("Invalid Cost", t, func() {
+		cost := []models.CostResource{{
+			Amount:                  "10",
+			AvailablePaymentMethods: []string{"method"},
+			ClassOfPayment:          []string{"class"},
+			Description:             "",
+			DescriptionIdentifier:   "identifier",
+			Links:                   models.Links{Self: "self"},
+		}}
+		So(validateCosts(&cost), ShouldNotBeNil)
+	})
+	Convey("Valid Cost", t, func() {
+		cost := []models.CostResource{{
+			Amount:                  "10",
+			AvailablePaymentMethods: []string{"method"},
+			ClassOfPayment:          []string{"class"},
+			Description:             "desc",
+			DescriptionIdentifier:   "identifier",
+			Links:                   models.Links{Self: "self"},
+		}}
+		So(validateCosts(&cost), ShouldBeNil)
+	})
+	Convey("Multiple Costs", t, func() {
+		cost := []models.CostResource{
+			{
+				Amount:                  "10",
+				AvailablePaymentMethods: []string{"method"},
+				ClassOfPayment:          []string{"class"},
+				Description:             "desc",
+				DescriptionIdentifier:   "identifier",
+				Links:                   models.Links{Self: "self"},
+			},
+			{
+				Amount:                  "20",
+				AvailablePaymentMethods: []string{"method"},
+				ClassOfPayment:          []string{"class"},
+				Description:             "",
+				DescriptionIdentifier:   "identifier",
+				Links:                   models.Links{Self: "self"},
+			},
+		}
+		So(validateCosts(&cost), ShouldNotBeNil)
+	})
+}
+
+func resetConfig() {
+	cfg, _ := config.Get()
+	cfg.DomainWhitelist = ""
 }
