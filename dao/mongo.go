@@ -3,11 +3,10 @@ package dao
 import (
 	"fmt"
 
-	"github.com/globalsign/mgo/bson"
-
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
 )
 
 var session *mgo.Session
@@ -67,6 +66,7 @@ func (m *Mongo) GetPaymentResource(id string) (*models.PaymentResource, error) {
 	return &resource, err
 }
 
+// PatchPaymentResource patches a payment resource from the DB
 func (m *Mongo) PatchPaymentResource(id string, paymentUpdate *models.PaymentResourceData) error {
 	paymentSession, err := getMongoSession()
 	if err != nil {
@@ -87,7 +87,6 @@ func (m *Mongo) PatchPaymentResource(id string, paymentUpdate *models.PaymentRes
 	}
 
 	updateCall := bson.M{"$set": patchUpdate}
-	c.UpdateId(id, updateCall)
 
-	return nil
+	return c.UpdateId(id, updateCall)
 }
