@@ -74,19 +74,19 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	}
 
 	var paymentResource models.PaymentResource
-	paymentResource.CreatedBy = models.CreatedBy{
+	paymentResource.Data.CreatedBy = models.CreatedBy{
 		ID:       req.Header.Get("Eric-Identity"),
 		Email:    email,
 		Forename: forename,
 		Surname:  surname,
 	}
-	paymentResource.Amount = totalAmount
-	paymentResource.CreatedAt = time.Now()
-	paymentResource.Reference = incomingPaymentResourceRequest.Reference
+	paymentResource.Data.Amount = totalAmount
+	paymentResource.Data.CreatedAt = time.Now()
+	paymentResource.Data.Reference = incomingPaymentResourceRequest.Reference
 	paymentResource.ID = generateID()
 
 	journeyURL := service.Config.PaymentsWebURL + "/payments/" + paymentResource.ID + "/pay"
-	paymentResource.Links = models.Links{
+	paymentResource.Data.Links = models.Links{
 		Journey:  journeyURL,
 		Resource: incomingPaymentResourceRequest.Resource,
 	}
@@ -103,7 +103,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	w.Header().Set("Location", journeyURL)
 	w.WriteHeader(http.StatusCreated)
 
-	err = json.NewEncoder(w).Encode(paymentResource)
+	err = json.NewEncoder(w).Encode(paymentResource.Data)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
 		return
@@ -133,7 +133,7 @@ func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *htt
 		return
 	}
 
-	costs, err := getCosts(w, req, paymentResource.Links.Resource, &service.Config)
+	costs, err := getCosts(w, req, paymentResource.Data.Links.Resource, &service.Config)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error getting payment resource: [%v]", err))
 		return
@@ -146,16 +146,16 @@ func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *htt
 		return
 	}
 
-	if totalAmount != paymentResource.Amount {
-		log.Info(fmt.Sprintf("amount in payment resource [%s] different from db [%s] for id [%s].", totalAmount, paymentResource.Amount, paymentResource.ID))
+	if totalAmount != paymentResource.Data.Amount {
+		log.Info(fmt.Sprintf("amount in payment resource [%s] different from db [%s] for id [%s].", totalAmount, paymentResource.Data.Amount, id))
 		// TODO Expire payment session
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
-	paymentResource.Costs = *costs
+	paymentResource.Data.Costs = *costs
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(paymentResource)
+	err = json.NewEncoder(w).Encode(paymentResource.Data)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
 		return
