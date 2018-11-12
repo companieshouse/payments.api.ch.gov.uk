@@ -78,12 +78,16 @@ func (m *Mongo) PatchPaymentResource(id string, paymentUpdate *models.PaymentRes
 
 	patchUpdate := make(bson.M)
 
-	// Patch only these fields
-	if paymentUpdate.PaymentMethod != "" {
-		patchUpdate["data.payment_method"] = paymentUpdate.PaymentMethod
-	}
-	if paymentUpdate.Status != "" {
-		patchUpdate["data.status"] = paymentUpdate.Status
+	if paymentUpdate.PaymentMethod != "" || paymentUpdate.Status != "" {
+		// Patch only these fields
+		if paymentUpdate.PaymentMethod != "" {
+			patchUpdate["data.payment_method"] = paymentUpdate.PaymentMethod
+		}
+		if paymentUpdate.Status != "" {
+			patchUpdate["data.status"] = paymentUpdate.Status
+		}
+	} else {
+		return fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", id)
 	}
 
 	updateCall := bson.M{"$set": patchUpdate}
