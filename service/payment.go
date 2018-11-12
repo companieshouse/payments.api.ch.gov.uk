@@ -162,10 +162,16 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 		return
 	}
 
-	err, httpStatus := service.DAO.PatchPaymentResource(id, &PaymentResourceUpdate)
+	if PaymentResourceUpdate.PaymentMethod == "" || PaymentResourceUpdate.Status == "" {
+		log.ErrorR(req, fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", id))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	err = service.DAO.PatchPaymentResource(id, &PaymentResourceUpdate)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error patching payment session on database: [%v]", err))
-		w.WriteHeader(httpStatus)
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 

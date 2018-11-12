@@ -404,7 +404,7 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 
-		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(fmt.Errorf("error"), http.StatusInternalServerError)
+		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(fmt.Errorf("error"))
 
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
@@ -425,7 +425,7 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 
-		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(nil, http.StatusOK)
+		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(nil)
 
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
