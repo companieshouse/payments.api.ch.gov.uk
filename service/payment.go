@@ -162,7 +162,7 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 		return
 	}
 
-	if PaymentResourceUpdate.PaymentMethod == "" || PaymentResourceUpdate.Status == "" {
+	if PaymentResourceUpdate.PaymentMethod == "" && PaymentResourceUpdate.Status == "" {
 		log.ErrorR(req, fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", id))
 		w.WriteHeader(http.StatusBadRequest)
 		return
