@@ -57,3 +57,15 @@ func (m *MockDAO) GetPaymentResource(arg0 string) (*models.PaymentResource, erro
 func (mr *MockDAOMockRecorder) GetPaymentResource(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaymentResource", reflect.TypeOf((*MockDAO)(nil).GetPaymentResource), arg0)
 }
+
+// PatchPaymentResource mocks base method
+func (m *MockDAO) PatchPaymentResource(id string, paymentUpdate *models.PaymentResourceData) error {
+	ret := m.ctrl.Call(m, "PatchPaymentResource", id, paymentUpdate)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PatchPaymentResource indicates an expected call of PatchPaymentResource
+func (mr *MockDAOMockRecorder) PatchPaymentResource(id, paymentUpdate interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PatchPaymentResource", reflect.TypeOf((*MockDAO)(nil).PatchPaymentResource), id, paymentUpdate)
+}
