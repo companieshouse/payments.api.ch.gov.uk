@@ -162,10 +162,10 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 		return
 	}
 
-	err = service.DAO.PatchPaymentResource(id, &PaymentResourceUpdate)
+	err, httpStatus := service.DAO.PatchPaymentResource(id, &PaymentResourceUpdate)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error patching payment session on database: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(httpStatus)
 	}
 }
 

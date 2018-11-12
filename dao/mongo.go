@@ -2,6 +2,7 @@ package dao
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
@@ -67,10 +68,10 @@ func (m *Mongo) GetPaymentResource(id string) (*models.PaymentResource, error) {
 }
 
 // PatchPaymentResource patches a payment resource from the DB
-func (m *Mongo) PatchPaymentResource(id string, paymentUpdate *models.PaymentResourceData) error {
+func (m *Mongo) PatchPaymentResource(id string, paymentUpdate *models.PaymentResourceData) (error, int) {
 	paymentSession, err := getMongoSession()
 	if err != nil {
-		return err
+		return err, http.StatusInternalServerError
 	}
 	defer paymentSession.Close()
 
@@ -87,10 +88,15 @@ func (m *Mongo) PatchPaymentResource(id string, paymentUpdate *models.PaymentRes
 			patchUpdate["data.status"] = paymentUpdate.Status
 		}
 	} else {
-		return fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", id)
+		return fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", id), http.StatusBadRequest
 	}
 
 	updateCall := bson.M{"$set": patchUpdate}
 
-	return c.UpdateId(id, updateCall)
+	err = c.UpdateId(id, updateCall)
+	if err != nil {
+		return err, http.StatusInternalServerError
+	}
+
+	return nil, http.StatusOK
 }

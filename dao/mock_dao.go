@@ -59,10 +59,11 @@ func (mr *MockDAOMockRecorder) GetPaymentResource(arg0 interface{}) *gomock.Call
 }
 
 // PatchPaymentResource mocks base method
-func (m *MockDAO) PatchPaymentResource(id string, paymentUpdate *models.PaymentResourceData) error {
+func (m *MockDAO) PatchPaymentResource(id string, paymentUpdate *models.PaymentResourceData) (error, int) {
 	ret := m.ctrl.Call(m, "PatchPaymentResource", id, paymentUpdate)
 	ret0, _ := ret[0].(error)
-	return ret0
+	ret1, _ := ret[1].(int)
+	return ret0, ret1
 }
 
 // PatchPaymentResource indicates an expected call of PatchPaymentResource

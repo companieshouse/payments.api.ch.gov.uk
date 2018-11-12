@@ -6,5 +6,5 @@ import "github.com/companieshouse/payments.api.ch.gov.uk/models"
 type DAO interface {
 	CreatePaymentResource(paymentResource *models.PaymentResource) error
 	GetPaymentResource(string) (*models.PaymentResource, error)
-	PatchPaymentResource(id string, paymentUpdate *models.PaymentResourceData) error
+	PatchPaymentResource(id string, paymentUpdate *models.PaymentResourceData) (error, int)
 }
