@@ -176,3 +176,26 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		So(createdExternalJourney.NextURL, ShouldEqual, "nextURL")
 	})
 }
+
+func TestUnitConvertToPenceFromDecimal(t *testing.T) {
+	Convey("Convert payment in pounds to pence", t, func() {
+		amount, err := convertToPenceFromDecimal("250")
+		So(err, ShouldBeNil)
+		So(amount, ShouldEqual, 25000)
+	})
+
+	Convey("Convert decimal payment in pounds to pence", t, func() {
+		amount, err := convertToPenceFromDecimal("116.32")
+		So(err, ShouldBeNil)
+		So(amount, ShouldEqual, 11632)
+	})
+
+	Convey("Test invalid amounts", t, func() {
+		invalidAmounts := []string{"alpha", "12,", "12.", "12,00", "12.012", "a.9", "9.a", "12.1"}
+		for _, amount := range invalidAmounts {
+			amountInPence, err := convertToPenceFromDecimal(amount)
+			So(amountInPence, ShouldEqual, 0)
+			So(err.Error(), ShouldEqual, fmt.Sprintf("amount [%s] format incorrect", amount))
+		}
+	})
+}

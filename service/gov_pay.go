@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
@@ -14,7 +13,13 @@ import (
 
 func returnNextURLGovPay(paymentResourceData *models.PaymentResourceData, id string, cfg *config.Config) (string, error) {
 	var govPayRequest models.OutgoingGovPayRequest
-	govPayRequest.Amount, _ = strconv.Atoi(paymentResourceData.Amount)
+
+	amountToPay, err := convertToPenceFromDecimal(paymentResourceData.Amount)
+	if err != nil {
+		return "", fmt.Errorf("error converting amount to pay to pence: [%s]", err)
+	}
+
+	govPayRequest.Amount = amountToPay
 	govPayRequest.Description = "Companies House Payment" //Hardcoded for now as a payment description isn't saved anywhere
 	govPayRequest.Reference = paymentResourceData.Reference
 	govPayRequest.ReturnURL = cfg.PaymentsWebURL + "/payments/" + id + "/paymentStatus"
