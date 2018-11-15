@@ -275,6 +275,7 @@ func TestUnitGetPayment(t *testing.T) {
 	})
 
 	cfg.DomainWhitelist = "http://dummy-resource"
+	defer ClearConfig(cfg)
 	reqBody := []byte("{\"redirect_uri\": \"dummy-redirect-uri\",\"resource\": \"http://dummy-resource\",\"state\": \"dummy-state\",\"reference\": \"dummy-reference\"}")
 
 	Convey("Invalid cost", t, func() {
@@ -458,4 +459,8 @@ func TestUnitGetTotalAmount(t *testing.T) {
 			So(err.Error(), ShouldEqual, fmt.Sprintf("amount [%s] format incorrect", amount))
 		}
 	})
+}
+
+func ClearConfig(cfg *config.Config) {
+	cfg.DomainWhitelist = ""
 }
