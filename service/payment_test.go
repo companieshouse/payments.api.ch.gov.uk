@@ -24,7 +24,7 @@ var defaultCost = models.CostResource{
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
-	Links:                   models.Links{Self: "self"},
+	Links: models.Links{Self: "self"},
 }
 
 var defaultCostArray = []models.CostResource{
@@ -288,6 +288,7 @@ func TestUnitGetPayment(t *testing.T) {
 	})
 
 	cfg.DomainWhitelist = "http://dummy-resource"
+	defer resetConfig()
 	reqBody := []byte("{\"redirect_uri\": \"dummy-redirect-uri\",\"resource\": \"http://dummy-resource\",\"state\": \"dummy-state\",\"reference\": \"dummy-reference\"}")
 
 	Convey("Invalid cost", t, func() {
@@ -500,7 +501,7 @@ func TestUnitValidateCosts(t *testing.T) {
 			ClassOfPayment:          []string{"class"},
 			Description:             "",
 			DescriptionIdentifier:   "identifier",
-			Links:                   models.Links{Self: "self"},
+			Links: models.Links{Self: "self"},
 		}}
 		So(validateCosts(&cost), ShouldNotBeNil)
 	})
@@ -511,7 +512,7 @@ func TestUnitValidateCosts(t *testing.T) {
 			ClassOfPayment:          []string{"class"},
 			Description:             "desc",
 			DescriptionIdentifier:   "identifier",
-			Links:                   models.Links{Self: "self"},
+			Links: models.Links{Self: "self"},
 		}}
 		So(validateCosts(&cost), ShouldBeNil)
 	})
@@ -523,7 +524,7 @@ func TestUnitValidateCosts(t *testing.T) {
 				ClassOfPayment:          []string{"class"},
 				Description:             "desc",
 				DescriptionIdentifier:   "identifier",
-				Links:                   models.Links{Self: "self"},
+				Links: models.Links{Self: "self"},
 			},
 			{
 				Amount:                  "20",
@@ -531,7 +532,7 @@ func TestUnitValidateCosts(t *testing.T) {
 				ClassOfPayment:          []string{"class"},
 				Description:             "",
 				DescriptionIdentifier:   "identifier",
-				Links:                   models.Links{Self: "self"},
+				Links: models.Links{Self: "self"},
 			},
 		}
 		So(validateCosts(&cost), ShouldNotBeNil)
