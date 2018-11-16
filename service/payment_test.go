@@ -174,15 +174,14 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		mockPaymentService.CreatePaymentSession(w, req)
 		So(w.Code, ShouldEqual, 201)
 		responseByteArray := w.Body.Bytes()
-		var createdPaymentResource models.PaymentResource
+		var createdPaymentResource models.PaymentResourceData
 		if err := json.Unmarshal(responseByteArray, &createdPaymentResource); err != nil {
 			panic(err)
 		}
-		So(createdPaymentResource.ID, ShouldNotBeEmpty)
 		So(createdPaymentResource.Links.Journey, ShouldNotBeEmpty)
-		expectedJourneyURL := fmt.Sprintf("https://payments.companieshouse.gov.uk/payments/%s/pay", createdPaymentResource.ID)
-		So(createdPaymentResource.Links.Journey, ShouldEqual, expectedJourneyURL)
-		So(w.Header().Get("Location"), ShouldEqual, expectedJourneyURL)
+		re := regexp.MustCompile("https://payments.companieshouse.gov.uk/payments/(.*)/pay")
+		So(re.MatchString(createdPaymentResource.Links.Journey), ShouldEqual, true)
+		So(re.MatchString(w.Header().Get("Location")), ShouldEqual, true)
 		So(createdPaymentResource.CreatedBy, ShouldNotBeEmpty)
 	})
 
@@ -205,17 +204,15 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(w.Code, ShouldEqual, 201)
 
 		responseByteArray := w.Body.Bytes()
-		var createdPaymentResource models.PaymentResource
+		var createdPaymentResource models.PaymentResourceData
 		if err := json.Unmarshal(responseByteArray, &createdPaymentResource); err != nil {
 			panic(err)
 		}
 
-		So(createdPaymentResource.ID, ShouldNotBeEmpty)
 		So(createdPaymentResource.Links.Journey, ShouldNotBeEmpty)
-
-		expectedJourneyURL := fmt.Sprintf("https://payments.companieshouse.gov.uk/payments/%s/pay", createdPaymentResource.ID)
-		So(createdPaymentResource.Links.Journey, ShouldEqual, expectedJourneyURL)
-		So(w.Header().Get("Location"), ShouldEqual, expectedJourneyURL)
+		re := regexp.MustCompile("https://payments.companieshouse.gov.uk/payments/(.*)/pay")
+		So(re.MatchString(createdPaymentResource.Links.Journey), ShouldEqual, true)
+		So(re.MatchString(w.Header().Get("Location")), ShouldEqual, true)
 
 		So(createdPaymentResource.CreatedBy, ShouldNotBeEmpty)
 		So(createdPaymentResource.Amount, ShouldEqual, "20")
@@ -294,7 +291,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Invalid cost", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{Amount: "x", Links: models.Links{Resource: "http://dummy-resource"}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "x", Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
@@ -317,7 +314,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Amount mismatch", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{Amount: "100", Links: models.Links{Resource: "http://dummy-resource"}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "100", Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
@@ -338,7 +335,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Get Payment session - success - Single cost", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{Amount: "10", Links: models.Links{Resource: "http://dummy-resource"}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "10", Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
@@ -358,7 +355,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Get Payment session - success - Multiple costs", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{Amount: "20", Links: models.Links{Resource: "http://dummy-resource"}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "20", Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
