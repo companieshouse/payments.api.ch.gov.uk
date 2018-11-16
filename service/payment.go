@@ -110,7 +110,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 		return
 	}
 
-	// log.Trace("TODO log successful creation with details") // TODO
+	log.InfoR(req, "Successfully POST request for new payment resource: "+paymentResource.ID)
 }
 
 // GetPaymentSession retrieves the payment session
@@ -136,6 +136,8 @@ func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *htt
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
 		return
 	}
+
+	log.InfoR(req, "Successfully GET request for payment resource: "+id)
 }
 
 // PatchPaymentSession patches and updates the payment session
@@ -173,6 +175,8 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 		log.ErrorR(req, fmt.Errorf("error patching payment session on database: [%v]", err))
 		w.WriteHeader(http.StatusInternalServerError)
 	}
+
+	log.InfoR(req, "Successfully PATCH request for payment resource: "+id)
 }
 
 func (service *PaymentService) getPaymentSession(id string) (*models.PaymentResourceData, int, error) {
