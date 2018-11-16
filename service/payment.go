@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -17,6 +18,7 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/shopspring/decimal"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // PaymentService contains the DAO for db access
@@ -110,7 +112,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 		return
 	}
 
-	// log.Trace("TODO log successful creation with details") // TODO
+	log.InfoR(req, "Successfully POST request for new payment resource: "+paymentResource.ID)
 }
 
 // GetPaymentSession retrieves the payment session
@@ -136,6 +138,8 @@ func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *htt
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
 		return
 	}
+
+	log.InfoR(req, "Successfully GET request for payment resource: "+id)
 }
 
 // PatchPaymentSession patches and updates the payment session
@@ -173,6 +177,8 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 		log.ErrorR(req, fmt.Errorf("error patching payment session on database: [%v]", err))
 		w.WriteHeader(http.StatusInternalServerError)
 	}
+
+	log.InfoR(req, "Successfully PATCH request for payment resource: "+id)
 }
 
 func (service *PaymentService) getPaymentSession(id string) (*models.PaymentResourceData, int, error) {
@@ -223,22 +229,9 @@ func getTotalAmount(costs *[]models.CostResource) (string, error) {
 }
 
 func getCosts(resource string, cfg *config.Config) (*[]models.CostResource, int, error) {
-	parsedURL, err := url.Parse(resource)
+	err := validateResource(resource, cfg)
 	if err != nil {
-		return nil, http.StatusBadRequest, fmt.Errorf("error parsing resource: [%v]", err)
-	}
-	resourceDomain := strings.Join([]string{parsedURL.Scheme, parsedURL.Host}, "://")
-
-	whitelist := strings.Split(cfg.DomainWhitelist, ",")
-	matched := false
-	for _, domain := range whitelist {
-		if resourceDomain == domain {
-			matched = true
-			break
-		}
-	}
-	if !matched {
-		return nil, http.StatusBadRequest, fmt.Errorf("invalid resource domain: %s", resourceDomain)
+		return nil, http.StatusBadRequest, err
 	}
 
 	resourceReq, err := http.NewRequest("GET", resource, nil)
@@ -252,18 +245,35 @@ func getCosts(resource string, cfg *config.Config) (*[]models.CostResource, int,
 		return nil, http.StatusInternalServerError, fmt.Errorf("error getting Cost Resource: [%v]", err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		var status int
+		if resp.StatusCode == http.StatusBadGateway {
+			status = http.StatusInternalServerError
+		} else {
+			status = http.StatusBadRequest
+		}
+		err = errors.New("error getting Cost Resource")
+		log.ErrorR(resourceReq, err)
+		return nil, status, err
+	}
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, http.StatusInternalServerError, fmt.Errorf("error reading Cost Resource: [%v]", err)
 	}
-
-	// TODO save cost resource and ensure all mandatory fields are present:
 
 	costs := &[]models.CostResource{}
 	err = json.Unmarshal(body, costs)
 	if err != nil {
 		return nil, http.StatusInternalServerError, fmt.Errorf("error reading Cost Resource: [%v]", err)
 	}
+
+	if err = validateCosts(costs); err != nil {
+		log.ErrorR(resourceReq, fmt.Errorf("invalid Cost Resource: [%v]", err))
+		return nil, http.StatusBadRequest, err
+	}
+
 	return costs, http.StatusOK, nil
 }
 
@@ -273,4 +283,37 @@ func generateID() (i string) {
 	ranNumber := fmt.Sprintf("%07d", rand.Intn(9999999))
 	millis := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
 	return ranNumber + millis
+}
+
+func validateResource(resource string, cfg *config.Config) error {
+	parsedURL, err := url.Parse(resource)
+	if err != nil {
+		return err
+	}
+	resourceDomain := strings.Join([]string{parsedURL.Scheme, parsedURL.Host}, "://")
+
+	whitelist := strings.Split(cfg.DomainWhitelist, ",")
+	matched := false
+	for _, domain := range whitelist {
+		if resourceDomain == domain {
+			matched = true
+			break
+		}
+	}
+	if !matched {
+		err = fmt.Errorf("invalid resource domain: %s", resourceDomain)
+		return err
+	}
+	return err
+}
+
+func validateCosts(costs *[]models.CostResource) error {
+	validate := validator.New()
+	for _, cost := range *costs {
+		err := validate.Struct(cost)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
