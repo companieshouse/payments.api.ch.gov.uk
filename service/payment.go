@@ -260,7 +260,7 @@ func getCosts(resource string, cfg *config.Config) (*[]models.CostResource, int,
 	costs := &[]models.CostResource{}
 	err = json.Unmarshal(body, costs)
 	if err != nil {
-		return nil, http.StatusInternalServerError, fmt.Errorf("error reading Cost Resource: [%v]", err)
+		return nil, http.StatusBadRequest, fmt.Errorf("error reading Cost Resource: [%v]", err)
 	}
 
 	if err = validateCosts(costs); err != nil {
