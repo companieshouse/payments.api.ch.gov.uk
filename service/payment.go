@@ -247,15 +247,9 @@ func getCosts(resource string, cfg *config.Config) (*[]models.CostResource, int,
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		var status int
-		if resp.StatusCode == http.StatusBadGateway {
-			status = http.StatusInternalServerError
-		} else {
-			status = http.StatusBadRequest
-		}
 		err = errors.New("error getting Cost Resource")
 		log.ErrorR(resourceReq, err)
-		return nil, status, err
+		return nil, http.StatusBadRequest, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)

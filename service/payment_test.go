@@ -116,7 +116,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		CostResource, httpStatus, err := getCosts("http://dummy-resource", cfg)
 		So(CostResource, ShouldEqual, nil)
 		So(err, ShouldNotBeNil)
-		So(httpStatus, ShouldEqual, 500)
+		So(httpStatus, ShouldEqual, 400)
 	})
 
 	Convey("Invalid user header", t, func() {
