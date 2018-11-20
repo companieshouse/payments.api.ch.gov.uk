@@ -110,7 +110,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 		return
 	}
 
-	log.InfoR(req, "Successfully POST request for new payment resource: "+paymentResource.ID)
+	log.InfoR(req, "Successful POST request for new payment resource", log.Data{"id": paymentResource.ID, "status": http.StatusCreated})
 }
 
 // GetPaymentSession retrieves the payment session
