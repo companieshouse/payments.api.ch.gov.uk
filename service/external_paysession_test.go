@@ -22,6 +22,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
+	defer resetConfig()
 
 	Convey("Payment ID not supplied", t, func() {
 		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
@@ -51,7 +52,6 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 	})
 
 	cfg.DomainWhitelist = "http://dummy-resource"
-	defer ClearConfig(cfg)
 
 	Convey("Invalid payment method", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
@@ -70,7 +70,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResource{{Amount: "10"}}
+		costArray := []models.CostResource{defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
@@ -95,7 +95,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResource{{Amount: "10"}}
+		costArray := []models.CostResource{defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
@@ -122,7 +122,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResource{{Amount: "10"}}
+		costArray := []models.CostResource{defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
@@ -153,7 +153,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResource{{Amount: "10"}}
+		costArray := []models.CostResource{defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
