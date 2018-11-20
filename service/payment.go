@@ -112,7 +112,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 		return
 	}
 
-	log.InfoR(req, "Successfully POST request for new payment resource: "+paymentResource.ID)
+	log.InfoR(req, "Successful POST request for new payment resource", log.Data{"payment_id": paymentResource.ID, "status": http.StatusCreated})
 }
 
 // GetPaymentSession retrieves the payment session
@@ -139,7 +139,7 @@ func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *htt
 		return
 	}
 
-	log.InfoR(req, "Successfully GET request for payment resource: "+id)
+	log.InfoR(req, "Successfully GET request for payment resource: ", log.Data{"payment_id": id, "status": http.StatusCreated})
 }
 
 // PatchPaymentSession patches and updates the payment session
@@ -178,7 +178,7 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
-	log.InfoR(req, "Successfully PATCH request for payment resource: "+id)
+	log.InfoR(req, "Successful PATCH request for payment resource", log.Data{"payment_id": id, "status": http.StatusOK})
 }
 
 func (service *PaymentService) getPaymentSession(id string) (*models.PaymentResourceData, int, error) {
