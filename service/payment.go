@@ -42,9 +42,10 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 		return
 	}
 
-	costs, err := getCosts(w, req, incomingPaymentResourceRequest.Resource, &service.Config)
+	costs, httpStatus, err := getCosts(incomingPaymentResourceRequest.Resource, &service.Config)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error getting payment resource: [%v]", err))
+		w.WriteHeader(httpStatus)
 		return
 	}
 
@@ -109,7 +110,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 		return
 	}
 
-	// log.Trace("TODO log successful creation with details") // TODO
+	log.InfoR(req, "Successful POST request for new payment resource", log.Data{"payment_id": paymentResource.ID, "status": http.StatusCreated})
 }
 
 // GetPaymentSession retrieves the payment session
@@ -121,45 +122,90 @@ func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *htt
 		return
 	}
 
-	paymentResource, err := service.DAO.GetPaymentResource(id)
-	if paymentResource == nil {
-		log.Info(fmt.Sprintf("payment session not found. id: %s", id))
-		w.WriteHeader(http.StatusForbidden)
-		return
-	}
+	paymentSession, httpStatus, err := (*PaymentService).getPaymentSession(service, id)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error getting payment resource from db: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(httpStatus)
+		log.ErrorR(req, err)
 		return
 	}
 
-	costs, err := getCosts(w, req, paymentResource.Data.Links.Resource, &service.Config)
-	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error getting payment resource: [%v]", err))
-		return
-	}
-
-	totalAmount, err := getTotalAmount(costs)
-	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error getting amount from costs: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	if totalAmount != paymentResource.Data.Amount {
-		log.Info(fmt.Sprintf("amount in payment resource [%s] different from db [%s] for id [%s].", totalAmount, paymentResource.Data.Amount, id))
-		// TODO Expire payment session
-		w.WriteHeader(http.StatusForbidden)
-		return
-	}
-
-	paymentResource.Data.Costs = *costs
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(paymentResource.Data)
+
+	err = json.NewEncoder(w).Encode(paymentSession)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
 		return
 	}
+
+	log.InfoR(req, "Successfully GET request for payment resource: ", log.Data{"payment_id": id, "status": http.StatusCreated})
+}
+
+// PatchPaymentSession patches and updates the payment session
+func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *http.Request) {
+	id := req.URL.Query().Get(":payment_id")
+	if id == "" {
+		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if req.Body == nil {
+		log.ErrorR(req, fmt.Errorf("request body empty"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	requestDecoder := json.NewDecoder(req.Body)
+	var PaymentResourceUpdate models.PaymentResourceData
+	err := requestDecoder.Decode(&PaymentResourceUpdate)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("request body invalid: [%v]", err))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if PaymentResourceUpdate.PaymentMethod == "" && PaymentResourceUpdate.Status == "" {
+		log.ErrorR(req, fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", id))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	err = service.DAO.PatchPaymentResource(id, &PaymentResourceUpdate)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error patching payment session on database: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	log.InfoR(req, "Successful PATCH request for payment resource", log.Data{"payment_id": id, "status": http.StatusOK})
+}
+
+func (service *PaymentService) getPaymentSession(id string) (*models.PaymentResourceData, int, error) {
+	paymentResource, err := service.DAO.GetPaymentResource(id)
+	if paymentResource == nil {
+		return nil, http.StatusForbidden, fmt.Errorf("payment session not found. id: %s", id)
+	}
+	if err != nil {
+		return nil, http.StatusInternalServerError, fmt.Errorf("error getting payment resource from db: [%v]", err)
+	}
+
+	costs, httpStatus, err := getCosts(paymentResource.Data.Links.Resource, &service.Config)
+	if err != nil {
+		return nil, httpStatus, fmt.Errorf("error getting payment resource: [%v]", err)
+	}
+
+	totalAmount, err := getTotalAmount(costs)
+	if err != nil {
+		return nil, http.StatusInternalServerError, fmt.Errorf("error getting amount from costs: [%v]", err)
+	}
+
+	if totalAmount != paymentResource.Data.Amount {
+		// TODO Expire payment session
+		return nil, http.StatusForbidden, fmt.Errorf("amount in payment resource [%s] different from db [%s] for id [%s]", totalAmount, paymentResource.Data.Amount, paymentResource.ID)
+	}
+
+	paymentResource.Data.Costs = *costs
+
+	return &paymentResource.Data, http.StatusOK, nil
 }
 
 func getTotalAmount(costs *[]models.CostResource) (string, error) {
@@ -180,12 +226,10 @@ func getTotalAmount(costs *[]models.CostResource) (string, error) {
 	return totalAmount.String(), nil
 }
 
-func getCosts(w http.ResponseWriter, req *http.Request, resource string, cfg *config.Config) (*[]models.CostResource, error) {
+func getCosts(resource string, cfg *config.Config) (*[]models.CostResource, int, error) {
 	parsedURL, err := url.Parse(resource)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error parsing resource: [%v]", err))
-		w.WriteHeader(http.StatusBadRequest)
-		return nil, err
+		return nil, http.StatusBadRequest, fmt.Errorf("error parsing resource: [%v]", err)
 	}
 	resourceDomain := strings.Join([]string{parsedURL.Scheme, parsedURL.Host}, "://")
 
@@ -198,32 +242,23 @@ func getCosts(w http.ResponseWriter, req *http.Request, resource string, cfg *co
 		}
 	}
 	if !matched {
-		err = fmt.Errorf("invalid resource domain: %s", resourceDomain)
-		log.ErrorR(req, err)
-		w.WriteHeader(http.StatusBadRequest)
-		return nil, err
+		return nil, http.StatusBadRequest, fmt.Errorf("invalid resource domain: %s", resourceDomain)
 	}
 
 	resourceReq, err := http.NewRequest("GET", resource, nil)
 	if err != nil {
-		log.ErrorR(resourceReq, fmt.Errorf("failed to create Resource Request: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return nil, err
+		return nil, http.StatusInternalServerError, fmt.Errorf("failed to create Resource Request: [%v]", err)
 	}
 
 	var client http.Client
 	resp, err := client.Do(resourceReq)
 	if err != nil {
-		log.ErrorR(resourceReq, fmt.Errorf("error getting Cost Resource: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return nil, err
+		return nil, http.StatusInternalServerError, fmt.Errorf("error getting Cost Resource: [%v]", err)
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.ErrorR(resourceReq, fmt.Errorf("error reading Cost Resource: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return nil, err
+		return nil, http.StatusInternalServerError, fmt.Errorf("error reading Cost Resource: [%v]", err)
 	}
 
 	// TODO save cost resource and ensure all mandatory fields are present:
@@ -231,11 +266,9 @@ func getCosts(w http.ResponseWriter, req *http.Request, resource string, cfg *co
 	costs := &[]models.CostResource{}
 	err = json.Unmarshal(body, costs)
 	if err != nil {
-		log.ErrorR(resourceReq, fmt.Errorf("error reading Cost Resource: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return nil, err
+		return nil, http.StatusInternalServerError, fmt.Errorf("error reading Cost Resource: [%v]", err)
 	}
-	return costs, nil
+	return costs, http.StatusOK, nil
 }
 
 // Generates a string of 20 numbers made up of 7 random numbers, followed by 13 numbers derived from the current time

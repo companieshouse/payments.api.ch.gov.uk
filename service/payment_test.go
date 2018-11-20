@@ -54,9 +54,10 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
-		w := httptest.NewRecorder()
-		getCosts(w, req, "http://dummy-resource", cfg)
-		So(w.Code, ShouldEqual, 400)
+		CostResource, httpStatus, err := getCosts("http://dummy-resource", cfg)
+		So(CostResource, ShouldEqual, nil)
+		So(err, ShouldNotBeNil)
+		So(httpStatus, ShouldEqual, 400)
 	})
 
 	cfg.DomainWhitelist = "http://dummy-resource"
@@ -95,12 +96,13 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
-		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("GET", "http://dummy-resource", httpmock.NewStringResponder(500, "string"))
-		getCosts(w, req, "http://dummy-resource", cfg)
-		So(w.Code, ShouldEqual, 500)
+		CostResource, httpStatus, err := getCosts("http://dummy-resource", cfg)
+		So(CostResource, ShouldEqual, nil)
+		So(err, ShouldNotBeNil)
+		So(httpStatus, ShouldEqual, 500)
 	})
 
 	Convey("Invalid user header", t, func() {
@@ -358,6 +360,89 @@ func TestUnitGetPayment(t *testing.T) {
 	})
 }
 
+func TestUnitPatchPaymentSession(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	cfg, _ := config.Get()
+	reqBodyPatch := []byte("{\"payment_method\": \"dummy-payment-method\",\"status\": \"dummy-status\"}")
+
+	Convey("Payment ID missing", t, func() {
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
+		req, err := http.NewRequest("GET", "", nil)
+		So(err, ShouldBeNil)
+		w := httptest.NewRecorder()
+		mockPaymentService.PatchPaymentSession(w, req)
+		So(w.Code, ShouldEqual, 400)
+	})
+
+	Convey("Empty Request Body", t, func() {
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
+		req, err := http.NewRequest("GET", "", nil)
+		So(err, ShouldBeNil)
+		q := req.URL.Query()
+		q.Add(":payment_id", "1234")
+		req.URL.RawQuery = q.Encode()
+		w := httptest.NewRecorder()
+		mockPaymentService.PatchPaymentSession(w, req)
+		So(w.Code, ShouldEqual, 400)
+	})
+
+	Convey("Invalid Request Body", t, func() {
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
+		req, err := http.NewRequest("GET", "", nil)
+		So(err, ShouldBeNil)
+		q := req.URL.Query()
+		q.Add(":payment_id", "1234")
+		req.URL.RawQuery = q.Encode()
+		req.Body = ioutil.NopCloser(bytes.NewReader([]byte("invalid_body")))
+		w := httptest.NewRecorder()
+		mockPaymentService.PatchPaymentSession(w, req)
+		So(w.Code, ShouldEqual, 400)
+	})
+
+	Convey("Error getting session from DB", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+
+		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(fmt.Errorf("error"))
+
+		req, err := http.NewRequest("Get", "", nil)
+		So(err, ShouldBeNil)
+
+		q := req.URL.Query()
+		q.Add(":payment_id", "1234")
+		req.URL.RawQuery = q.Encode()
+
+		req.Body = ioutil.NopCloser(bytes.NewReader(reqBodyPatch))
+		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
+		w := httptest.NewRecorder()
+
+		mockPaymentService.PatchPaymentSession(w, req)
+		So(w.Code, ShouldEqual, 500)
+	})
+
+	Convey("Valid request - Patch resource", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+
+		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(nil)
+
+		req, err := http.NewRequest("Get", "", nil)
+		So(err, ShouldBeNil)
+
+		q := req.URL.Query()
+		q.Add(":payment_id", "1234")
+		req.URL.RawQuery = q.Encode()
+
+		req.Body = ioutil.NopCloser(bytes.NewReader(reqBodyPatch))
+		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
+		w := httptest.NewRecorder()
+
+		mockPaymentService.PatchPaymentSession(w, req)
+		So(w.Code, ShouldEqual, 200)
+	})
+}
+
 func TestUnitGetTotalAmount(t *testing.T) {
 	Convey("Get Total Amount - valid", t, func() {
 		costs := []models.CostResource{{Amount: "10"}, {Amount: "13"}, {Amount: "13.01"}}
@@ -373,5 +458,4 @@ func TestUnitGetTotalAmount(t *testing.T) {
 			So(err.Error(), ShouldEqual, fmt.Sprintf("amount [%s] format incorrect", amount))
 		}
 	})
-
 }
