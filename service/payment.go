@@ -137,7 +137,7 @@ func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *htt
 		return
 	}
 
-	log.InfoR(req, "Successfully GET request for payment resource: "+id)
+	log.InfoR(req, "Successfully GET request for payment resource: ", log.Data{"payment_id": id, "status": http.StatusCreated})
 }
 
 // PatchPaymentSession patches and updates the payment session
