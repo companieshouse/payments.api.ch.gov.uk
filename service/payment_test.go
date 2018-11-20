@@ -380,6 +380,7 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
+	defer resetConfig()
 	reqBodyPatch := []byte("{\"payment_method\": \"dummy-payment-method\",\"status\": \"dummy-status\"}")
 
 	Convey("Payment ID missing", t, func() {
