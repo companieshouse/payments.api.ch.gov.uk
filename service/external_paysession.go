@@ -64,7 +64,8 @@ func (service *PaymentService) CreateExternalPaymentJourney(w http.ResponseWrite
 	}
 }
 
+// decimalPayment will always be in the form XX.XX (e.g: 12.00) due to getTotalAmount converting to decimal with 2 fixed places right of decimal point.
 func convertToPenceFromDecimal(decimalPayment string) (int, error) {
-	pencePayment := strings.Replace(decimalPayment, ".", "", -1)
+	pencePayment := strings.Replace(decimalPayment, ".", "", 1)
 	return strconv.Atoi(pencePayment)
 }
