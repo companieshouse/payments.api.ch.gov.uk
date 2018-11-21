@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -62,22 +61,7 @@ func (service *PaymentService) CreateExternalPaymentJourney(w http.ResponseWrite
 }
 
 func convertToPenceFromDecimal(decimalPayment string) (int, error) {
-	r, err := regexp.Compile(`^\d+(\.\d{2})?$`)
-	if err != nil {
-		return 0, err
-	}
-
-	matched := r.MatchString(decimalPayment)
-	if !matched {
-		return 0, fmt.Errorf("amount [%s] format incorrect", decimalPayment)
-	}
-
-	if strings.Contains(decimalPayment, ".") {
-		c := strings.Replace(decimalPayment, ".", "", -1)
-		pencePayment, _ := strconv.ParseInt(c, 10, 64)
-		return int(pencePayment), nil
-	}
-
-	pencePayment, _ := strconv.ParseInt(decimalPayment, 10, 64)
-	return int(pencePayment * 100), nil
+	c := strings.Replace(decimalPayment, ".", "", -1)
+	pencePayment, _ := strconv.ParseInt(c, 10, 64)
+	return int(pencePayment), nil
 }

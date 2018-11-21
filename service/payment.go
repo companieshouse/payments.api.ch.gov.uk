@@ -225,7 +225,7 @@ func getTotalAmount(costs *[]models.CostResource) (string, error) {
 		amount, _ := decimal.NewFromString(cost.Amount)
 		totalAmount = totalAmount.Add(amount)
 	}
-	return totalAmount.String(), nil
+	return totalAmount.StringFixed(2), nil
 }
 
 func getCosts(resource string, cfg *config.Config) (*[]models.CostResource, int, error) {
