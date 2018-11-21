@@ -169,11 +169,18 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		if err := json.Unmarshal(responseByteArray, &createdPaymentResource); err != nil {
 			panic(err)
 		}
+
 		So(createdPaymentResource.Links.Journey, ShouldNotBeEmpty)
-		re := regexp.MustCompile("https://payments.companieshouse.gov.uk/payments/(.*)/pay")
-		So(re.MatchString(createdPaymentResource.Links.Journey), ShouldEqual, true)
-		So(re.MatchString(w.Header().Get("Location")), ShouldEqual, true)
+		// Regex format for journey url
+		regJourney := regexp.MustCompile("https://payments.companieshouse.gov.uk/payments/(.*)/pay")
+		So(regJourney.MatchString(createdPaymentResource.Links.Journey), ShouldEqual, true)
+		So(regJourney.MatchString(w.Header().Get("Location")), ShouldEqual, true)
+		So(createdPaymentResource.Status, ShouldEqual, PaymentPending.String())
 		So(createdPaymentResource.CreatedBy, ShouldNotBeEmpty)
+		// Regex format for self url
+		regSelf := regexp.MustCompile("payments/(.*)")
+		So(regSelf.MatchString(createdPaymentResource.Links.Self), ShouldEqual, true)
+
 	})
 
 	Convey("Valid request - multiple costs", t, func() {
@@ -201,11 +208,15 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		}
 
 		So(createdPaymentResource.Links.Journey, ShouldNotBeEmpty)
-		re := regexp.MustCompile("https://payments.companieshouse.gov.uk/payments/(.*)/pay")
-		So(re.MatchString(createdPaymentResource.Links.Journey), ShouldEqual, true)
-		So(re.MatchString(w.Header().Get("Location")), ShouldEqual, true)
-
+		// Regex format for journey url
+		regJourney := regexp.MustCompile("https://payments.companieshouse.gov.uk/payments/(.*)/pay")
+		So(regJourney.MatchString(createdPaymentResource.Links.Journey), ShouldEqual, true)
+		So(regJourney.MatchString(w.Header().Get("Location")), ShouldEqual, true)
+		So(createdPaymentResource.Status, ShouldEqual, PaymentPending.String())
 		So(createdPaymentResource.CreatedBy, ShouldNotBeEmpty)
+		// Regex format for self url
+		regSelf := regexp.MustCompile("payments/(.*)")
+		So(regSelf.MatchString(createdPaymentResource.Links.Self), ShouldEqual, true)
 	})
 
 	Convey("Valid generated PaymentResource ID", t, func() {

@@ -30,7 +30,7 @@ type PaymentStatus int
 
 // Enumeration containing all possible payment statuses
 const (
-	Pending PaymentStatus = 1 + iota
+	PaymentPending PaymentStatus = 1 + iota
 	InProgress
 	Paid
 	NoFunds
@@ -39,8 +39,8 @@ const (
 
 // String representation of payment statuses
 var paymentStatuses = [...]string{
-	"pending",
-	"in-rogress",
+	"payment-pending",
+	"in-progress",
 	"paid",
 	"no-funds ",
 	"failed",
@@ -116,7 +116,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	}
 
 	paymentResource.Data.Reference = incomingPaymentResourceRequest.Reference
-	paymentResource.Data.Status = Pending.String()
+	paymentResource.Data.Status = PaymentPending.String()
 	paymentResource.ID = generateID()
 
 	journeyURL := service.Config.PaymentsWebURL + "/payments/" + paymentResource.ID + "/pay"
