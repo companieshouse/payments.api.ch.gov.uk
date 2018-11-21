@@ -29,7 +29,8 @@ func (service *PaymentService) CreateExternalPaymentJourney(w http.ResponseWrite
 
 	paymentJourney := &models.ExternalPaymentJourney{}
 
-	if paymentSession.PaymentMethod == "GovPay" {
+	switch paymentSession.PaymentMethod {
+	case "GovPay":
 		paymentJourney.NextURL, err = returnNextURLGovPay(paymentSession, id, &service.Config)
 		if err != nil {
 			log.ErrorR(req, fmt.Errorf("error communicating with GovPay: [%s]", err))
@@ -51,13 +52,14 @@ func (service *PaymentService) CreateExternalPaymentJourney(w http.ResponseWrite
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
+
+		log.InfoR(req, "Successfully started session with GovPay", log.Data{"payment_id": id, "status": http.StatusCreated})
+
 		return
 	}
 
 	log.ErrorR(req, fmt.Errorf("payment method, [%s], for resource [%s] not recognised", paymentSession.PaymentMethod, id))
 	w.WriteHeader(http.StatusBadRequest)
-	return
-
 }
 
 func convertToPenceFromDecimal(decimalPayment string) (int, error) {
