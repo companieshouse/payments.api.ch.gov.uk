@@ -23,6 +23,7 @@ func Register(r *pat.Router, cfg config.Config) {
 	r.Post("/payments", p.CreatePaymentSession).Name("create-payment")
 	r.Get("/payments/{payment_id}", p.GetPaymentSession).Name("get-payment")
 	r.Patch("/private/payments/{payment_id}", p.PatchPaymentSession).Name("patch-payment")
+	r.Post("/private/payments/{payment_id}/external-journey", p.CreateExternalPaymentJourney).Name("create-external-payment-journey")
 }
 
 func healthCheck(w http.ResponseWriter, _ *http.Request) {
