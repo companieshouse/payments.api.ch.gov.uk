@@ -22,7 +22,7 @@ type Config struct {
 	APIKey            string `env:"CHS_API_KEY"          flag:"api-key"                flagDesc:"API key used to authenticate for internal API calls"`
 	DomainWhitelist   string `env:"DOMAIN_WHITELIST"     flag:"domain-whitelist"       flagDesc:"List of Valid Domains"`
 	PaymentsWebURL    string `env:"PAYMENTS_WEB_URL"     flag:"payments-web-url"       flagDesc:"Base URL for the Payment Service Web"`
-	GovPayUrl         string `env:"GOV_PAY_URL"          flag:"gov-pay-url"            flagDesc:"URL used to make calls to GovPay"`
+	GovPayURL         string `env:"GOV_PAY_URL"          flag:"gov-pay-url"            flagDesc:"URL used to make calls to GovPay"`
 	GovPayBearerToken string `env:"GOV_PAY_BEARER_TOKEN" flag:"gov-pay-bearer-token"   flagDesc:"Bearer Token used to authenticate API calls with GovPay"`
 }
 

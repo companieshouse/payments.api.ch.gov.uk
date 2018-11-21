@@ -29,7 +29,7 @@ func returnNextURLGovPay(paymentResourceData *models.PaymentResourceData, id str
 		return "", fmt.Errorf("error reading GovPayRequest: [%s]", err)
 	}
 
-	request, err := http.NewRequest("POST", cfg.GovPayUrl, bytes.NewBuffer(requestBody))
+	request, err := http.NewRequest("POST", cfg.GovPayURL, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return "", fmt.Errorf("error generating request for GovPay: [%s]", err)
 	}
