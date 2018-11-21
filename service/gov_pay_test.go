@@ -4,14 +4,11 @@ import (
 	"fmt"
 	"testing"
 
-	"gopkg.in/jarcoal/httpmock.v1"
-
-	"github.com/companieshouse/payments.api.ch.gov.uk/models"
-
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
+	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/golang/mock/gomock"
-
 	. "github.com/smartystreets/goconvey/convey"
+	"gopkg.in/jarcoal/httpmock.v1"
 )
 
 func TestUnitGovPay(t *testing.T) {

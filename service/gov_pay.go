@@ -20,9 +20,9 @@ func returnNextURLGovPay(paymentResourceData *models.PaymentResourceData, id str
 	}
 
 	govPayRequest.Amount = amountToPay
-	govPayRequest.Description = "Companies House Payment" //Hardcoded for now as a payment description isn't saved anywhere
+	govPayRequest.Description = "Companies House Payment" // TODO - Make description mandatory when creating payment-session so this doesn't have to be hardcoded
 	govPayRequest.Reference = paymentResourceData.Reference
-	govPayRequest.ReturnURL = cfg.PaymentsWebURL + "/payments/" + id + "/paymentStatus"
+	govPayRequest.ReturnURL = cfg.PaymentsWebURL + "/payments/" + id + "/paymentStatus" // TODO - Change this URL when payment.web has been updated to contain a return page
 
 	requestBody, err := json.Marshal(govPayRequest)
 	if err != nil {
