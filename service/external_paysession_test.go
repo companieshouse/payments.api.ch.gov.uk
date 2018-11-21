@@ -70,7 +70,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResource{{Amount: "10"}}
+		costArray := []models.CostResource{defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
@@ -95,7 +95,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResource{{Amount: "10"}}
+		costArray := []models.CostResource{defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
@@ -122,7 +122,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResource{{Amount: "10"}}
+		costArray := []models.CostResource{defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
@@ -153,7 +153,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResource{{Amount: "10"}}
+		costArray := []models.CostResource{defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
