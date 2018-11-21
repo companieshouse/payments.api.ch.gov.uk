@@ -54,19 +54,19 @@ type GovPayLinks struct {
 	Cancel      Cancel      `json:"cancel"`
 }
 
-// Link to the payment
+// Self links to the payment
 type Self struct {
 	HREF   string `json:"href"`
 	Method string `json:"method"`
 }
 
-// Where to navigate the user next as a GET
+// NextURL contains where to navigate the user next as a GET
 type NextURL struct {
 	HREF   string `json:"href"`
 	Method string `json:"method"`
 }
 
-// Where to navigate the user next as a POST
+// NextURLPost contains where to navigate the user next as a POST
 type NextURLPost struct {
 	PostType string `json:"type"`
 	Params   Params `json:"params"`
@@ -74,24 +74,24 @@ type NextURLPost struct {
 	Method   string `json:"method"`
 }
 
-// Contains charge token for payment
+// Params contains the charge token for the payment
 type Params struct {
 	ChargeTokenId string `json:"chargeTokenId"`
 }
 
-// Link to payment events
+// Events contains a link to payment events
 type Events struct {
 	HREF   string `json:"href"`
 	Method string `json:"method"`
 }
 
-// Link to payment refunds
+// Refunds contains a link to payment refunds
 type Refunds struct {
 	HREF   string `json:"href"`
 	Method string `json:"method"`
 }
 
-// Link to cancel the payment
+// Cancel contains a link to cancel the payment
 type Cancel struct {
 	HREF   string `json:"href"`
 	Method string `json:"method"`

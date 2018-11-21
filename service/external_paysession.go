@@ -56,14 +56,15 @@ func (service *PaymentService) CreateExternalPaymentJourney(w http.ResponseWrite
 		log.InfoR(req, "Successfully started session with GovPay", log.Data{"payment_id": id, "status": http.StatusCreated})
 
 		return
-	}
 
-	log.ErrorR(req, fmt.Errorf("payment method, [%s], for resource [%s] not recognised", paymentSession.PaymentMethod, id))
-	w.WriteHeader(http.StatusBadRequest)
+	default:
+		log.ErrorR(req, fmt.Errorf("payment method, [%s], for resource [%s] not recognised", paymentSession.PaymentMethod, id))
+
+		w.WriteHeader(http.StatusBadRequest)
+	}
 }
 
 func convertToPenceFromDecimal(decimalPayment string) (int, error) {
-	c := strings.Replace(decimalPayment, ".", "", -1)
-	pencePayment, _ := strconv.ParseInt(c, 10, 64)
-	return int(pencePayment), nil
+	pencePayment := strings.Replace(decimalPayment, ".", "", -1)
+	return strconv.Atoi(pencePayment)
 }
