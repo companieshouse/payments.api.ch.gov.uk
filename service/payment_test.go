@@ -459,3 +459,8 @@ func TestUnitGetTotalAmount(t *testing.T) {
 		}
 	})
 }
+
+func resetConfig() {
+	cfg, _ := config.Get()
+	cfg.DomainWhitelist = ""
+}
