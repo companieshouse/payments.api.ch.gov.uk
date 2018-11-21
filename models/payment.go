@@ -44,7 +44,7 @@ type CreatedBy struct {
 type Links struct {
 	Journey  string `json:"journey"`
 	Resource string `json:"resource"`
-	Self     string `json:"self"`
+	Self     string `json:"self" validate:"required"`
 }
 
 // Data is a representation of the top level data retrieved from the Transaction API
@@ -60,14 +60,14 @@ type Filing struct {
 
 // CostResource contains the details of an individual Cost Resource
 type CostResource struct {
-	Amount                  string            `json:"amount"`
-	AvailablePaymentMethods []string          `json:"available_payment_methods"`
-	ClassOfPayment          []string          `json:"class_of_payment"`
-	Description             string            `json:"description"`
-	DescriptionIdentifier   string            `json:"description_identifier"`
+	Amount                  string            `json:"amount"                    validate:"required"`
+	AvailablePaymentMethods []string          `json:"available_payment_methods" validate:"required"`
+	ClassOfPayment          []string          `json:"class_of_payment"          validate:"required"`
+	Description             string            `json:"description"               validate:"required"`
+	DescriptionIdentifier   string            `json:"description_identifier"    validate:"required"`
 	DescriptionValues       DescriptionValues `json:"description_values"`
 	IsVariablePayment       bool              `json:"is_variable_payment"`
-	Links                   Links             `json:"links"`
+	Links                   Links             `json:"links"                     validate:"required"`
 }
 
 // DescriptionValues contains a description of the cost
