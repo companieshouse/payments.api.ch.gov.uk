@@ -111,11 +111,6 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	paymentResource.Data.Amount = totalAmount
 	// To match the format time is saved to mongo, e.g. "2018-11-22T08:39:16.782Z", truncate the time
 	paymentResource.Data.CreatedAt = time.Now().Truncate(time.Millisecond)
-	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error parsing date: %v", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
 
 	paymentResource.Data.Reference = incomingPaymentResourceRequest.Reference
 	paymentResource.Data.Status = Pending.String()
