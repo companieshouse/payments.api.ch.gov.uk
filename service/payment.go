@@ -30,7 +30,7 @@ type PaymentStatus int
 
 // Enumeration containing all possible payment statuses
 const (
-	PaymentPending PaymentStatus = 1 + iota
+	Pending PaymentStatus = 1 + iota
 	InProgress
 	Paid
 	NoFunds
@@ -39,7 +39,7 @@ const (
 
 // String representation of payment statuses
 var paymentStatuses = [...]string{
-	"payment-pending",
+	"pending",
 	"in-progress",
 	"paid",
 	"no-funds ",
@@ -107,8 +107,8 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 		Surname:  surname,
 	}
 	paymentResource.Data.Amount = totalAmount
-	// To get the correct time format, format the current time and parse the result
-	paymentResource.Data.CreatedAt, err = time.Parse("2006-01-02 15:04:05.000", time.Now().Format("2006-01-02 15:04:05.000"))
+	// To match the format time is saved to mongo, e.g. "2018-11-22T08:39:16.782Z", truncate the time
+	paymentResource.Data.CreatedAt = time.Now().Truncate(time.Millisecond)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error parsing date: %v", err))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -116,7 +116,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	}
 
 	paymentResource.Data.Reference = incomingPaymentResourceRequest.Reference
-	paymentResource.Data.Status = PaymentPending.String()
+	paymentResource.Data.Status = Pending.String()
 	paymentResource.ID = generateID()
 
 	journeyURL := service.Config.PaymentsWebURL + "/payments/" + paymentResource.ID + "/pay"
