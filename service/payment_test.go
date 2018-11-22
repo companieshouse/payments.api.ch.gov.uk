@@ -175,7 +175,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		regJourney := regexp.MustCompile("https://payments.companieshouse.gov.uk/payments/(.*)/pay")
 		So(regJourney.MatchString(createdPaymentResource.Links.Journey), ShouldEqual, true)
 		So(regJourney.MatchString(w.Header().Get("Location")), ShouldEqual, true)
-		So(createdPaymentResource.Status, ShouldEqual, PaymentPending.String())
+		So(createdPaymentResource.Status, ShouldEqual, Pending.String())
 		So(createdPaymentResource.CreatedBy, ShouldNotBeEmpty)
 		// Regex format for self url
 		regSelf := regexp.MustCompile("payments/(.*)")
@@ -212,7 +212,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		regJourney := regexp.MustCompile("https://payments.companieshouse.gov.uk/payments/(.*)/pay")
 		So(regJourney.MatchString(createdPaymentResource.Links.Journey), ShouldEqual, true)
 		So(regJourney.MatchString(w.Header().Get("Location")), ShouldEqual, true)
-		So(createdPaymentResource.Status, ShouldEqual, PaymentPending.String())
+		So(createdPaymentResource.Status, ShouldEqual, Pending.String())
 		So(createdPaymentResource.CreatedBy, ShouldNotBeEmpty)
 		// Regex format for self url
 		regSelf := regexp.MustCompile("payments/(.*)")
