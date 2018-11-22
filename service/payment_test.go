@@ -18,6 +18,19 @@ import (
 	"gopkg.in/jarcoal/httpmock.v1"
 )
 
+var defaultCost = models.CostResource{
+	Amount:                  "10",
+	AvailablePaymentMethods: []string{"method"},
+	ClassOfPayment:          []string{"class"},
+	Description:             "desc",
+	DescriptionIdentifier:   "identifier",
+	Links: models.Links{Self: "self"},
+}
+
+var defaultCostArray = []models.CostResource{
+	defaultCost,
+}
+
 func createMockPaymentService(dao *dao.MockDAO, config *config.Config) PaymentService {
 	return PaymentService{
 		DAO:    dao,
@@ -70,8 +83,9 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResource{{Amount: "x"}}
-		jsonResponse, _ := httpmock.NewJsonResponder(500, costArray)
+		costArray := []models.CostResource{defaultCost}
+		costArray[0].Amount = "x"
+		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 		w := httptest.NewRecorder()
@@ -98,11 +112,11 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("GET", "http://dummy-resource", httpmock.NewStringResponder(500, "string"))
+		httpmock.RegisterResponder("GET", "http://dummy-resource", httpmock.NewStringResponder(502, "string"))
 		CostResource, httpStatus, err := getCosts("http://dummy-resource", cfg)
 		So(CostResource, ShouldEqual, nil)
 		So(err, ShouldNotBeNil)
-		So(httpStatus, ShouldEqual, 500)
+		So(httpStatus, ShouldEqual, 400)
 	})
 
 	Convey("Invalid user header", t, func() {
@@ -114,8 +128,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		var costArray []models.CostResource
-		jsonResponse, _ := httpmock.NewJsonResponder(500, costArray)
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCostArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 		mockPaymentService.CreatePaymentSession(w, req)
 		So(w.Code, ShouldEqual, 500)
@@ -135,8 +148,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		var costArray []models.CostResource
-		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCostArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
 		mockPaymentService.CreatePaymentSession(w, req)
@@ -159,8 +171,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		var costArray []models.CostResource
-		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCostArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 		mockPaymentService.CreatePaymentSession(w, req)
 		So(w.Code, ShouldEqual, 201)
@@ -194,7 +205,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResource{{Amount: "10"}, {Amount: "12"}}
+		costArray := []models.CostResource{defaultCost, defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
@@ -217,6 +228,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		// Regex format for self url
 		regSelf := regexp.MustCompile("payments/(.*)")
 		So(regSelf.MatchString(createdPaymentResource.Links.Self), ShouldEqual, true)
+		So(createdPaymentResource.Amount, ShouldEqual, "20")
 	})
 
 	Convey("Valid generated PaymentResource ID", t, func() {
@@ -233,6 +245,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 func TestUnitGetPayment(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	cfg, _ := config.Get()
+	defer resetConfig()
 
 	Convey("Payment ID missing", t, func() {
 		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
@@ -301,8 +314,9 @@ func TestUnitGetPayment(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResource{{Amount: "x"}}
-		jsonResponse, _ := httpmock.NewJsonResponder(500, costArray)
+		costArray := []models.CostResource{defaultCost}
+		costArray[0].Amount = "x"
+		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 		w := httptest.NewRecorder()
@@ -323,7 +337,8 @@ func TestUnitGetPayment(t *testing.T) {
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResource{{Amount: "99"}}
+		costArray := []models.CostResource{defaultCost}
+		costArray[0].Amount = "99"
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 		mockPaymentService.GetPaymentSession(w, req)
@@ -343,7 +358,7 @@ func TestUnitGetPayment(t *testing.T) {
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResource{{Amount: "10"}}
+		costArray := []models.CostResource{defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 		mockPaymentService.GetPaymentSession(w, req)
@@ -353,7 +368,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Get Payment session - success - Multiple costs", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "23", Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "20", Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
@@ -363,7 +378,7 @@ func TestUnitGetPayment(t *testing.T) {
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResource{{Amount: "10"}, {Amount: "13"}}
+		costArray := []models.CostResource{defaultCost, defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 		mockPaymentService.GetPaymentSession(w, req)
@@ -469,4 +484,72 @@ func TestUnitGetTotalAmount(t *testing.T) {
 			So(err.Error(), ShouldEqual, fmt.Sprintf("amount [%s] format incorrect", amount))
 		}
 	})
+}
+
+func TestUnitValidateResource(t *testing.T) {
+	cfg, _ := config.Get()
+	defer resetConfig()
+
+	Convey("Invalid Resource Domain", t, func() {
+		err := validateResource("http://dummy-resource", cfg)
+		So(err.Error(), ShouldStartWith, "invalid resource domain")
+	})
+
+	cfg.DomainWhitelist = "http://dummy-resource"
+
+	Convey("Valid Resource Domain", t, func() {
+		err := validateResource("http://dummy-resource", cfg)
+		So(err, ShouldBeNil)
+	})
+}
+
+func TestUnitValidateCosts(t *testing.T) {
+	Convey("Invalid Cost", t, func() {
+		cost := []models.CostResource{{
+			Amount:                  "10",
+			AvailablePaymentMethods: []string{"method"},
+			ClassOfPayment:          []string{"class"},
+			Description:             "",
+			DescriptionIdentifier:   "identifier",
+			Links: models.Links{Self: "self"},
+		}}
+		So(validateCosts(&cost), ShouldNotBeNil)
+	})
+	Convey("Valid Cost", t, func() {
+		cost := []models.CostResource{{
+			Amount:                  "10",
+			AvailablePaymentMethods: []string{"method"},
+			ClassOfPayment:          []string{"class"},
+			Description:             "desc",
+			DescriptionIdentifier:   "identifier",
+			Links: models.Links{Self: "self"},
+		}}
+		So(validateCosts(&cost), ShouldBeNil)
+	})
+	Convey("Multiple Costs", t, func() {
+		cost := []models.CostResource{
+			{
+				Amount:                  "10",
+				AvailablePaymentMethods: []string{"method"},
+				ClassOfPayment:          []string{"class"},
+				Description:             "desc",
+				DescriptionIdentifier:   "identifier",
+				Links: models.Links{Self: "self"},
+			},
+			{
+				Amount:                  "20",
+				AvailablePaymentMethods: []string{"method"},
+				ClassOfPayment:          []string{"class"},
+				Description:             "",
+				DescriptionIdentifier:   "identifier",
+				Links: models.Links{Self: "self"},
+			},
+		}
+		So(validateCosts(&cost), ShouldNotBeNil)
+	})
+}
+
+func resetConfig() {
+	cfg, _ := config.Get()
+	cfg.DomainWhitelist = ""
 }
