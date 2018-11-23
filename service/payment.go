@@ -27,6 +27,31 @@ type PaymentService struct {
 	Config config.Config
 }
 
+// PaymentStatus Enum Type
+type PaymentStatus int
+
+// Enumeration containing all possible payment statuses
+const (
+	Pending PaymentStatus = 1 + iota
+	InProgress
+	Paid
+	NoFunds
+	Failed
+)
+
+// String representation of payment statuses
+var paymentStatuses = [...]string{
+	"pending",
+	"in-progress",
+	"paid",
+	"no-funds ",
+	"failed",
+}
+
+func (paymentStatus PaymentStatus) String() string {
+	return paymentStatuses[paymentStatus-1]
+}
+
 // CreatePaymentSession creates a payment session and returns a journey URL for the calling app to redirect to
 func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *http.Request) {
 	if req.Body == nil {
@@ -84,14 +109,18 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 		Surname:  surname,
 	}
 	paymentResource.Data.Amount = totalAmount
-	paymentResource.Data.CreatedAt = time.Now()
+	// To match the format time is saved to mongo, e.g. "2018-11-22T08:39:16.782Z", truncate the time
+	paymentResource.Data.CreatedAt = time.Now().Truncate(time.Millisecond)
+
 	paymentResource.Data.Reference = incomingPaymentResourceRequest.Reference
+	paymentResource.Data.Status = Pending.String()
 	paymentResource.ID = generateID()
 
 	journeyURL := service.Config.PaymentsWebURL + "/payments/" + paymentResource.ID + "/pay"
 	paymentResource.Data.Links = models.Links{
 		Journey:  journeyURL,
 		Resource: incomingPaymentResourceRequest.Resource,
+		Self:     fmt.Sprintf("payments/%s", paymentResource.ID),
 	}
 
 	err = service.DAO.CreatePaymentResource(&paymentResource)
