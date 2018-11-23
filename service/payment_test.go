@@ -391,6 +391,7 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
+	reqBodyPatchInvalid := []byte("{\"amount\": \"130.00\"}")
 	reqBodyPatch := []byte("{\"payment_method\": \"dummy-payment-method\",\"status\": \"dummy-status\"}")
 
 	Convey("Payment ID missing", t, func() {
@@ -446,6 +447,46 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 
 		mockPaymentService.PatchPaymentSession(w, req)
 		So(w.Code, ShouldEqual, 500)
+	})
+
+	Convey("No valid fields for the patch request supplied", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+
+		req, err := http.NewRequest("Get", "", nil)
+		So(err, ShouldBeNil)
+
+		q := req.URL.Query()
+		q.Add(":payment_id", "1234")
+		req.URL.RawQuery = q.Encode()
+
+		req.Body = ioutil.NopCloser(bytes.NewReader(reqBodyPatchInvalid))
+		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
+		w := httptest.NewRecorder()
+
+		mockPaymentService.PatchPaymentSession(w, req)
+		So(w.Code, ShouldEqual, 400)
+	})
+
+	Convey("Could not find payment resource to patch", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+
+		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(fmt.Errorf("not found"))
+
+		req, err := http.NewRequest("Get", "", nil)
+		So(err, ShouldBeNil)
+
+		q := req.URL.Query()
+		q.Add(":payment_id", "1234")
+		req.URL.RawQuery = q.Encode()
+
+		req.Body = ioutil.NopCloser(bytes.NewReader(reqBodyPatch))
+		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
+		w := httptest.NewRecorder()
+
+		mockPaymentService.PatchPaymentSession(w, req)
+		So(w.Code, ShouldEqual, 403)
 	})
 
 	Convey("Valid request - Patch resource", t, func() {
