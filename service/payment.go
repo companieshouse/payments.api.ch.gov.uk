@@ -174,8 +174,14 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 
 	err = service.DAO.PatchPaymentResource(id, &PaymentResourceUpdate)
 	if err != nil {
+		if err.Error() == "not found" {
+			log.ErrorR(req, fmt.Errorf("could not find payment resource to patch"))
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
 		log.ErrorR(req, fmt.Errorf("error patching payment session on database: [%v]", err))
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	log.InfoR(req, "Successful PATCH request for payment resource", log.Data{"payment_id": id, "status": http.StatusOK})
