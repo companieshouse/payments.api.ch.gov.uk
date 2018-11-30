@@ -55,7 +55,12 @@ func (m *Mongo) GetPaymentResource(id string) (*models.PaymentResource, error) {
 	}
 	defer paymentSession.Close()
 
-	c := paymentSession.DB("payments").C("payments")
+	cfg, err := config.Get()
+	if err != nil {
+		return nil, fmt.Errorf("error getting config: %s", err)
+	}
+
+	c := paymentSession.DB(cfg.Database).C(cfg.Collection)
 	err = c.FindId(id).One(&resource)
 
 	// If Payment not found in DB, return empty resource
@@ -74,7 +79,11 @@ func (m *Mongo) PatchPaymentResource(id string, paymentUpdate *models.PaymentRes
 	}
 	defer paymentSession.Close()
 
-	c := paymentSession.DB("payments").C("payments")
+	cfg, err := config.Get()
+	if err != nil {
+		return fmt.Errorf("error getting config: %s", err)
+	}
+	c := paymentSession.DB(cfg.Database).C(cfg.Collection)
 
 	patchUpdate := make(bson.M)
 
