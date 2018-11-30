@@ -40,7 +40,11 @@ func (m *Mongo) CreatePaymentResource(paymentResource *models.PaymentResource) e
 	}
 	defer paymentSession.Close()
 
-	c := paymentSession.DB("payments").C("payments")
+	cfg, err := config.Get()
+	if err != nil {
+		return fmt.Errorf("error getting config: %s", err)
+	}
+	c := paymentSession.DB(cfg.Database).C(cfg.Collection)
 
 	return c.Insert(paymentResource)
 }
