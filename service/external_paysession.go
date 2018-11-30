@@ -20,7 +20,7 @@ func (service *PaymentService) CreateExternalPaymentJourney(w http.ResponseWrite
 		return
 	}
 
-	paymentSession, httpStatus, err := (*PaymentService).getPaymentSession(service, id)
+	paymentSession, httpStatus, err := service.getPaymentSession(id)
 	if err != nil {
 		w.WriteHeader(httpStatus)
 		log.ErrorR(req, err)

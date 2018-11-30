@@ -225,8 +225,6 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(regJourney.MatchString(w.Header().Get("Location")), ShouldEqual, true)
 		So(createdPaymentResource.Status, ShouldEqual, Pending.String())
 		So(createdPaymentResource.CreatedBy, ShouldNotBeEmpty)
-
-		// Regex format for self url
 		regSelf := regexp.MustCompile("payments/(.*)")
 		So(regSelf.MatchString(createdPaymentResource.Links.Self), ShouldEqual, true)
 		So(createdPaymentResource.Amount, ShouldEqual, "20.00")

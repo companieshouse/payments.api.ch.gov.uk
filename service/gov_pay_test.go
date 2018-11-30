@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
@@ -77,7 +78,7 @@ func TestUnitGovPay(t *testing.T) {
 		GovPayLinks := models.GovPayLinks{NextURL: NextURL}
 		IncomingGovPayResponse := models.IncomingGovPayResponse{GovPayLinks: GovPayLinks}
 
-		jsonResponse, _ := httpmock.NewJsonResponder(201, IncomingGovPayResponse)
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusCreated, IncomingGovPayResponse)
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
 
 		paymentResourceData := models.PaymentResourceData{Amount: "250"}

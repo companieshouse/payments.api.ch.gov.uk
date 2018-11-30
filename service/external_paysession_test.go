@@ -124,7 +124,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
 		IncomingGovPayResponse := models.IncomingGovPayResponse{}
-		govPayJSONResponse, _ := httpmock.NewJsonResponder(201, IncomingGovPayResponse)
+		govPayJSONResponse, _ := httpmock.NewJsonResponder(http.StatusCreated, IncomingGovPayResponse)
 
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, govPayJSONResponse)
@@ -158,7 +158,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		GovPayLinks := models.GovPayLinks{NextURL: NextURL}
 
 		IncomingGovPayResponse := models.IncomingGovPayResponse{GovPayLinks: GovPayLinks}
-		govPayJSONResponse, _ := httpmock.NewJsonResponder(201, IncomingGovPayResponse)
+		govPayJSONResponse, _ := httpmock.NewJsonResponder(http.StatusCreated, IncomingGovPayResponse)
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, govPayJSONResponse)
 
 		mockPaymentService.CreateExternalPaymentJourney(w, req)
