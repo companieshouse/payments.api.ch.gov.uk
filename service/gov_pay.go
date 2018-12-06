@@ -11,6 +11,16 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 )
 
+type GovpayResponse struct{}
+
+func (g GovpayResponse) checkProvider(id string) {
+	// Calls the getGovPayPaymentState method down below to get state
+
+	// If status is complete and finished, redirect to confirmation page. Or return status to tx web confirmation page?
+
+	// Send payment-processed message to kafka topic
+}
+
 func returnNextURLGovPay(paymentResourceData *models.PaymentResourceData, id string, cfg *config.Config) (string, error) {
 	var govPayRequest models.OutgoingGovPayRequest
 
@@ -59,4 +69,37 @@ func returnNextURLGovPay(paymentResourceData *models.PaymentResourceData, id str
 	}
 
 	return govPayResponse.GovPayLinks.NextURL.HREF, nil
+}
+
+// To check the status of a payment, GET a payment resource from GovPay and read Status from inside the State block
+func getGovPayPaymentState(paymentResource *models.PaymentResource, cfg *config.Config) (*models.State, error) {
+	request, err := http.NewRequest("GET", paymentResource.ExternalPaymentStatusURI, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error generating request for GovPay: [%s]", err)
+	}
+
+	request.Header.Add("accept", "application/json")
+	request.Header.Add("authorization", "Bearer "+cfg.GovPayBearerToken)
+	request.Header.Add("content-type", "application/json")
+
+	// Make call to GovPay to check state of payment
+	resp, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("error sending request to GovPay to check payment status: [%s]", err)
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response from GovPay when checking payment status: [%s]", err)
+	}
+
+	govPayResponse := &models.IncomingGovPayResponse{}
+	err = json.Unmarshal(body, govPayResponse)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response from GovPay when checking payment status: [%s]", err)
+	}
+
+	// Return the status of the payment
+	return &govPayResponse.State, nil
 }
