@@ -16,9 +16,7 @@ type GovpayResponse struct{}
 func (g GovpayResponse) checkProvider(id string) {
 	// Calls the getGovPayPaymentState method down below to get state
 
-	// If status is complete and finished, redirect to confirmation page. Or return status to tx web confirmation page?
-
-	// Send payment-processed message to kafka topic
+	// Return state
 }
 
 func returnNextURLGovPay(paymentResourceData *models.PaymentResourceData, id string, cfg *config.Config) (string, error) {

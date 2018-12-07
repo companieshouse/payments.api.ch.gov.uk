@@ -24,9 +24,7 @@ func Register(r *pat.Router, cfg config.Config) {
 	r.Get("/payments/{payment_id}", p.GetPaymentSession).Name("get-payment")
 	r.Patch("/private/payments/{payment_id}", p.PatchPaymentSession).Name("patch-payment")
 	r.Post("/private/payments/{payment_id}/external-journey", p.CreateExternalPaymentJourney).Name("create-external-payment-journey")
-	//r.Get("/private/govpay/{payment_id}/external-journey-status", p.FinishGovPayJourney).Name("get-external-payment-journey-status")
-	//r.Get("/private/payments/{payment_id}/external-journey-status", p.FinishGovPayJourney).Name("get-external-payment-journey-status")
-	r.Get("/private/callback/govpay/{payment_id}", p.FinishGovPayJourney).Name("finish-govpay-journey")
+	r.Get("/callback/govpay/{payment_id}", p.FinishGovPayJourney).Name("finish-journey")
 }
 
 func healthCheck(w http.ResponseWriter, _ *http.Request) {

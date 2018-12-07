@@ -6,3 +6,4 @@ routes:
   1: ^/payments
   2: ^/payments/.*
   3: ^/private/payments/.*
+  4: ^/callback

@@ -1,4 +1,4 @@
-package service
+package models
 
 // StatusResponse is the generic response
 type StatusResponse struct {

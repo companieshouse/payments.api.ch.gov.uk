@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/davecgh/go-spew/spew"
+
 	"github.com/companieshouse/chs.go/log"
 )
 
@@ -29,13 +31,20 @@ func (service *PaymentService) FinishGovPayJourney(w http.ResponseWriter, req *h
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
+	spew.Dump(paymentResource)
 	// Ensure payment method matches endpoint
-	if paymentResource.Data.PaymentMethod == "GovPay" {
+	if paymentResource.Data.PaymentMethod == "" {
+		log.ErrorR(req, fmt.Errorf("payment method not supplied"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	} else if paymentResource.Data.PaymentMethod == "GovPay" {
 		// Get the state of a GovPay payment
 		GovpayResponse.checkProvider(GovpayResponse{}, id)
+		redirectUser(w, req, paymentResource.RedirectURI, paymentResource.State, paymentResource.Data.Reference, paymentResource.Data.Status)
+		// TODO: Produce kafka message using the produceKafkaMessage in callback_helper
 	} else {
 		log.ErrorR(req, fmt.Errorf("payment method, [%s], for resource [%s] not recognised", paymentResource.Data.PaymentMethod, id))
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 }
