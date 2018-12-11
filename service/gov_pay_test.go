@@ -95,9 +95,9 @@ func TestUnitGovPay(t *testing.T) {
 		IncomingGovPayResponse := models.IncomingGovPayResponse{State: GovPayState}
 
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, IncomingGovPayResponse)
-		httpmock.RegisterResponder("GET", cfg.GovPayURL, jsonResponse)
+		httpmock.RegisterResponder("GET", "testurl", jsonResponse)
 
-		paymentResource := models.PaymentResource{}
+		paymentResource := models.PaymentResource{PaymentStatusURL: "testurl"}
 		govPayResponse, err := getGovPayPaymentState(&paymentResource, cfg)
 
 		So(govPayResponse, ShouldResemble, &GovPayState)

@@ -63,7 +63,7 @@ func returnNextURLGovPay(paymentResourceData *models.PaymentResourceData, id str
 
 // To get the status of a GovPay payment, GET the payment resource from GovPay and return the State block
 func getGovPayPaymentState(paymentResource *models.PaymentResource, cfg *config.Config) (*models.State, error) {
-	request, err := http.NewRequest("GET", paymentResource.PaymentStatusURI, nil)
+	request, err := http.NewRequest("GET", paymentResource.PaymentStatusURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error generating request for GovPay: [%s]", err)
 	}
