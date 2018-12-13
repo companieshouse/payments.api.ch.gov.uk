@@ -31,7 +31,7 @@ func (service *PaymentService) CreateExternalPaymentJourney(w http.ResponseWrite
 
 	switch paymentSession.PaymentMethod {
 	case "GovPay":
-		paymentJourney.NextURL, err = returnNextURLGovPay(paymentSession, id, &service.Config)
+		paymentJourney.NextURL, err = service.returnNextURLGovPay(paymentSession, id, &service.Config)
 		if err != nil {
 			log.ErrorR(req, fmt.Errorf("error communicating with GovPay: [%s]", err))
 			w.WriteHeader(http.StatusInternalServerError)
