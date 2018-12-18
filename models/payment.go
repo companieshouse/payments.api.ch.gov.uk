@@ -14,6 +14,7 @@ type IncomingPaymentResourceRequest struct {
 type PaymentResource struct {
 	ID               string              `json:"_id"                bson:"_id"`
 	PaymentStatusURL string              `json:"payment_status_url" bson:"payment_status_url"`
+	State            string              `json:"state"              bson:"state"`
 	Data             PaymentResourceData `json:"data"               bson:"data"`
 }
 
