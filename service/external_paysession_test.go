@@ -131,6 +131,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		mockPaymentService := createMockPaymentService(mock, cfg)
 
 		mock.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "10.00", Links: models.Links{Resource: "http://dummy-resource"}, PaymentMethod: "GovPay"}}, nil)
+		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(nil)
 
 		path := fmt.Sprintf("/payments/%s", "1234")
 		req, err := http.NewRequest("Get", path, nil)
@@ -146,7 +147,9 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
 		NextURL := models.NextURL{HREF: "nextURL"}
-		GovPayLinks := models.GovPayLinks{NextURL: NextURL}
+		Self := models.Self{HREF: "paymentStatusURL"}
+
+		GovPayLinks := models.GovPayLinks{NextURL: NextURL, Self: Self}
 
 		IncomingGovPayResponse := models.IncomingGovPayResponse{GovPayLinks: GovPayLinks}
 		govPayJSONResponse, _ := httpmock.NewJsonResponder(http.StatusCreated, IncomingGovPayResponse)
