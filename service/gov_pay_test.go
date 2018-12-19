@@ -5,9 +5,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
-
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
+	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
