@@ -115,6 +115,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	paymentResource.Data.CreatedAt = time.Now().Truncate(time.Millisecond)
 
 	paymentResource.Data.Reference = incomingPaymentResourceRequest.Reference
+	paymentResource.State = incomingPaymentResourceRequest.State
 	paymentResource.Data.Status = Pending.String()
 	paymentResource.ID = generateID()
 
