@@ -108,4 +108,20 @@ func TestUnitGovPay(t *testing.T) {
 		So(err, ShouldBeNil)
 	})
 
+	Convey("Valid GET request to GovPay and return status", t, func() {
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		GovPayState := models.State{Status: "complete", Finished: true}
+		IncomingGovPayResponse := models.IncomingGovPayResponse{State: GovPayState}
+
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, IncomingGovPayResponse)
+		httpmock.RegisterResponder("GET", "testurl", jsonResponse)
+
+		paymentResource := models.PaymentResource{PaymentStatusURL: "testurl"}
+		govPayResponse, err := getGovPayPaymentState(&paymentResource, cfg)
+
+		So(govPayResponse, ShouldResemble, &GovPayState)
+		So(err, ShouldBeNil)
+	})
+
 }
