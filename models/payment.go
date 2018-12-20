@@ -12,8 +12,10 @@ type IncomingPaymentResourceRequest struct {
 
 // PaymentResource contains all payment details to be stored in the DB
 type PaymentResource struct {
-	ID   string              `json:"_id"   bson:"_id"`
-	Data PaymentResourceData `json:"data"  bson:"data"`
+	ID               string              `json:"_id"                bson:"_id"`
+	PaymentStatusURL string              `json:"payment_status_url" bson:"payment_status_url"`
+	State            string              `json:"state"              bson:"state"`
+	Data             PaymentResourceData `json:"data"               bson:"data"`
 }
 
 // PaymentResourceData is public facing payment details to be returned in the response

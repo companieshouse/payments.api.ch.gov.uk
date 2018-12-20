@@ -76,7 +76,7 @@ func (m *Mongo) GetPaymentResource(id string) (*models.PaymentResource, error) {
 }
 
 // PatchPaymentResource patches a payment resource from the DB
-func (m *Mongo) PatchPaymentResource(id string, paymentUpdate *models.PaymentResourceData) error {
+func (m *Mongo) PatchPaymentResource(id string, paymentUpdate *models.PaymentResource) error {
 	paymentSession, err := getMongoSession()
 	if err != nil {
 		return err
@@ -92,11 +92,14 @@ func (m *Mongo) PatchPaymentResource(id string, paymentUpdate *models.PaymentRes
 	patchUpdate := make(bson.M)
 
 	// Patch only these fields
-	if paymentUpdate.PaymentMethod != "" {
-		patchUpdate["data.payment_method"] = paymentUpdate.PaymentMethod
+	if paymentUpdate.Data.PaymentMethod != "" {
+		patchUpdate["data.payment_method"] = paymentUpdate.Data.PaymentMethod
 	}
-	if paymentUpdate.Status != "" {
-		patchUpdate["data.status"] = paymentUpdate.Status
+	if paymentUpdate.Data.Status != "" {
+		patchUpdate["data.status"] = paymentUpdate.Data.Status
+	}
+	if paymentUpdate.PaymentStatusURL != "" {
+		patchUpdate["payment_status_url"] = paymentUpdate.PaymentStatusURL
 	}
 
 	updateCall := bson.M{"$set": patchUpdate}
