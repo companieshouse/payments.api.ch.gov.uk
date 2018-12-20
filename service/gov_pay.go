@@ -11,7 +11,7 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 )
 
-func returnNextURLGovPay(paymentResourceData *models.PaymentResourceData, id string, cfg *config.Config) (string, error) {
+func (service *PaymentService) returnNextURLGovPay(paymentResourceData *models.PaymentResourceData, id string, cfg *config.Config) (string, error) {
 	var govPayRequest models.OutgoingGovPayRequest
 
 	amountToPay, err := convertToPenceFromDecimal(paymentResourceData.Amount)
@@ -56,6 +56,14 @@ func returnNextURLGovPay(paymentResourceData *models.PaymentResourceData, id str
 	}
 	if resp.StatusCode != http.StatusCreated {
 		return "", fmt.Errorf("error status [%v] back from GovPay: [%s]", resp.StatusCode, govPayResponse.Description)
+	}
+
+	var PaymentResourceUpdate models.PaymentResource
+	PaymentResourceUpdate.PaymentStatusURL = govPayResponse.GovPayLinks.Self.HREF
+
+	_, err = service.patchPaymentSession(id, PaymentResourceUpdate)
+	if err != nil {
+		return "", fmt.Errorf("error patching payment session with PaymentStatusUrl: [%s]", err)
 	}
 
 	return govPayResponse.GovPayLinks.NextURL.HREF, nil

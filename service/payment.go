@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/mux"
+
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
@@ -113,6 +115,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	paymentResource.Data.CreatedAt = time.Now().Truncate(time.Millisecond)
 
 	paymentResource.Data.Reference = incomingPaymentResourceRequest.Reference
+	paymentResource.State = incomingPaymentResourceRequest.State
 	paymentResource.Data.Status = Pending.String()
 	paymentResource.ID = generateID()
 
@@ -146,7 +149,8 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 
 // GetPaymentSession retrieves the payment session
 func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *http.Request) {
-	id := req.URL.Query().Get(":payment_id")
+	vars := mux.Vars(req)
+	id := vars["payment_id"]
 	if id == "" {
 		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
 		w.WriteHeader(http.StatusBadRequest)
@@ -173,7 +177,8 @@ func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *htt
 
 // PatchPaymentSession patches and updates the payment session
 func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *http.Request) {
-	id := req.URL.Query().Get(":payment_id")
+	vars := mux.Vars(req)
+	id := vars["payment_id"]
 	if id == "" {
 		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
 		w.WriteHeader(http.StatusBadRequest)
@@ -187,33 +192,42 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 	}
 
 	requestDecoder := json.NewDecoder(req.Body)
-	var PaymentResourceUpdate models.PaymentResourceData
-	err := requestDecoder.Decode(&PaymentResourceUpdate)
+	var PaymentResourceUpdateData models.PaymentResourceData
+	err := requestDecoder.Decode(&PaymentResourceUpdateData)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("request body invalid: [%v]", err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if PaymentResourceUpdate.PaymentMethod == "" && PaymentResourceUpdate.Status == "" {
-		log.ErrorR(req, fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", id))
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
+	var PaymentResourceUpdate models.PaymentResource
+	PaymentResourceUpdate.Data = PaymentResourceUpdateData
 
-	err = service.DAO.PatchPaymentResource(id, &PaymentResourceUpdate)
+	httpStatus, err := service.patchPaymentSession(id, PaymentResourceUpdate)
 	if err != nil {
-		if err.Error() == "not found" {
-			log.ErrorR(req, fmt.Errorf("could not find payment resource to patch"))
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
-		log.ErrorR(req, fmt.Errorf("error patching payment session on database: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(httpStatus)
+		log.ErrorR(req, err)
 		return
 	}
 
 	log.InfoR(req, "Successful PATCH request for payment resource", log.Data{"payment_id": id, "status": http.StatusOK})
+}
+
+func (service *PaymentService) patchPaymentSession(id string, PaymentResourceUpdate models.PaymentResource) (int, error) {
+
+	if PaymentResourceUpdate.Data.PaymentMethod == "" && PaymentResourceUpdate.Data.Status == "" && PaymentResourceUpdate.PaymentStatusURL == "" {
+		return http.StatusBadRequest, fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", id)
+	}
+
+	err := service.DAO.PatchPaymentResource(id, &PaymentResourceUpdate)
+	if err != nil {
+		if err.Error() == "not found" {
+			return http.StatusForbidden, fmt.Errorf("could not find payment resource to patch")
+		}
+		return http.StatusInternalServerError, fmt.Errorf("error patching payment session on database: [%v]", err)
+	}
+
+	return http.StatusOK, nil
 }
 
 func (service *PaymentService) getPaymentSession(id string) (*models.PaymentResourceData, int, error) {

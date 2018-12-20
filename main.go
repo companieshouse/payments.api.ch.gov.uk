@@ -11,7 +11,7 @@ import (
 
 	eric "github.com/companieshouse/eric/chain" // Identity bridge
 
-	"github.com/gorilla/pat"
+	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 )
 
@@ -25,7 +25,7 @@ func main() {
 		return
 	}
 
-	router := pat.New()
+	router := mux.NewRouter()
 	chain := alice.New()
 
 	chain = eric.Register(chain)

@@ -9,11 +9,13 @@ import (
 
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/gorilla/mux"
 )
 
 // CreateExternalPaymentJourney creates an external payment session with a Payment Provider that is given, e.g: GovPay
 func (service *PaymentService) CreateExternalPaymentJourney(w http.ResponseWriter, req *http.Request) {
-	id := req.URL.Query().Get(":payment_id")
+	vars := mux.Vars(req)
+	id := vars["payment_id"]
 	if id == "" {
 		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
 		w.WriteHeader(http.StatusBadRequest)
@@ -31,7 +33,7 @@ func (service *PaymentService) CreateExternalPaymentJourney(w http.ResponseWrite
 
 	switch paymentSession.PaymentMethod {
 	case "GovPay":
-		paymentJourney.NextURL, err = returnNextURLGovPay(paymentSession, id, &service.Config)
+		paymentJourney.NextURL, err = service.returnNextURLGovPay(paymentSession, id, &service.Config)
 		if err != nil {
 			log.ErrorR(req, fmt.Errorf("error communicating with GovPay: [%s]", err))
 			w.WriteHeader(http.StatusInternalServerError)
