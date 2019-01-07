@@ -14,6 +14,7 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/golang/mock/gomock"
+	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 	"gopkg.in/jarcoal/httpmock.v1"
 )
@@ -162,7 +163,9 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		mockPaymentService := createMockPaymentService(mock, cfg)
 		mock.EXPECT().CreatePaymentResource(gomock.Any())
 
-		req, err := http.NewRequest("Get", "", nil)
+		path := fmt.Sprintf("/payments/%s", "1234")
+		req, err := http.NewRequest("Get", path, nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		So(err, ShouldBeNil)
 
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
@@ -180,11 +183,18 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		if err := json.Unmarshal(responseByteArray, &createdPaymentResource); err != nil {
 			panic(err)
 		}
+
 		So(createdPaymentResource.Links.Journey, ShouldNotBeEmpty)
-		re := regexp.MustCompile("https://payments.companieshouse.gov.uk/payments/(.*)/pay")
-		So(re.MatchString(createdPaymentResource.Links.Journey), ShouldEqual, true)
-		So(re.MatchString(w.Header().Get("Location")), ShouldEqual, true)
+		// Regex format for journey url
+		regJourney := regexp.MustCompile("https://payments.companieshouse.gov.uk/payments/(.*)/pay")
+		So(regJourney.MatchString(createdPaymentResource.Links.Journey), ShouldEqual, true)
+		So(regJourney.MatchString(w.Header().Get("Location")), ShouldEqual, true)
+		So(createdPaymentResource.Status, ShouldEqual, Pending.String())
 		So(createdPaymentResource.CreatedBy, ShouldNotBeEmpty)
+		// Regex format for self url
+		regSelf := regexp.MustCompile("payments/(.*)")
+		So(regSelf.MatchString(createdPaymentResource.Links.Self), ShouldEqual, true)
+
 	})
 
 	Convey("Valid request - multiple costs", t, func() {
@@ -212,11 +222,14 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		}
 
 		So(createdPaymentResource.Links.Journey, ShouldNotBeEmpty)
-		re := regexp.MustCompile("https://payments.companieshouse.gov.uk/payments/(.*)/pay")
-		So(re.MatchString(createdPaymentResource.Links.Journey), ShouldEqual, true)
-		So(re.MatchString(w.Header().Get("Location")), ShouldEqual, true)
-
+		// Regex format for journey url
+		regJourney := regexp.MustCompile("https://payments.companieshouse.gov.uk/payments/(.*)/pay")
+		So(regJourney.MatchString(createdPaymentResource.Links.Journey), ShouldEqual, true)
+		So(regJourney.MatchString(w.Header().Get("Location")), ShouldEqual, true)
+		So(createdPaymentResource.Status, ShouldEqual, Pending.String())
 		So(createdPaymentResource.CreatedBy, ShouldNotBeEmpty)
+		regSelf := regexp.MustCompile("payments/(.*)")
+		So(regSelf.MatchString(createdPaymentResource.Links.Self), ShouldEqual, true)
 		So(createdPaymentResource.Amount, ShouldEqual, "20.00")
 	})
 
@@ -249,10 +262,9 @@ func TestUnitGetPayment(t *testing.T) {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 		mock.EXPECT().GetPaymentResource("invalid").Return(nil, nil)
-		req, err := http.NewRequest("Get", "", nil)
-		q := req.URL.Query()
-		q.Add(":payment_id", "invalid")
-		req.URL.RawQuery = q.Encode()
+		path := fmt.Sprintf("/payments/%s", "invalid")
+		req, err := http.NewRequest("Get", path, nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "invalid"})
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockPaymentService.GetPaymentSession(w, req)
@@ -263,11 +275,10 @@ func TestUnitGetPayment(t *testing.T) {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 		mock.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResource{}, fmt.Errorf("error"))
-		req, err := http.NewRequest("Get", "", nil)
+		path := fmt.Sprintf("/payments/%s", "1234")
+		req, err := http.NewRequest("Get", path, nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		So(err, ShouldBeNil)
-		q := req.URL.Query()
-		q.Add(":payment_id", "1234")
-		req.URL.RawQuery = q.Encode()
 		w := httptest.NewRecorder()
 		mockPaymentService.GetPaymentSession(w, req)
 		So(w.Code, ShouldEqual, 500)
@@ -277,11 +288,10 @@ func TestUnitGetPayment(t *testing.T) {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 		mock.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResource{}, nil)
-		req, err := http.NewRequest("Get", "", nil)
+		path := fmt.Sprintf("/payments/%s", "1234")
+		req, err := http.NewRequest("Get", path, nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		So(err, ShouldBeNil)
-		q := req.URL.Query()
-		q.Add(":payment_id", "1234")
-		req.URL.RawQuery = q.Encode()
 		w := httptest.NewRecorder()
 		mockPaymentService.GetPaymentSession(w, req)
 		So(w.Code, ShouldEqual, 400)
@@ -294,12 +304,11 @@ func TestUnitGetPayment(t *testing.T) {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "x", Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
-		req, err := http.NewRequest("Get", "", nil)
+		path := fmt.Sprintf("/payments/%s", "1234")
+		req, err := http.NewRequest("Get", path, nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
-		q := req.URL.Query()
-		q.Add(":payment_id", "1234")
-		req.URL.RawQuery = q.Encode()
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
@@ -317,12 +326,11 @@ func TestUnitGetPayment(t *testing.T) {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "100", Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
-		req, err := http.NewRequest("Get", "", nil)
+		path := fmt.Sprintf("/payments/%s", "1234")
+		req, err := http.NewRequest("Get", path, nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
-		q := req.URL.Query()
-		q.Add(":payment_id", "1234")
-		req.URL.RawQuery = q.Encode()
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
@@ -338,12 +346,11 @@ func TestUnitGetPayment(t *testing.T) {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "10.00", Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
-		req, err := http.NewRequest("Get", "", nil)
+		path := fmt.Sprintf("/payments/%s", "1234")
+		req, err := http.NewRequest("Get", path, nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
-		q := req.URL.Query()
-		q.Add(":payment_id", "1234")
-		req.URL.RawQuery = q.Encode()
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
@@ -358,12 +365,11 @@ func TestUnitGetPayment(t *testing.T) {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "20.00", Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
-		req, err := http.NewRequest("Get", "", nil)
+		path := fmt.Sprintf("/payments/%s", "1234")
+		req, err := http.NewRequest("Get", path, nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		So(err, ShouldBeNil)
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
-		q := req.URL.Query()
-		q.Add(":payment_id", "1234")
-		req.URL.RawQuery = q.Encode()
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
@@ -393,11 +399,11 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 
 	Convey("Empty Request Body", t, func() {
 		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
-		req, err := http.NewRequest("GET", "", nil)
+		path := fmt.Sprintf("/payments/%s", "1234")
+		req, err := http.NewRequest("Get", path, nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		So(err, ShouldBeNil)
-		q := req.URL.Query()
-		q.Add(":payment_id", "1234")
-		req.URL.RawQuery = q.Encode()
+
 		w := httptest.NewRecorder()
 		mockPaymentService.PatchPaymentSession(w, req)
 		So(w.Code, ShouldEqual, 400)
@@ -405,11 +411,10 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 
 	Convey("Invalid Request Body", t, func() {
 		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
-		req, err := http.NewRequest("GET", "", nil)
+		path := fmt.Sprintf("/payments/%s", "1234")
+		req, err := http.NewRequest("Get", path, nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		So(err, ShouldBeNil)
-		q := req.URL.Query()
-		q.Add(":payment_id", "1234")
-		req.URL.RawQuery = q.Encode()
 		req.Body = ioutil.NopCloser(bytes.NewReader([]byte("invalid_body")))
 		w := httptest.NewRecorder()
 		mockPaymentService.PatchPaymentSession(w, req)
@@ -422,12 +427,10 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 
 		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(fmt.Errorf("error"))
 
-		req, err := http.NewRequest("Get", "", nil)
+		path := fmt.Sprintf("/payments/%s", "1234")
+		req, err := http.NewRequest("Get", path, nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		So(err, ShouldBeNil)
-
-		q := req.URL.Query()
-		q.Add(":payment_id", "1234")
-		req.URL.RawQuery = q.Encode()
 
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBodyPatch))
 		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
@@ -441,12 +444,10 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 
-		req, err := http.NewRequest("Get", "", nil)
+		path := fmt.Sprintf("/payments/%s", "1234")
+		req, err := http.NewRequest("Get", path, nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		So(err, ShouldBeNil)
-
-		q := req.URL.Query()
-		q.Add(":payment_id", "1234")
-		req.URL.RawQuery = q.Encode()
 
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBodyPatchInvalid))
 		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
@@ -462,12 +463,10 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 
 		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(fmt.Errorf("not found"))
 
-		req, err := http.NewRequest("Get", "", nil)
+		path := fmt.Sprintf("/payments/%s", "1234")
+		req, err := http.NewRequest("Get", path, nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		So(err, ShouldBeNil)
-
-		q := req.URL.Query()
-		q.Add(":payment_id", "1234")
-		req.URL.RawQuery = q.Encode()
 
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBodyPatch))
 		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
@@ -483,12 +482,10 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 
 		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(nil)
 
-		req, err := http.NewRequest("Get", "", nil)
+		path := fmt.Sprintf("/payments/%s", "1234")
+		req, err := http.NewRequest("Get", path, nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		So(err, ShouldBeNil)
-
-		q := req.URL.Query()
-		q.Add(":payment_id", "1234")
-		req.URL.RawQuery = q.Encode()
 
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBodyPatch))
 		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")

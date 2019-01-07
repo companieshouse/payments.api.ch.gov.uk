@@ -62,7 +62,7 @@ func returnNextURLGovPay(paymentResourceData *models.PaymentResourceData, id str
 	if err != nil {
 		return "", fmt.Errorf("error reading response from GovPay: [%s]", err)
 	}
-	if resp.StatusCode != 201 {
+	if resp.StatusCode != http.StatusCreated {
 		return "", fmt.Errorf("error status [%v] back from GovPay: [%s]", resp.StatusCode, govPayResponse.Description)
 	}
 

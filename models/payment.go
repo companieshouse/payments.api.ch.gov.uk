@@ -29,7 +29,6 @@ type PaymentResourceData struct {
 	Description             string         `json:"description"                         bson:"description"`
 	Links                   Links          `json:"links"                               bson:"links"`
 	PaymentMethod           string         `json:"payment_method,omitempty"            bson:"payment_method"`
-	RedirectURI             string         `json:"redirect_uri"                        bson:"redirect_uri"`
 	Reference               string         `json:"reference,omitempty"                 bson:"reference,omitempty"`
 	Status                  string         `json:"status"                              bson:"status"`
 	Costs                   []CostResource `json:"items"`

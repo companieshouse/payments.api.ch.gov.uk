@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/mux"
+
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
@@ -146,7 +148,8 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 
 // GetPaymentSession retrieves the payment session
 func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *http.Request) {
-	id := req.URL.Query().Get(":payment_id")
+	vars := mux.Vars(req)
+	id := vars["payment_id"]
 	if id == "" {
 		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
 		w.WriteHeader(http.StatusBadRequest)
@@ -173,7 +176,8 @@ func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *htt
 
 // PatchPaymentSession patches and updates the payment session
 func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *http.Request) {
-	id := req.URL.Query().Get(":payment_id")
+	vars := mux.Vars(req)
+	id := vars["payment_id"]
 	if id == "" {
 		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
 		w.WriteHeader(http.StatusBadRequest)

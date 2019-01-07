@@ -76,7 +76,7 @@ type NextURLPost struct {
 
 // Params contains the charge token for the payment
 type Params struct {
-	ChargeTokenId string `json:"chargeTokenId"`
+	ChargeTokenID string `json:"chargeTokenId"`
 }
 
 // Events contains a link to payment events
