@@ -39,7 +39,14 @@ func (service *PaymentService) FinishGovPayJourney(w http.ResponseWriter, req *h
 		return
 	} else if paymentResource.Data.PaymentMethod == "GovPay" {
 		// Get the state of a GovPay payment
-		GovpayResponse.checkProvider(GovpayResponse{}, id)
+		statusResponse, err := GovpayResponse.checkProvider(GovpayResponse{}, paymentResource)
+		if err != nil {
+			log.ErrorR(req, fmt.Errorf("error getting payment status from govpay: [%v]", err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		// Set the status of the payment
+		paymentResource.Data.Status = statusResponse.Status
 		redirectUser(w, req, paymentResource.RedirectURI, paymentResource.State, paymentResource.Data.Reference, paymentResource.Data.Status)
 		// TODO: Produce kafka message using the produceKafkaMessage in callback_helper
 	} else {

@@ -13,10 +13,22 @@ import (
 
 type GovpayResponse struct{}
 
-func (g GovpayResponse) checkProvider(id string) {
-	// Calls the getGovPayPaymentState method down below to get state
-
+func (g GovpayResponse) checkProvider(paymentResource *models.PaymentResource) (*models.StatusResponse, error){
+	// Call the getGovPayPaymentState method down below to get state
+	cfg, err := config.Get()
+	if err != nil {
+		return nil, fmt.Errorf("error getting config: [%s]", err)
+	}
+	state, err := getGovPayPaymentState(paymentResource, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("error getting state of GovPay payment: [%s]", err)
+	}
 	// Return state
+	if state.Finished == true && state.Status == "complete" {
+		return &models.StatusResponse{ "paid" }, nil
+	} else {
+		return &models.StatusResponse{ "failed" }, nil
+	}
 }
 
 func returnNextURLGovPay(paymentResourceData *models.PaymentResourceData, id string, cfg *config.Config) (string, error) {
