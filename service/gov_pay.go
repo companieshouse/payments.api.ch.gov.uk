@@ -31,7 +31,7 @@ func (g GovpayResponse) checkProvider(paymentResource *models.PaymentResource) (
 	}
 }
 
-func returnNextURLGovPay(paymentResourceData *models.PaymentResourceData, id string, cfg *config.Config) (string, error) {
+func (service *PaymentService) returnNextURLGovPay(paymentResourceData *models.PaymentResourceData, id string, cfg *config.Config) (string, error) {
 	var govPayRequest models.OutgoingGovPayRequest
 
 	amountToPay, err := convertToPenceFromDecimal(paymentResourceData.Amount)
@@ -78,10 +78,18 @@ func returnNextURLGovPay(paymentResourceData *models.PaymentResourceData, id str
 		return "", fmt.Errorf("error status [%v] back from GovPay: [%s]", resp.StatusCode, govPayResponse.Description)
 	}
 
+	var PaymentResourceUpdate models.PaymentResource
+	PaymentResourceUpdate.ExternalPaymentStatusURI = govPayResponse.GovPayLinks.Self.HREF
+
+	_, err = service.patchPaymentSession(id, PaymentResourceUpdate)
+	if err != nil {
+		return "", fmt.Errorf("error patching payment session with PaymentStatusUrl: [%s]", err)
+	}
+
 	return govPayResponse.GovPayLinks.NextURL.HREF, nil
 }
 
-// To check the status of a payment, GET a payment resource from GovPay and read Status from inside the State block
+// To get the status of a GovPay payment, GET the payment resource from GovPay and return the State block
 func getGovPayPaymentState(paymentResource *models.PaymentResource, cfg *config.Config) (*models.State, error) {
 	request, err := http.NewRequest("GET", paymentResource.ExternalPaymentStatusURI, nil)
 	if err != nil {
