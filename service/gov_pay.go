@@ -13,7 +13,7 @@ import (
 
 type GovpayResponse struct{}
 
-func (g GovpayResponse) checkProvider(paymentResource *models.PaymentResource) (*models.StatusResponse, error){
+func (g GovpayResponse) checkProvider(paymentResource *models.PaymentResource) (*models.StatusResponse, error) {
 	// Call the getGovPayPaymentState method down below to get state
 	cfg, err := config.Get()
 	if err != nil {
@@ -25,9 +25,9 @@ func (g GovpayResponse) checkProvider(paymentResource *models.PaymentResource) (
 	}
 	// Return state
 	if state.Finished == true && state.Status == "complete" {
-		return &models.StatusResponse{ "paid" }, nil
+		return &models.StatusResponse{"paid"}, nil
 	} else {
-		return &models.StatusResponse{ "failed" }, nil
+		return &models.StatusResponse{"failed"}, nil
 	}
 }
 
@@ -42,7 +42,7 @@ func returnNextURLGovPay(paymentResourceData *models.PaymentResourceData, id str
 	govPayRequest.Amount = amountToPay
 	govPayRequest.Description = "Companies House Payment" // TODO - Make description mandatory when creating payment-session so this doesn't have to be hardcoded
 	govPayRequest.Reference = paymentResourceData.Reference
-	govPayRequest.ReturnURL = cfg.PaymentsWebURL + "/payments/" + id + "/paymentStatus" // TODO - Change this URL when payment.web has been updated to contain a return page
+	govPayRequest.ReturnURL = "http://chs-dev:4001/callback/payments/govpay/32343701544453954021" // TODO - Change this URL when payment.web has been updated to contain a return page
 
 	requestBody, err := json.Marshal(govPayRequest)
 	if err != nil {

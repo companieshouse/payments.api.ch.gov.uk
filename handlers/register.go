@@ -25,7 +25,7 @@ func Register(r *mux.Router, cfg config.Config) {
 	r.HandleFunc("/payments/{payment_id}", p.GetPaymentSession).Methods("GET").Name("get-payment")
 	r.HandleFunc("/private/payments/{payment_id}", p.PatchPaymentSession).Methods("PATCH").Name("patch-payment")
 	r.HandleFunc("/private/payments/{payment_id}/external-journey", p.CreateExternalPaymentJourney).Methods("POST").Name("create-external-payment-journey")
-	r.HandleFunc("/callback/govpay/{payment_id}", p.FinishGovPayJourney).Methods("GET").Name("finish-govpay-journey")
+	r.HandleFunc("/callback/payments/govpay/{payment_id}", p.HandleGovPayCallback).Methods("GET").Name("handle-govpay-callback")
 }
 
 func healthCheck(w http.ResponseWriter, _ *http.Request) {

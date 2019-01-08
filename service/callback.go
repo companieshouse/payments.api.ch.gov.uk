@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"github.com/gorilla/mux"
 	"net/http"
 
 	"github.com/davecgh/go-spew/spew"
@@ -9,10 +10,15 @@ import (
 	"github.com/companieshouse/chs.go/log"
 )
 
-// GetExternalPaymentJourney gets an external payment session status from a payment provider, e.g: GovPay
-func (service *PaymentService) FinishGovPayJourney(w http.ResponseWriter, req *http.Request) {
+// HandleGovPayCallback handles the callback from Govpay and redirects the user
+func (service *PaymentService) HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
+	spew.Dump(req.URL.RawQuery)
+	spew.Dump(req.URL.Query())
+	spew.Dump(req.URL)
+	spew.Dump(req.URL.Query())
 	// Get the payment session
-	id := req.URL.Query().Get(":payment_id")
+	vars := mux.Vars(req)
+	id := vars["payment_id"]
 	if id == "" {
 		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
 		w.WriteHeader(http.StatusBadRequest)
@@ -33,11 +39,7 @@ func (service *PaymentService) FinishGovPayJourney(w http.ResponseWriter, req *h
 	}
 	spew.Dump(paymentResource)
 	// Ensure payment method matches endpoint
-	if paymentResource.Data.PaymentMethod == "" {
-		log.ErrorR(req, fmt.Errorf("payment method not supplied"))
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	} else if paymentResource.Data.PaymentMethod == "GovPay" {
+	if paymentResource.Data.PaymentMethod == "GovPay" {
 		// Get the state of a GovPay payment
 		statusResponse, err := GovpayResponse.checkProvider(GovpayResponse{}, paymentResource)
 		if err != nil {
@@ -47,8 +49,9 @@ func (service *PaymentService) FinishGovPayJourney(w http.ResponseWriter, req *h
 		}
 		// Set the status of the payment
 		paymentResource.Data.Status = statusResponse.Status
-		redirectUser(w, req, paymentResource.RedirectURI, paymentResource.State, paymentResource.Data.Reference, paymentResource.Data.Status)
+		UpdatePaymentStatus(statusResponse, paymentResource)
 		// TODO: Produce kafka message using the produceKafkaMessage in callback_helper
+		redirectUser(w, req, paymentResource.RedirectURI, paymentResource.State, paymentResource.Data.Reference, paymentResource.Data.Status)
 	} else {
 		log.ErrorR(req, fmt.Errorf("payment method, [%s], for resource [%s] not recognised", paymentResource.Data.PaymentMethod, id))
 		w.WriteHeader(http.StatusBadRequest)
