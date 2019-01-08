@@ -5,8 +5,6 @@ import (
 	"github.com/gorilla/mux"
 	"net/http"
 
-	"github.com/davecgh/go-spew/spew"
-
 	"github.com/companieshouse/chs.go/log"
 )
 
@@ -33,7 +31,7 @@ func (service *PaymentService) HandleGovPayCallback(w http.ResponseWriter, req *
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	spew.Dump(paymentResource)
+
 	// Ensure payment method matches endpoint
 	if paymentResource.Data.PaymentMethod == "GovPay" {
 		// Get the state of a GovPay payment

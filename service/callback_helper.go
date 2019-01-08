@@ -3,7 +3,6 @@ package service
 import (
 	"fmt"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
-	"github.com/davecgh/go-spew/spew"
 	"log"
 	"net/http"
 	"os"
@@ -23,7 +22,6 @@ func redirectUser(w http.ResponseWriter, r *http.Request, redirectURI string, st
 	query.Add("status", status)
 
 	generatedURL := fmt.Sprintf("%s?%s", redirectURI, query.Encode())
-	spew.Dump(generatedURL)
 	http.Redirect(w, r, generatedURL, http.StatusSeeOther)
 }
 
@@ -31,7 +29,7 @@ func produceKafkaMessage() {
 	// TODO: Produce message to payment-processed topic
 }
 
-func (service *PaymentService) UpdatePaymentStatus(s models.StatusResponse, p models.PaymentResource) error{
+func (service *PaymentService) UpdatePaymentStatus(s models.StatusResponse, p models.PaymentResource) error {
 	p.Data.Status = s.Status
 	_, err := service.patchPaymentSession(p.ID, p)
 
