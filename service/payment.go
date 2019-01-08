@@ -215,7 +215,7 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 
 func (service *PaymentService) patchPaymentSession(id string, PaymentResourceUpdate models.PaymentResource) (int, error) {
 
-	if PaymentResourceUpdate.Data.PaymentMethod == "" && PaymentResourceUpdate.Data.Status == "" && PaymentResourceUpdate.PaymentStatusURL == "" {
+	if PaymentResourceUpdate.Data.PaymentMethod == "" && PaymentResourceUpdate.Data.Status == "" && PaymentResourceUpdate.ExternalPaymentStatusURI == "" {
 		return http.StatusBadRequest, fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", id)
 	}
 

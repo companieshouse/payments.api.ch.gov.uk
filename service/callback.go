@@ -44,8 +44,12 @@ func (service *PaymentService) HandleGovPayCallback(w http.ResponseWriter, req *
 			return
 		}
 		// Set the status of the payment
-		paymentResource.Data.Status = statusResponse.Status
-		UpdatePaymentStatus(statusResponse, paymentResource)
+		err = service.UpdatePaymentStatus(*statusResponse, *paymentResource)
+		if err != nil {
+			log.ErrorR(req, fmt.Errorf("error setting payment status: [%v]", err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		// TODO: Produce kafka message using the produceKafkaMessage in callback_helper
 		redirectUser(w, req, paymentResource.RedirectURI, paymentResource.State, paymentResource.Data.Reference, paymentResource.Data.Status)
 	} else {

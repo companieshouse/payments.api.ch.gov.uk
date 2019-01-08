@@ -42,7 +42,7 @@ func (service *PaymentService) returnNextURLGovPay(paymentResourceData *models.P
 	govPayRequest.Amount = amountToPay
 	govPayRequest.Description = "Companies House Payment" // TODO - Make description mandatory when creating payment-session so this doesn't have to be hardcoded
 	govPayRequest.Reference = paymentResourceData.Reference
-	govPayRequest.ReturnURL = "http://chs-dev:4001/callback/payments/govpay/32343701544453954021" // TODO - Change this URL when payment.web has been updated to contain a return page
+	govPayRequest.ReturnURL = fmt.Sprintf("%s/callback/payments/govpay/%s", cfg.PaymentsApiURL, id) // TODO - Change this URL when payment.web has been updated to contain a return page
 
 	requestBody, err := json.Marshal(govPayRequest)
 	if err != nil {
