@@ -12,10 +12,6 @@ import (
 
 // HandleGovPayCallback handles the callback from Govpay and redirects the user
 func (service *PaymentService) HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
-	spew.Dump(req.URL.RawQuery)
-	spew.Dump(req.URL.Query())
-	spew.Dump(req.URL)
-	spew.Dump(req.URL.Query())
 	// Get the payment session
 	vars := mux.Vars(req)
 	id := vars["payment_id"]

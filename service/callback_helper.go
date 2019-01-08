@@ -33,32 +33,5 @@ func produceKafkaMessage() {
 }
 
 func (service *PaymentService) UpdatePaymentStatus(s models.StatusResponse, p models.PaymentResource) {
-	//requestDecoder := json.NewDecoder(p)
-	//var PaymentResourceUpdate models.PaymentResourceData
-	//err := requestDecoder.Decode(&PaymentResourceUpdate)
-	//if err != nil {
-	//	log.ErrorR(req, fmt.Errorf("request body invalid: [%v]", err))
-	//	w.WriteHeader(http.StatusBadRequest)
-	//	return
-	//}
-	//
-	//if PaymentResourceUpdate.PaymentMethod == "" && PaymentResourceUpdate.Status == "" {
-	//	log.ErrorR(req, fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", id))
-	//	w.WriteHeader(http.StatusBadRequest)
-	//	return
-	//}
-
-	err := service.DAO.PatchPaymentResource(p.ID, &p.Data)
-	if err != nil {
-		//if err.Error() == "not found" {
-		//	log.ErrorR(req, fmt.Errorf("could not find payment resource to patch"))
-		//	w.WriteHeader(http.StatusForbidden)
-		//	return
-		//}
-		//log.ErrorR(req, fmt.Errorf("error patching payment session on database: [%v]", err))
-		//w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	return
-	//log.InfoR(req, "Successful PATCH request for payment resource", log.Data{"payment_id": id, "status": http.StatusOK})
+	
 }
