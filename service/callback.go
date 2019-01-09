@@ -50,7 +50,7 @@ func (service *PaymentService) HandleGovPayCallback(w http.ResponseWriter, req *
 		}
 
 		// TODO: Produce kafka message using the produceKafkaMessage in callback_helper
-		redirectUser(w, req, paymentResource.RedirectURI, paymentResource.State, paymentResource.Data.Reference, paymentResource.Data.Status)
+		redirectUser(w, req, paymentResource.RedirectURI, paymentResource.State, paymentResource.Data.Reference, statusResponse.Status)
 	} else {
 		log.ErrorR(req, fmt.Errorf("payment method, [%s], for resource [%s] not recognised", paymentResource.Data.PaymentMethod, id))
 		w.WriteHeader(http.StatusBadRequest)
