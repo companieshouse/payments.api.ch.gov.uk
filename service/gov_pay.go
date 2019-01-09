@@ -19,12 +19,13 @@ func (g GovpayResponse) checkProvider(paymentResource *models.PaymentResource) (
 	if err != nil {
 		return nil, fmt.Errorf("error getting config: [%s]", err)
 	}
+
 	state, err := getGovPayPaymentState(paymentResource, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("error getting state of GovPay payment: [%s]", err)
 	}
 	// Return state
-	if state.Finished == true && state.Status == "complete" {
+	if state.Finished == true && state.Status == "success" {
 		return &models.StatusResponse{"paid"}, nil
 	} else {
 		return &models.StatusResponse{"failed"}, nil

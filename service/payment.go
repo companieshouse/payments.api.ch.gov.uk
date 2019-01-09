@@ -116,6 +116,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 
 	paymentResource.Data.Reference = incomingPaymentResourceRequest.Reference
 	paymentResource.State = incomingPaymentResourceRequest.State
+	paymentResource.RedirectURI = incomingPaymentResourceRequest.RedirectURI
 	paymentResource.Data.Status = Pending.String()
 	paymentResource.ID = generateID()
 
