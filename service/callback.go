@@ -48,6 +48,7 @@ func (service *PaymentService) HandleGovPayCallback(w http.ResponseWriter, req *
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+
 		// TODO: Produce kafka message using the produceKafkaMessage in callback_helper
 		redirectUser(w, req, paymentResource.RedirectURI, paymentResource.State, paymentResource.Data.Reference, paymentResource.Data.Status)
 	} else {
