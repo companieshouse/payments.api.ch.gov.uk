@@ -11,6 +11,26 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 )
 
+type GovpayResponse struct{}
+
+func (g GovpayResponse) checkProvider(paymentResource *models.PaymentResource) (*models.StatusResponse, error) {
+	// Call the getGovPayPaymentState method down below to get state
+	cfg, err := config.Get()
+	if err != nil {
+		return nil, fmt.Errorf("error getting config: [%s]", err)
+	}
+	state, err := getGovPayPaymentState(paymentResource, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("error getting state of GovPay payment: [%s]", err)
+	}
+	// Return state
+	if state.Finished == true && state.Status == "complete" {
+		return &models.StatusResponse{"paid"}, nil
+	} else {
+		return &models.StatusResponse{"failed"}, nil
+	}
+}
+
 func (service *PaymentService) returnNextURLGovPay(paymentResourceData *models.PaymentResourceData, id string, cfg *config.Config) (string, error) {
 	var govPayRequest models.OutgoingGovPayRequest
 
@@ -22,7 +42,7 @@ func (service *PaymentService) returnNextURLGovPay(paymentResourceData *models.P
 	govPayRequest.Amount = amountToPay
 	govPayRequest.Description = "Companies House Payment" // TODO - Make description mandatory when creating payment-session so this doesn't have to be hardcoded
 	govPayRequest.Reference = paymentResourceData.Reference
-	govPayRequest.ReturnURL = cfg.PaymentsWebURL + "/payments/" + id + "/paymentStatus" // TODO - Change this URL when payment.web has been updated to contain a return page
+	govPayRequest.ReturnURL = fmt.Sprintf("%s/callback/payments/govpay/%s", cfg.PaymentsApiURL, id) // TODO - Change this URL when payment.web has been updated to contain a return page
 
 	requestBody, err := json.Marshal(govPayRequest)
 	if err != nil {
@@ -59,7 +79,7 @@ func (service *PaymentService) returnNextURLGovPay(paymentResourceData *models.P
 	}
 
 	var PaymentResourceUpdate models.PaymentResource
-	PaymentResourceUpdate.PaymentStatusURL = govPayResponse.GovPayLinks.Self.HREF
+	PaymentResourceUpdate.ExternalPaymentStatusURI = govPayResponse.GovPayLinks.Self.HREF
 
 	_, err = service.patchPaymentSession(id, PaymentResourceUpdate)
 	if err != nil {
@@ -71,7 +91,7 @@ func (service *PaymentService) returnNextURLGovPay(paymentResourceData *models.P
 
 // To get the status of a GovPay payment, GET the payment resource from GovPay and return the State block
 func getGovPayPaymentState(paymentResource *models.PaymentResource, cfg *config.Config) (*models.State, error) {
-	request, err := http.NewRequest("GET", paymentResource.PaymentStatusURL, nil)
+	request, err := http.NewRequest("GET", paymentResource.ExternalPaymentStatusURI, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error generating request for GovPay: [%s]", err)
 	}
