@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/gorilla/mux"
 	"net/http"
 
@@ -21,39 +22,42 @@ func (service *PaymentService) HandleGovPayCallback(w http.ResponseWriter, req *
 
 	// The PaymentResource must be retrieved directly to enable access to metadata outside the data block
 	paymentResource, err := service.DAO.GetPaymentResource(id)
-	if paymentResource == nil {
-		log.ErrorR(req, fmt.Errorf("payment session not found. id: %s", id))
-		w.WriteHeader(http.StatusForbidden)
-		return
-	}
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error getting payment resource from db: [%v]", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	if paymentResource == nil {
+		log.ErrorR(req, fmt.Errorf("payment session not found. id: %s", id))
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
 
 	// Ensure payment method matches endpoint
-	if paymentResource.Data.PaymentMethod == "GovPay" {
-		// Get the state of a GovPay payment
-		statusResponse, err := GovpayResponse.checkProvider(GovpayResponse{}, paymentResource)
-		if err != nil {
-			log.ErrorR(req, fmt.Errorf("error getting payment status from govpay: [%v]", err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		// Set the status of the payment
-		err = service.UpdatePaymentStatus(*statusResponse, *paymentResource)
-		if err != nil {
-			log.ErrorR(req, fmt.Errorf("error setting payment status: [%v]", err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		// TODO: Produce kafka message using the produceKafkaMessage in callback_helper
-		redirectUser(w, req, paymentResource.RedirectURI, paymentResource.State, paymentResource.Data.Reference, statusResponse.Status)
-	} else {
+	if paymentResource.Data.PaymentMethod != "GovPay" {
 		log.ErrorR(req, fmt.Errorf("payment method, [%s], for resource [%s] not recognised", paymentResource.Data.PaymentMethod, id))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
+	// Get the state of a GovPay payment
+	statusResponse, err := GovPayResponse.checkProvider(GovPayResponse{}, paymentResource)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error getting payment status from govpay: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	// Set the status of the payment
+	err = service.UpdatePaymentStatus(*statusResponse, *paymentResource)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error setting payment status: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Prepare parameters needed for redirecting
+	params := models.RedirectParams{State: paymentResource.State, Ref: paymentResource.Data.Reference, Status: paymentResource.Data.Status}
+
+	produceKafkaMessage()
+	redirectUser(w, req, paymentResource.RedirectURI, params)
 }
