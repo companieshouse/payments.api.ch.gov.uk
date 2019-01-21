@@ -14,13 +14,14 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	validator "gopkg.in/bluesuncorp/validator.v5"
 
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/companieshouse/payments.api.ch.gov.uk/transformers"
 	"github.com/shopspring/decimal"
-	"gopkg.in/go-playground/validator.v9"
 )
 
 // PaymentService contains the DAO for db access
@@ -103,30 +104,39 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 		}
 	}
 
-	var paymentResource models.PaymentResource
-	paymentResource.Data.CreatedBy = models.CreatedBy{
+	// Create payment session REST data from writable input fields and decorating with read only fields
+	var paymentResourceRest models.PaymentResourceRest
+
+	paymentResourceRest.CreatedBy = models.CreatedByRest{
 		ID:       req.Header.Get("Eric-Identity"),
 		Email:    email,
 		Forename: forename,
 		Surname:  surname,
 	}
-	paymentResource.Data.Amount = totalAmount
+
+	paymentResourceRest.Amount = totalAmount
 	// To match the format time is saved to mongo, e.g. "2018-11-22T08:39:16.782Z", truncate the time
-	paymentResource.Data.CreatedAt = time.Now().Truncate(time.Millisecond)
+	paymentResourceRest.CreatedAt = time.Now().Truncate(time.Millisecond)
 
-	paymentResource.Data.Reference = incomingPaymentResourceRequest.Reference
-	paymentResource.State = incomingPaymentResourceRequest.State
-	paymentResource.Data.Status = Pending.String()
-	paymentResource.ID = generateID()
+	paymentResourceRest.Reference = incomingPaymentResourceRequest.Reference
+	paymentResourceRest.Status = Pending.String()
 
-	journeyURL := service.Config.PaymentsWebURL + "/payments/" + paymentResource.ID + "/pay"
-	paymentResource.Data.Links = models.Links{
+	paymentResourceID := generateID()
+	journeyURL := service.Config.PaymentsWebURL + "/payments/" + paymentResourceID + "/pay"
+	paymentResourceRest.Links = models.PaymentLinksRest{
 		Journey:  journeyURL,
 		Resource: incomingPaymentResourceRequest.Resource,
-		Self:     fmt.Sprintf("payments/%s", paymentResource.ID),
+		Self:     fmt.Sprintf("payments/%s", paymentResourceID),
 	}
 
-	err = service.DAO.CreatePaymentResource(&paymentResource)
+	// transform the complete REST model to a DB model before writing to the DB
+	paymentResourceEntity := transformers.PaymentTransformer{}.Transform(paymentResourceRest)
+
+	// set metadata fields on the DB model before writing
+	paymentResourceEntity.ID = paymentResourceID
+	paymentResourceEntity.State = incomingPaymentResourceRequest.State
+
+	err = service.DAO.CreatePaymentResource(&paymentResourceEntity)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing to MongoDB: %v", err))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -138,13 +148,14 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	w.Header().Set("Location", journeyURL)
 	w.WriteHeader(http.StatusCreated)
 
-	err = json.NewEncoder(w).Encode(paymentResource.Data)
+	// response body contains fully decorated REST model
+	err = json.NewEncoder(w).Encode(paymentResourceRest)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
 		return
 	}
 
-	log.InfoR(req, "Successful POST request for new payment resource", log.Data{"payment_id": paymentResource.ID, "status": http.StatusCreated})
+	log.InfoR(req, "Successful POST request for new payment resource", log.Data{"payment_id": paymentResourceEntity.ID, "status": http.StatusCreated})
 }
 
 // GetPaymentSession retrieves the payment session

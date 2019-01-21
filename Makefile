@@ -5,6 +5,7 @@ bin          := payments.api.ch.gov.uk
 chs_envs     := $(CHS_ENV_HOME)/global_env $(CHS_ENV_HOME)/payments.api.ch.gov.uk/env
 source_env   := for chs_env in $(chs_envs); do test -f $$chs_env && . $$chs_env; done
 xunit_output := test.xml
+lint_output   := lint.txt
 
 commit       := $(shell git rev-parse --short HEAD)
 tag          := $(shell git tag -l 'v*-rc*' --points-at HEAD)
@@ -62,3 +63,9 @@ dist: clean build package
 xunit-tests: test-deps
 	go get github.com/tebeka/go2xunit
 	@set -a; $(test_unit_env); go test -v $(TESTS) -run 'Unit' | go2xunit -output $(xunit_output)
+
+.PHONY: lint
+lint:
+	go get -u github.com/alecthomas/gometalinter
+	gometalinter --install
+	gometalinter ./... > $(lint_output); true
