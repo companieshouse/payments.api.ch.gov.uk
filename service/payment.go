@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	validator "gopkg.in/bluesuncorp/validator.v5"
 
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
@@ -22,6 +21,7 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/transformers"
 	"github.com/shopspring/decimal"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // PaymentService contains the DAO for db access
@@ -72,6 +72,11 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 		return
 	}
 
+	// missing validation layer? need to validate input before we try to process e.g.
+	// - ensure State is set and valid
+	// - ensure RedirectUri is set and valid
+	// - ensure Ref is set and valid (maybe optional?)
+
 	costs, httpStatus, err := getCosts(incomingPaymentResourceRequest.Resource, &service.Config)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error getting payment resource: [%v]", err))
@@ -86,6 +91,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 		return
 	}
 
+	// should be moved to utility with new user interceptor
 	user := strings.Split(req.Header.Get("Eric-Authorised-User"), ";")
 	email := user[0]
 	var forename string
@@ -289,6 +295,7 @@ func getTotalAmount(costs *[]models.CostResource) (string, error) {
 }
 
 func getCosts(resource string, cfg *config.Config) (*[]models.CostResource, int, error) {
+	// resource validation call should be handled before we call this method so it can be removed from here
 	err := validateResource(resource, cfg)
 	if err != nil {
 		return nil, http.StatusBadRequest, err
@@ -339,6 +346,7 @@ func generateID() (i string) {
 	return ranNumber + millis
 }
 
+// split into validation service layer
 func validateResource(resource string, cfg *config.Config) error {
 	parsedURL, err := url.Parse(resource)
 	if err != nil {
@@ -361,6 +369,7 @@ func validateResource(resource string, cfg *config.Config) error {
 	return err
 }
 
+// cost validation should be split into validation service layer with validateResource func above
 func validateCosts(costs *[]models.CostResource) error {
 	validate := validator.New()
 	for _, cost := range *costs {
