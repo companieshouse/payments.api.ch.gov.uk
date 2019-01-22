@@ -231,6 +231,16 @@ func (service *PaymentService) patchPaymentSession(id string, PaymentResourceUpd
 	return http.StatusOK, nil
 }
 
+func (service *PaymentService) UpdatePaymentStatus(s models.StatusResponse, p models.PaymentResource) error {
+	p.Data.Status = s.Status
+	_, err := service.patchPaymentSession(p.ID, p)
+
+	if err != nil {
+		return fmt.Errorf("error updating payment status: [%s]", err)
+	}
+	return nil
+}
+
 func (service *PaymentService) getPaymentSession(id string) (*models.PaymentResourceData, int, error) {
 	paymentResource, err := service.DAO.GetPaymentResource(id)
 	if paymentResource == nil {

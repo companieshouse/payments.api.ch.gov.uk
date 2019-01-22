@@ -30,13 +30,3 @@ func redirectUser(w http.ResponseWriter, r *http.Request, redirectURI string, pa
 func produceKafkaMessage() {
 	// TODO: Produce message to payment-processed topic
 }
-
-func (service *PaymentService) UpdatePaymentStatus(s models.StatusResponse, p models.PaymentResource) error {
-	p.Data.Status = s.Status
-	_, err := service.patchPaymentSession(p.ID, p)
-
-	if err != nil {
-		return fmt.Errorf("error updating payment status: [%s]", err)
-	}
-	return nil
-}
