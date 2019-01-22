@@ -11,7 +11,14 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 )
 
-func (service *PaymentService) returnNextURLGovPay(paymentResourceData *models.PaymentResourceData, id string, cfg *config.Config) (string, error) {
+// GovPayService service provides specific integrations with the GovPay third party payment provider
+type GovPayService struct {
+	Config config.Config
+}
+
+func (service *GovPayService) returnNextURLGovPay(paymentResourceData *models.PaymentResourceData, id string) (string, error) {
+	cfg := service.Config
+
 	var govPayRequest models.OutgoingGovPayRequest
 
 	amountToPay, err := convertToPenceFromDecimal(paymentResourceData.Amount)
@@ -58,19 +65,22 @@ func (service *PaymentService) returnNextURLGovPay(paymentResourceData *models.P
 		return "", fmt.Errorf("error status [%v] back from GovPay: [%s]", resp.StatusCode, govPayResponse.Description)
 	}
 
-	var PaymentResourceUpdate models.PaymentResource
-	PaymentResourceUpdate.PaymentStatusURL = govPayResponse.GovPayLinks.Self.HREF
+	// This is not part of responsibility of the GET next URL, it is a write so should be done outside of this function
+	// var PaymentResourceUpdate models.PaymentResource
+	// PaymentResourceUpdate.PaymentStatusURL = govPayResponse.GovPayLinks.Self.HREF
 
-	_, err = service.patchPaymentSession(id, PaymentResourceUpdate)
-	if err != nil {
-		return "", fmt.Errorf("error patching payment session with PaymentStatusUrl: [%s]", err)
-	}
+	// _, err = service.patchPaymentSession(id, PaymentResourceUpdate)
+	// if err != nil {
+	// 	return "", fmt.Errorf("error patching payment session with PaymentStatusUrl: [%s]", err)
+	// }
 
 	return govPayResponse.GovPayLinks.NextURL.HREF, nil
 }
 
-// To get the status of a GovPay payment, GET the payment resource from GovPay and return the State block
-func getGovPayPaymentState(paymentResource *models.PaymentResource, cfg *config.Config) (*models.State, error) {
+// GetGovPayPaymentState will get the status of a GovPay payment, GET the payment resource from GovPay and return the State block
+func (service *GovPayService) GetGovPayPaymentState(paymentResource *models.PaymentResource) (*models.State, error) {
+	cfg := service.Config
+
 	request, err := http.NewRequest("GET", paymentResource.PaymentStatusURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error generating request for GovPay: [%s]", err)

@@ -33,7 +33,8 @@ func (service *PaymentService) CreateExternalPaymentJourney(w http.ResponseWrite
 
 	switch paymentSession.PaymentMethod {
 	case "GovPay":
-		paymentJourney.NextURL, err = service.returnNextURLGovPay(paymentSession, id, &service.Config)
+		govPayService := &GovPayService{Config: service.Config}
+		paymentJourney.NextURL, err = govPayService.returnNextURLGovPay(paymentSession, id)
 		if err != nil {
 			log.ErrorR(req, fmt.Errorf("error communicating with GovPay: [%s]", err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -41,6 +42,16 @@ func (service *PaymentService) CreateExternalPaymentJourney(w http.ResponseWrite
 		}
 		if paymentJourney.NextURL == "" {
 			log.ErrorR(req, fmt.Errorf("no NextURL returned from GovPay"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// Moved out of the GET next URL, it is a write so should be done outside of the GET function
+		var PaymentResourceUpdate models.PaymentResource
+		PaymentResourceUpdate.PaymentStatusURL = paymentJourney.NextURL
+		_, err = service.patchPaymentSession(id, PaymentResourceUpdate)
+		if err != nil {
+			log.ErrorR(req, fmt.Errorf("error patching payment session with PaymentStatusUrl: [%s]", err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
