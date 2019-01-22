@@ -2,16 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/companieshouse/payments.api.ch.gov.uk/wrappers"
-	"github.com/davecgh/go-spew/spew"
 	"net/http"
 
 	"github.com/companieshouse/chs.go/log"
 
+	eric "github.com/companieshouse/eric/chain" // Identity bridge
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/handlers"
-
-	eric "github.com/companieshouse/eric/chain" // Identity bridge
+	"github.com/companieshouse/payments.api.ch.gov.uk/interceptors"
 
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
@@ -31,7 +29,7 @@ func main() {
 	chain := alice.New()
 
 	chain = eric.Register(chain)
-	router.Use(wrappers.IsAuthorized)
+	router.Use(interceptors.AuthenticationInterceptor)
 	handlers.Register(router, *cfg)
 
 	log.Info("Starting " + namespace)
@@ -41,14 +39,4 @@ func main() {
 	}
 
 	log.Trace("Exiting " + namespace)
-}
-
-func loggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Do stuff here
-		spew.Dump(r.RequestURI)
-		spew.Dump("DALLLLELLLELELEL")
-		// Call the next handler, which can be another middleware in the chain, or the final handler.
-		next.ServeHTTP(w, r)
-	})
 }
