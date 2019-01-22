@@ -9,7 +9,7 @@ import (
 
 func AuthenticationInterceptor(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Do stuff here
+		//Check headers for identity type and identityg
 		identityType := r.Header.Get("Eric-Identity-Type")
 		if identityType == "" || identityType != "oauth2" {
 			log.Error(fmt.Errorf("Authentication interceptor unauthorised: not oauth2 identity type"))
