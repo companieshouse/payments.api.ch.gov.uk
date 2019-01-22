@@ -6,10 +6,10 @@ import (
 
 	"github.com/companieshouse/chs.go/log"
 
+	eric "github.com/companieshouse/eric/chain" // Identity bridge
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/handlers"
-
-	eric "github.com/companieshouse/eric/chain" // Identity bridge
+	"github.com/companieshouse/payments.api.ch.gov.uk/interceptors"
 
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
@@ -29,7 +29,7 @@ func main() {
 	chain := alice.New()
 
 	chain = eric.Register(chain)
-
+	router.Use(interceptors.AuthenticationInterceptor)
 	handlers.Register(router, *cfg)
 
 	log.Info("Starting " + namespace)
