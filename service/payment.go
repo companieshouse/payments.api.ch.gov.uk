@@ -116,6 +116,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 
 	paymentResource.Data.Reference = incomingPaymentResourceRequest.Reference
 	paymentResource.State = incomingPaymentResourceRequest.State
+	paymentResource.RedirectURI = incomingPaymentResourceRequest.RedirectURI
 	paymentResource.Data.Status = Pending.String()
 	paymentResource.ID = generateID()
 
@@ -215,7 +216,7 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 
 func (service *PaymentService) patchPaymentSession(id string, PaymentResourceUpdate models.PaymentResource) (int, error) {
 
-	if PaymentResourceUpdate.Data.PaymentMethod == "" && PaymentResourceUpdate.Data.Status == "" && PaymentResourceUpdate.PaymentStatusURL == "" {
+	if PaymentResourceUpdate.Data.PaymentMethod == "" && PaymentResourceUpdate.Data.Status == "" && PaymentResourceUpdate.ExternalPaymentStatusURI == "" {
 		return http.StatusBadRequest, fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", id)
 	}
 
@@ -228,6 +229,16 @@ func (service *PaymentService) patchPaymentSession(id string, PaymentResourceUpd
 	}
 
 	return http.StatusOK, nil
+}
+
+func (service *PaymentService) UpdatePaymentStatus(s models.StatusResponse, p models.PaymentResource) error {
+	p.Data.Status = s.Status
+	_, err := service.patchPaymentSession(p.ID, p)
+
+	if err != nil {
+		return fmt.Errorf("error updating payment status: [%s]", err)
+	}
+	return nil
 }
 
 func (service *PaymentService) getPaymentSession(id string) (*models.PaymentResourceData, int, error) {
