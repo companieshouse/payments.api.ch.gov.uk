@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -61,7 +62,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
+	spew.Dump(req.Context().Value("user_details"))
 	requestDecoder := json.NewDecoder(req.Body)
 	var incomingPaymentResourceRequest models.IncomingPaymentResourceRequest
 	err := requestDecoder.Decode(&incomingPaymentResourceRequest)
