@@ -8,3 +8,9 @@ type StatusResponse struct {
 type response_service interface {
 	checkProvider()
 }
+
+type RedirectParams struct {
+	State  string
+	Ref    string
+	Status string
+}
