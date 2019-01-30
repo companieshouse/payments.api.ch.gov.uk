@@ -71,6 +71,12 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 		return
 	}
 
+	if err = validatePaymentCreate(incomingPaymentResourceRequest); err != nil {
+		log.ErrorR(req, fmt.Errorf("invalid POST request to create payment session: [%v]", err))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	costs, httpStatus, err := getCosts(incomingPaymentResourceRequest.Resource, &service.Config)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error getting payment resource: [%v]", err))
@@ -368,6 +374,15 @@ func validateCosts(costs *[]models.CostResource) error {
 		if err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func validatePaymentCreate(incomingPaymentResourceRequest models.IncomingPaymentResourceRequest) error {
+	validate := validator.New()
+	err := validate.Struct(incomingPaymentResourceRequest)
+	if err != nil {
+		return err
 	}
 	return nil
 }
