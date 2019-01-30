@@ -68,7 +68,6 @@ type CostResource struct {
 	Description             string            `json:"description"               validate:"required"`
 	DescriptionIdentifier   string            `json:"description_identifier"    validate:"required"`
 	DescriptionValues       DescriptionValues `json:"description_values"`
-	IsVariablePayment       bool              `json:"is_variable_payment"`
 	Links                   Links             `json:"links"                     validate:"required"`
 }
 
