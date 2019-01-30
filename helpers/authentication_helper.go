@@ -53,7 +53,7 @@ func IsRoleAuthorised(r *http.Request, role string) bool {
 	return contains(roles, role)
 }
 
-// contains tells whether array contains s.
+// contains returns whether array contains string s.
 func contains(array []string, s string) bool {
 	for _, n := range array {
 		if s == n {

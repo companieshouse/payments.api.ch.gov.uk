@@ -147,8 +147,8 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	log.InfoR(req, "Successful POST request for new payment resource", log.Data{"payment_id": paymentResource.ID, "status": http.StatusCreated})
 }
 
-// GetPaymentSession retrieves the payment session
-func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *http.Request) {
+// GetPaymentSessionFromRequest retrieves the payment session
+func (service *PaymentService) GetPaymentSessionFromRequest(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	id := vars["payment_id"]
 	if id == "" {
@@ -157,7 +157,7 @@ func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *htt
 		return
 	}
 
-	paymentSession, httpStatus, err := (*PaymentService).getPaymentSession(service, id)
+	paymentSession, httpStatus, err := (*PaymentService).GetPaymentSession(service, id)
 	if err != nil {
 		w.WriteHeader(httpStatus)
 		log.ErrorR(req, err)
@@ -230,7 +230,7 @@ func (service *PaymentService) patchPaymentSession(id string, PaymentResourceUpd
 	return http.StatusOK, nil
 }
 
-func (service *PaymentService) getPaymentSession(id string) (*models.PaymentResourceData, int, error) {
+func (service *PaymentService) GetPaymentSession(id string) (*models.PaymentResourceData, int, error) {
 	paymentResource, err := service.DAO.GetPaymentResource(id)
 	if paymentResource == nil {
 		return nil, http.StatusForbidden, fmt.Errorf("payment session not found. id: %s", id)
