@@ -133,7 +133,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	}
 
 	// transform the complete REST model to a DB model before writing to the DB
-	paymentResourceEntity := transformers.PaymentTransformer{}.Transform(paymentResourceRest)
+	paymentResourceEntity := transformers.PaymentTransformer{}.TransformToDB(paymentResourceRest)
 
 	// set metadata fields on the DB model before writing
 	paymentResourceEntity.ID = paymentResourceID
@@ -179,9 +179,11 @@ func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *htt
 		return
 	}
 
+	paymentSessionResponse := transformers.PaymentTransformer{}.TransformFromDB(*paymentSession)
+
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(paymentSession)
+	err = json.NewEncoder(w).Encode(paymentSessionResponse)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
 		return
