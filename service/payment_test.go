@@ -25,7 +25,7 @@ var defaultCost = models.CostResource{
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
-	Links:                   models.Links{Self: "self"},
+	Links:                   models.CostLinks{Self: "self"},
 }
 
 var defaultCostArray = []models.CostResource{
@@ -313,7 +313,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Invalid cost", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "x", Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "x", Links: models.PaymentLinks{Resource: "http://dummy-resource"}}}, nil)
 		path := fmt.Sprintf("/payments/%s", "1234")
 		req, err := http.NewRequest("Get", path, nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
@@ -335,7 +335,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Amount mismatch", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "100", Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "100", Links: models.PaymentLinks{Resource: "http://dummy-resource"}}}, nil)
 		path := fmt.Sprintf("/payments/%s", "1234")
 		req, err := http.NewRequest("Get", path, nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
@@ -355,7 +355,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Get Payment session - success - Single cost", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "10.00", Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "10.00", Links: models.PaymentLinks{Resource: "http://dummy-resource"}}}, nil)
 		path := fmt.Sprintf("/payments/%s", "1234")
 		req, err := http.NewRequest("Get", path, nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
@@ -374,7 +374,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Get Payment session - success - Multiple costs", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "20.00", Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "20.00", Links: models.PaymentLinks{Resource: "http://dummy-resource"}}}, nil)
 		path := fmt.Sprintf("/payments/%s", "1234")
 		req, err := http.NewRequest("Get", path, nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
@@ -548,7 +548,7 @@ func TestUnitValidateCosts(t *testing.T) {
 			ClassOfPayment:          []string{"class"},
 			Description:             "",
 			DescriptionIdentifier:   "identifier",
-			Links:                   models.Links{Self: "self"},
+			Links:                   models.CostLinks{Self: "self"},
 		}}
 		So(validateCosts(&cost), ShouldNotBeNil)
 	})
@@ -559,7 +559,7 @@ func TestUnitValidateCosts(t *testing.T) {
 			ClassOfPayment:          []string{"class"},
 			Description:             "desc",
 			DescriptionIdentifier:   "identifier",
-			Links:                   models.Links{Self: "self"},
+			Links:                   models.CostLinks{Self: "self"},
 		}}
 		So(validateCosts(&cost), ShouldBeNil)
 	})
@@ -571,7 +571,7 @@ func TestUnitValidateCosts(t *testing.T) {
 				ClassOfPayment:          []string{"class"},
 				Description:             "desc",
 				DescriptionIdentifier:   "identifier",
-				Links:                   models.Links{Self: "self"},
+				Links:                   models.CostLinks{Self: "self"},
 			},
 			{
 				Amount:                  "20",
@@ -579,7 +579,7 @@ func TestUnitValidateCosts(t *testing.T) {
 				ClassOfPayment:          []string{"class"},
 				Description:             "",
 				DescriptionIdentifier:   "identifier",
-				Links:                   models.Links{Self: "self"},
+				Links:                   models.CostLinks{Self: "self"},
 			},
 		}
 		So(validateCosts(&cost), ShouldNotBeNil)
