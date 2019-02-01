@@ -179,7 +179,7 @@ func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *htt
 		return
 	}
 
-	paymentSessionResponse := transformers.PaymentTransformer{}.TransformFromDB(*paymentSession)
+	paymentSessionResponse := transformers.PaymentTransformer{}.TransformToRest(*paymentSession)
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -217,7 +217,7 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 		return
 	}
 
-	var PaymentResourceUpdate models.PaymentResource
+	var PaymentResourceUpdate models.PaymentResourceDB
 	PaymentResourceUpdate = transformers.PaymentTransformer{}.TransformToDB(PaymentResourceUpdateData)
 
 	httpStatus, err := service.patchPaymentSession(id, PaymentResourceUpdate)
@@ -230,7 +230,7 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 	log.InfoR(req, "Successful PATCH request for payment resource", log.Data{"payment_id": id, "status": http.StatusOK})
 }
 
-func (service *PaymentService) patchPaymentSession(id string, PaymentResourceUpdate models.PaymentResource) (int, error) {
+func (service *PaymentService) patchPaymentSession(id string, PaymentResourceUpdate models.PaymentResourceDB) (int, error) {
 
 	if PaymentResourceUpdate.Data.PaymentMethod == "" && PaymentResourceUpdate.Data.Status == "" && PaymentResourceUpdate.ExternalPaymentStatusURI == "" {
 		return http.StatusBadRequest, fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", id)
@@ -248,7 +248,7 @@ func (service *PaymentService) patchPaymentSession(id string, PaymentResourceUpd
 }
 
 // UpdatePaymentStatus updates the Status in the Payment Session.
-func (service *PaymentService) UpdatePaymentStatus(s models.StatusResponse, p models.PaymentResource) error {
+func (service *PaymentService) UpdatePaymentStatus(s models.StatusResponse, p models.PaymentResourceDB) error {
 	p.Data.Status = s.Status
 	_, err := service.patchPaymentSession(p.ID, p)
 
@@ -287,7 +287,7 @@ func (service *PaymentService) getPaymentSession(id string) (*models.PaymentReso
 	return &paymentResource.Data, http.StatusOK, nil
 }
 
-func getTotalAmount(costs *[]models.CostResource) (string, error) {
+func getTotalAmount(costs *[]models.CostResourceDB) (string, error) {
 	r, err := regexp.Compile(`^\d+(\.\d{2})?$`)
 	if err != nil {
 		return "", err
@@ -305,7 +305,7 @@ func getTotalAmount(costs *[]models.CostResource) (string, error) {
 	return totalAmount.StringFixed(2), nil
 }
 
-func getCosts(resource string, cfg *config.Config) (*[]models.CostResource, int, error) {
+func getCosts(resource string, cfg *config.Config) (*[]models.CostResourceDB, int, error) {
 	err := validateResource(resource, cfg)
 	if err != nil {
 		return nil, http.StatusBadRequest, err
@@ -334,7 +334,7 @@ func getCosts(resource string, cfg *config.Config) (*[]models.CostResource, int,
 		return nil, http.StatusInternalServerError, fmt.Errorf("error reading Cost Resource: [%v]", err)
 	}
 
-	costs := &[]models.CostResource{}
+	costs := &[]models.CostResourceDB{}
 	err = json.Unmarshal(body, costs)
 	if err != nil {
 		return nil, http.StatusBadRequest, fmt.Errorf("error reading Cost Resource: [%v]", err)
@@ -378,7 +378,7 @@ func validateResource(resource string, cfg *config.Config) error {
 	return err
 }
 
-func validateCosts(costs *[]models.CostResource) error {
+func validateCosts(costs *[]models.CostResourceDB) error {
 	validate := validator.New()
 	for _, cost := range *costs {
 		err := validate.Struct(cost)

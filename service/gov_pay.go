@@ -13,7 +13,7 @@ import (
 
 type GovPayResponse struct{}
 
-func (g GovPayResponse) checkProvider(paymentResource *models.PaymentResource) (*models.StatusResponse, error) {
+func (g GovPayResponse) checkProvider(paymentResource *models.PaymentResourceDB) (*models.StatusResponse, error) {
 	// Call the getGovPayPaymentState method down below to get state
 	cfg, err := config.Get()
 	if err != nil {
@@ -79,7 +79,7 @@ func (service *PaymentService) returnNextURLGovPay(paymentResourceData *models.P
 		return "", fmt.Errorf("error status [%v] back from GovPay: [%s]", resp.StatusCode, govPayResponse.Description)
 	}
 
-	var PaymentResourceUpdate models.PaymentResource
+	var PaymentResourceUpdate models.PaymentResourceDB
 	PaymentResourceUpdate.ExternalPaymentStatusURI = govPayResponse.GovPayLinks.Self.HREF
 
 	_, err = service.patchPaymentSession(id, PaymentResourceUpdate)
@@ -91,7 +91,7 @@ func (service *PaymentService) returnNextURLGovPay(paymentResourceData *models.P
 }
 
 // To get the status of a GovPay payment, GET the payment resource from GovPay and return the State block
-func getGovPayPaymentState(paymentResource *models.PaymentResource, cfg *config.Config) (*models.State, error) {
+func getGovPayPaymentState(paymentResource *models.PaymentResourceDB, cfg *config.Config) (*models.State, error) {
 	request, err := http.NewRequest("GET", paymentResource.ExternalPaymentStatusURI, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error generating request for GovPay: [%s]", err)

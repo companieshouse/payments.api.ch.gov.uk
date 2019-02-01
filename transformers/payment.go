@@ -7,14 +7,14 @@ import (
 // Transformer is an interface for all transformer implementations to implement
 type Transformer interface {
 	TransformToDB(interface{}) interface{}
-	TransformFromDB(interface{}) interface{}
+	TransformToRest(interface{}) interface{}
 }
 
 // PaymentTransformer transforms payment resource data between rest and database models
 type PaymentTransformer struct{}
 
 // TransformToDB transforms payment resource rest model into payment resource database model
-func (pt PaymentTransformer) TransformToDB(rest models.PaymentResourceRest) models.PaymentResource {
+func (pt PaymentTransformer) TransformToDB(rest models.PaymentResourceRest) models.PaymentResourceDB {
 	paymentResourceData := models.PaymentResourceData{
 		Amount:                  rest.Amount,
 		AvailablePaymentMethods: rest.AvailablePaymentMethods,
@@ -26,19 +26,19 @@ func (pt PaymentTransformer) TransformToDB(rest models.PaymentResourceRest) mode
 		Status:                  rest.Status,
 	}
 
-	paymentResourceData.CreatedBy = models.CreatedBy(rest.CreatedBy)
-	paymentResourceData.Links = models.PaymentLinks(rest.Links)
+	paymentResourceData.CreatedBy = models.CreatedByDB(rest.CreatedBy)
+	paymentResourceData.Links = models.PaymentLinksDB(rest.Links)
 	paymentResourceData.Costs = pt.transformCostResourcesToDB(rest.Costs)
 
-	paymentResource := models.PaymentResource{
+	paymentResource := models.PaymentResourceDB{
 		Data: paymentResourceData,
 	}
 
 	return paymentResource
 }
 
-// TransformFromDB transforms payment resource database model into payment resource rest model
-func (pt PaymentTransformer) TransformFromDB(dbResourceData models.PaymentResourceData) models.PaymentResourceRest {
+// TransformToRest transforms payment resource database model into payment resource rest model
+func (pt PaymentTransformer) TransformToRest(dbResourceData models.PaymentResourceData) models.PaymentResourceRest {
 	paymentResource := models.PaymentResourceRest{
 		Amount:                  dbResourceData.Amount,
 		AvailablePaymentMethods: dbResourceData.AvailablePaymentMethods,
@@ -50,40 +50,40 @@ func (pt PaymentTransformer) TransformFromDB(dbResourceData models.PaymentResour
 		Reference:               dbResourceData.Reference,
 		Status:                  dbResourceData.Status,
 		Links:                   models.PaymentLinksRest(dbResourceData.Links),
-		Costs:                   pt.transformCostResourcesFromDB(dbResourceData.Costs),
+		Costs:                   pt.transformCostResourcesToRest(dbResourceData.Costs),
 	}
 	return paymentResource
 }
 
-func (pt PaymentTransformer) transformCostResourcesToDB(rest []models.CostResourceRest) []models.CostResource {
-	costResources := make([]models.CostResource, len(rest))
+func (pt PaymentTransformer) transformCostResourcesToDB(rest []models.CostResourceRest) []models.CostResourceDB {
+	costResources := make([]models.CostResourceDB, len(rest))
 	for i, restCost := range rest {
 		costResources[i] = pt.transformCostResourceToDB(restCost)
 	}
 	return costResources
 }
 
-func (pt PaymentTransformer) transformCostResourcesFromDB(dbCostResources []models.CostResource) []models.CostResourceRest {
+func (pt PaymentTransformer) transformCostResourcesToRest(dbCostResources []models.CostResourceDB) []models.CostResourceRest {
 	costResources := make([]models.CostResourceRest, len(dbCostResources))
 	for i, cost := range dbCostResources {
-		costResources[i] = pt.transformCostResourceFromDB(cost)
+		costResources[i] = pt.transformCostResourceToRest(cost)
 	}
 	return costResources
 }
 
-func (pt PaymentTransformer) transformCostResourceToDB(rest models.CostResourceRest) models.CostResource {
-	return models.CostResource{
+func (pt PaymentTransformer) transformCostResourceToDB(rest models.CostResourceRest) models.CostResourceDB {
+	return models.CostResourceDB{
 		Amount:                  rest.Amount,
 		AvailablePaymentMethods: rest.AvailablePaymentMethods,
 		ClassOfPayment:          rest.ClassOfPayment,
 		Description:             rest.Description,
 		DescriptionIdentifier:   rest.DescriptionIdentifier,
 		DescriptionValues:       rest.DescriptionValues,
-		Links:                   models.CostLinks(rest.Links),
+		Links:                   models.CostLinksDB(rest.Links),
 	}
 }
 
-func (pt PaymentTransformer) transformCostResourceFromDB(dbCostResource models.CostResource) models.CostResourceRest {
+func (pt PaymentTransformer) transformCostResourceToRest(dbCostResource models.CostResourceDB) models.CostResourceRest {
 	return models.CostResourceRest{
 		Amount:                  dbCostResource.Amount,
 		AvailablePaymentMethods: dbCostResource.AvailablePaymentMethods,
