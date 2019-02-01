@@ -64,6 +64,16 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(w.Code, ShouldEqual, 400)
 	})
 
+	Convey("Invalid POST request with missing required fields", t, func() {
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
+		req, err := http.NewRequest("GET", "", nil)
+		So(err, ShouldBeNil)
+		req.Body = ioutil.NopCloser(bytes.NewReader([]byte("{\"redirect_uri\": \"dummy-redirect-uri\"}")))
+		w := httptest.NewRecorder()
+		mockPaymentService.CreatePaymentSession(w, req)
+		So(w.Code, ShouldEqual, 400)
+	})
+
 	Convey("Invalid Resource Domain", t, func() {
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
@@ -573,6 +583,51 @@ func TestUnitValidateCosts(t *testing.T) {
 			},
 		}
 		So(validateCosts(&cost), ShouldNotBeNil)
+	})
+}
+
+func TestUnitValidatePaymentCreate(t *testing.T) {
+	Convey("Invalid Payment Create, Redirect URL missing", t, func() {
+		paymentCreate := models.IncomingPaymentResourceRequest{
+			Resource:  "http://chs-dev:4000/payment-service-test-harness/payable-resource?amount=150",
+			State:     "application-nonce-value",
+			Reference: "customer-reference",
+		}
+		So(validatePaymentCreate(paymentCreate), ShouldNotBeNil)
+	})
+	Convey("Invalid Payment Create, Resource missing", t, func() {
+		paymentCreate := models.IncomingPaymentResourceRequest{
+			RedirectURI: "https://client.web.domain/payment-complete-callback",
+			State:       "application-nonce-value",
+			Reference:   "customer-reference",
+		}
+		So(validatePaymentCreate(paymentCreate), ShouldNotBeNil)
+	})
+	Convey("Invalid Payment Create, State missing", t, func() {
+		paymentCreate := models.IncomingPaymentResourceRequest{
+			RedirectURI: "https://client.web.domain/payment-complete-callback",
+			Resource:    "http://chs-dev:4000/payment-service-test-harness/payable-resource?amount=150",
+			Reference:   "customer-reference",
+		}
+		So(validatePaymentCreate(paymentCreate), ShouldNotBeNil)
+	})
+
+	Convey("Valid Payment Create, Reference present", t, func() {
+		paymentCreate := models.IncomingPaymentResourceRequest{
+			RedirectURI: "https://client.web.domain/payment-complete-callback",
+			Resource:    "http://chs-dev:4000/payment-service-test-harness/payable-resource?amount=150",
+			State:       "application-nonce-value",
+			Reference:   "customer-reference",
+		}
+		So(validatePaymentCreate(paymentCreate), ShouldBeNil)
+	})
+	Convey("Valid Payment Create, Reference missing", t, func() {
+		paymentCreate := models.IncomingPaymentResourceRequest{
+			RedirectURI: "https://client.web.domain/payment-complete-callback",
+			Resource:    "http://chs-dev:4000/payment-service-test-harness/payable-resource?amount=150",
+			State:       "application-nonce-value",
+		}
+		So(validatePaymentCreate(paymentCreate), ShouldBeNil)
 	})
 }
 

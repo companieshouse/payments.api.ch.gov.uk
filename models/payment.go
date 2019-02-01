@@ -4,18 +4,19 @@ import "time"
 
 // IncomingPaymentResourceRequest is the data received in the body of the incoming request
 type IncomingPaymentResourceRequest struct {
-	RedirectURI string `json:"redirect_uri"`
+	RedirectURI string `json:"redirect_uri"        validate:"required"`
 	Reference   string `json:"reference"`
-	Resource    string `json:"resource"`
-	State       string `json:"state"`
+	Resource    string `json:"resource"            validate:"required"`
+	State       string `json:"state"               validate:"required"`
 }
 
 // PaymentResource contains all payment details to be stored in the DB
 type PaymentResource struct {
-	ID               string              `json:"_id"                bson:"_id"`
-	PaymentStatusURL string              `json:"payment_status_url" bson:"payment_status_url"`
-	State            string              `json:"state"              bson:"state"`
-	Data             PaymentResourceData `json:"data"               bson:"data"`
+	ID                       string              `json:"_id"                           bson:"_id"`
+	RedirectURI              string              `json:"redirect_uri"                  bson:"redirect_uri"`
+	State                    string              `json:"state"                         bson:"state"`
+	ExternalPaymentStatusURI string              `json:"external_payment_status_url"   bson:"external_payment_status_url"`
+	Data                     PaymentResourceData `json:"data"                          bson:"data"`
 }
 
 // PaymentResourceData is public facing payment details to be returned in the response
@@ -67,7 +68,6 @@ type CostResource struct {
 	Description             string            `json:"description"               validate:"required"`
 	DescriptionIdentifier   string            `json:"description_identifier"    validate:"required"`
 	DescriptionValues       DescriptionValues `json:"description_values"`
-	IsVariablePayment       bool              `json:"is_variable_payment"`
 	Links                   Links             `json:"links"                     validate:"required"`
 }
 

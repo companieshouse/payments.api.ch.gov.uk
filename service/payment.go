@@ -71,6 +71,12 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 		return
 	}
 
+	if err = validatePaymentCreate(incomingPaymentResourceRequest); err != nil {
+		log.ErrorR(req, fmt.Errorf("invalid POST request to create payment session: [%v]", err))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	costs, httpStatus, err := getCosts(incomingPaymentResourceRequest.Resource, &service.Config)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error getting payment resource: [%v]", err))
@@ -116,6 +122,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 
 	paymentResource.Data.Reference = incomingPaymentResourceRequest.Reference
 	paymentResource.State = incomingPaymentResourceRequest.State
+	paymentResource.RedirectURI = incomingPaymentResourceRequest.RedirectURI
 	paymentResource.Data.Status = Pending.String()
 	paymentResource.ID = generateID()
 
@@ -215,7 +222,7 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 
 func (service *PaymentService) patchPaymentSession(id string, PaymentResourceUpdate models.PaymentResource) (int, error) {
 
-	if PaymentResourceUpdate.Data.PaymentMethod == "" && PaymentResourceUpdate.Data.Status == "" && PaymentResourceUpdate.PaymentStatusURL == "" {
+	if PaymentResourceUpdate.Data.PaymentMethod == "" && PaymentResourceUpdate.Data.Status == "" && PaymentResourceUpdate.ExternalPaymentStatusURI == "" {
 		return http.StatusBadRequest, fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", id)
 	}
 
@@ -228,6 +235,16 @@ func (service *PaymentService) patchPaymentSession(id string, PaymentResourceUpd
 	}
 
 	return http.StatusOK, nil
+}
+
+func (service *PaymentService) UpdatePaymentStatus(s models.StatusResponse, p models.PaymentResource) error {
+	p.Data.Status = s.Status
+	_, err := service.patchPaymentSession(p.ID, p)
+
+	if err != nil {
+		return fmt.Errorf("error updating payment status: [%s]", err)
+	}
+	return nil
 }
 
 func (service *PaymentService) GetPaymentSession(id string) (*models.PaymentResourceData, int, error) {
@@ -357,6 +374,15 @@ func validateCosts(costs *[]models.CostResource) error {
 		if err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func validatePaymentCreate(incomingPaymentResourceRequest models.IncomingPaymentResourceRequest) error {
+	validate := validator.New()
+	err := validate.Struct(incomingPaymentResourceRequest)
+	if err != nil {
+		return err
 	}
 	return nil
 }

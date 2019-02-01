@@ -27,7 +27,7 @@ type IncomingGovPayResponse struct {
 
 // State is the current state of the payment
 type State struct {
-	Status   string `json:"state"`
+	Status   string `json:"status"`
 	Finished bool   `json:"finished"`
 }
 

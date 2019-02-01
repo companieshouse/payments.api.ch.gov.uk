@@ -98,8 +98,8 @@ func (m *Mongo) PatchPaymentResource(id string, paymentUpdate *models.PaymentRes
 	if paymentUpdate.Data.Status != "" {
 		patchUpdate["data.status"] = paymentUpdate.Data.Status
 	}
-	if paymentUpdate.PaymentStatusURL != "" {
-		patchUpdate["payment_status_url"] = paymentUpdate.PaymentStatusURL
+	if paymentUpdate.ExternalPaymentStatusURI != "" {
+		patchUpdate["external_payment_status_url"] = paymentUpdate.ExternalPaymentStatusURI
 	}
 
 	updateCall := bson.M{"$set": patchUpdate}
