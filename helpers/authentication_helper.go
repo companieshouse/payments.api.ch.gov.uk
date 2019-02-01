@@ -9,7 +9,6 @@ const (
 	Oauth2IdentityType     = "oauth2"
 	AdminPaymentLookupRole = "/admin/payment-lookup"
 	UserDetailsKey         = "user_details"
-	PaymentSessionKey      = "payment_session"
 
 	ericIdentity        = "ERIC-Identity"
 	ericIdentityType    = "ERIC-Identity-Type"

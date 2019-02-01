@@ -32,6 +32,8 @@ type PaymentService struct {
 // PaymentStatus Enum Type
 type PaymentStatus int
 
+const PaymentSessionKey = "payment_session"
+
 // Enumeration containing all possible payment statuses
 const (
 	Pending PaymentStatus = 1 + iota

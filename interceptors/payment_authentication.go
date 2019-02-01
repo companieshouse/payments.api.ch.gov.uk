@@ -64,7 +64,7 @@ func PaymentAuthenticationInterceptor(next http.Handler) http.Handler {
 		}
 
 		// Store paymentSession in context to use later in the handler
-		ctx := context.WithValue(r.Context(), helpers.PaymentSessionKey, paymentSession)
+		ctx := context.WithValue(r.Context(), service.PaymentSessionKey, paymentSession)
 
 		// Set up variables that are used to determine authorisation below
 		isGetRequest := http.MethodGet == r.Method
@@ -73,10 +73,10 @@ func PaymentAuthenticationInterceptor(next http.Handler) http.Handler {
 
 		// Set up debug map for logging at each exit point
 		debugMap := log.Data{
-			"paymentId":                    id,
-			"authUserIsPaymentCreator":     authUserIsPaymentCreator,
-			"authUserHasPaymentLookupRole": authUserHasPaymentLookupRole,
-			"requestMethod":                r.Method,
+			"payment_id":                    id,
+			"auth_user_is_payment_creator":     authUserIsPaymentCreator,
+			"auth_user_has_payment_lookup_role": authUserHasPaymentLookupRole,
+			"request_method":                r.Method,
 		}
 
 		// Now that we have the payment data and authorized user there are

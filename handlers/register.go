@@ -45,9 +45,9 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	callbackRouter.HandleFunc("/payments/govpay/{payment_id}", p.HandleGovPayCallback).Methods("GET").Name("handle-govpay-callback")
 
 	// Set middleware for subrouters
-	rootPaymentRouter.Use(interceptors.UserAuthenticationInterceptor, log.Handler)
+	rootPaymentRouter.Use(log.Handler, interceptors.UserAuthenticationInterceptor)
 	getPaymentRouter.Use(interceptors.PaymentAuthenticationInterceptor)
-	privateRouter.Use(interceptors.UserAuthenticationInterceptor, interceptors.PaymentAuthenticationInterceptor, log.Handler)
+	privateRouter.Use(log.Handler, interceptors.UserAuthenticationInterceptor, interceptors.PaymentAuthenticationInterceptor)
 	callbackRouter.Use(log.Handler)
 }
 
