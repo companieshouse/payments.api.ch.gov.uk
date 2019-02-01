@@ -73,10 +73,10 @@ func PaymentAuthenticationInterceptor(next http.Handler) http.Handler {
 
 		// Set up debug map for logging at each exit point
 		debugMap := log.Data{
-			"payment_id":                    id,
-			"auth_user_is_payment_creator":     authUserIsPaymentCreator,
+			"payment_id":                        id,
+			"auth_user_is_payment_creator":      authUserIsPaymentCreator,
 			"auth_user_has_payment_lookup_role": authUserHasPaymentLookupRole,
-			"request_method":                r.Method,
+			"request_method":                    r.Method,
 		}
 
 		// Now that we have the payment data and authorized user there are
