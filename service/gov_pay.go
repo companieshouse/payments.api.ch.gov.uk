@@ -32,7 +32,7 @@ func (g GovPayResponse) checkProvider(paymentResource *models.PaymentResourceDB)
 	}
 }
 
-func (service *PaymentService) returnNextURLGovPay(paymentResourceData *models.PaymentResourceData, id string, cfg *config.Config) (string, error) {
+func (service *PaymentService) returnNextURLGovPay(paymentResourceData *models.PaymentResourceDataDB, id string, cfg *config.Config) (string, error) {
 	var govPayRequest models.OutgoingGovPayRequest
 
 	amountToPay, err := convertToPenceFromDecimal(paymentResourceData.Amount)

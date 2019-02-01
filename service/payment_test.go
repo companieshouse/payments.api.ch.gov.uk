@@ -189,7 +189,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		mockPaymentService.CreatePaymentSession(w, req)
 		So(w.Code, ShouldEqual, 201)
 		responseByteArray := w.Body.Bytes()
-		var createdPaymentResource models.PaymentResourceData
+		var createdPaymentResource models.PaymentResourceDataDB
 		if err := json.Unmarshal(responseByteArray, &createdPaymentResource); err != nil {
 			panic(err)
 		}
@@ -226,7 +226,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(w.Code, ShouldEqual, 201)
 
 		responseByteArray := w.Body.Bytes()
-		var createdPaymentResource models.PaymentResourceData
+		var createdPaymentResource models.PaymentResourceDataDB
 		if err := json.Unmarshal(responseByteArray, &createdPaymentResource); err != nil {
 			panic(err)
 		}
@@ -313,7 +313,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Invalid cost", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceData{Amount: "x", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceDataDB{Amount: "x", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
 		path := fmt.Sprintf("/payments/%s", "1234")
 		req, err := http.NewRequest("Get", path, nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
@@ -335,7 +335,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Amount mismatch", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceData{Amount: "100", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceDataDB{Amount: "100", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
 		path := fmt.Sprintf("/payments/%s", "1234")
 		req, err := http.NewRequest("Get", path, nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
@@ -355,7 +355,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Get Payment session - success - Single cost", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceData{Amount: "10.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceDataDB{Amount: "10.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
 		path := fmt.Sprintf("/payments/%s", "1234")
 		req, err := http.NewRequest("Get", path, nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
@@ -374,7 +374,7 @@ func TestUnitGetPayment(t *testing.T) {
 	Convey("Get Payment session - success - Multiple costs", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceData{Amount: "20.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceDataDB{Amount: "20.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
 		path := fmt.Sprintf("/payments/%s", "1234")
 		req, err := http.NewRequest("Get", path, nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})

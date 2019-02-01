@@ -4,15 +4,15 @@ import "time"
 
 // PaymentResource contains all payment details to be stored in the DB
 type PaymentResourceDB struct {
-	ID                       string              `bson:"_id"`
-	RedirectURI              string              `bson:"redirect_uri"`
-	State                    string              `bson:"state"`
-	ExternalPaymentStatusURI string              `bson:"external_payment_status_url"`
-	Data                     PaymentResourceData `bson:"data"`
+	ID                       string                `bson:"_id"`
+	RedirectURI              string                `bson:"redirect_uri"`
+	State                    string                `bson:"state"`
+	ExternalPaymentStatusURI string                `bson:"external_payment_status_url"`
+	Data                     PaymentResourceDataDB `bson:"data"`
 }
 
 // PaymentResourceData is public facing payment details to be returned in the response
-type PaymentResourceData struct {
+type PaymentResourceDataDB struct {
 	Amount                  string           `bson:"amount"`
 	AvailablePaymentMethods []string         `bson:"available_payment_methods,omitempty"`
 	CompletedAt             time.Time        `bson:"completed_at,omitempty"`

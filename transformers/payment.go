@@ -15,7 +15,7 @@ type PaymentTransformer struct{}
 
 // TransformToDB transforms payment resource rest model into payment resource database model
 func (pt PaymentTransformer) TransformToDB(rest models.PaymentResourceRest) models.PaymentResourceDB {
-	paymentResourceData := models.PaymentResourceData{
+	paymentResourceData := models.PaymentResourceDataDB{
 		Amount:                  rest.Amount,
 		AvailablePaymentMethods: rest.AvailablePaymentMethods,
 		CompletedAt:             rest.CompletedAt,
@@ -38,7 +38,7 @@ func (pt PaymentTransformer) TransformToDB(rest models.PaymentResourceRest) mode
 }
 
 // TransformToRest transforms payment resource database model into payment resource rest model
-func (pt PaymentTransformer) TransformToRest(dbResourceData models.PaymentResourceData) models.PaymentResourceRest {
+func (pt PaymentTransformer) TransformToRest(dbResourceData models.PaymentResourceDataDB) models.PaymentResourceRest {
 	paymentResource := models.PaymentResourceRest{
 		Amount:                  dbResourceData.Amount,
 		AvailablePaymentMethods: dbResourceData.AvailablePaymentMethods,

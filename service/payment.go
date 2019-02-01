@@ -258,7 +258,7 @@ func (service *PaymentService) UpdatePaymentStatus(s models.StatusResponse, p mo
 	return nil
 }
 
-func (service *PaymentService) getPaymentSession(id string) (*models.PaymentResourceData, int, error) {
+func (service *PaymentService) getPaymentSession(id string) (*models.PaymentResourceDataDB, int, error) {
 	paymentResource, err := service.DAO.GetPaymentResource(id)
 	if paymentResource == nil {
 		return nil, http.StatusForbidden, fmt.Errorf("payment session not found. id: %s", id)
