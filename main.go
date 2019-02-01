@@ -6,11 +6,9 @@ import (
 
 	"github.com/companieshouse/chs.go/log"
 
-	eric "github.com/companieshouse/eric/chain" // Identity bridge
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/handlers"
 	"github.com/gorilla/mux"
-	"github.com/justinas/alice"
 )
 
 func main() {
@@ -26,13 +24,10 @@ func main() {
 	// Create router
 	mainRouter := mux.NewRouter()
 
-	chain := alice.New()
-	chain = eric.Register(chain)
-
 	handlers.Register(mainRouter, *cfg)
 
 	log.Info("Starting " + namespace)
-	err = http.ListenAndServe(cfg.BindAddr, chain.Then(mainRouter))
+	err = http.ListenAndServe(cfg.BindAddr, mainRouter)
 	if err != nil {
 		log.Error(err)
 	}

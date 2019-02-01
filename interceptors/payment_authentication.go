@@ -1,11 +1,13 @@
 package interceptors
 
 import (
+	"context"
 	"fmt"
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
+	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -19,6 +21,22 @@ func PaymentAuthenticationInterceptor(next http.Handler) http.Handler {
 		if id == "" {
 			log.ErrorR(r, fmt.Errorf("PaymentAuthenticationInterceptor error: no payment id"))
 			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		// Get user details from context, passed in by UserAuthenticationInterceptor
+		userDetails, ok := r.Context().Value(helpers.UserDetailsKey).(models.AuthUserDetails)
+		if !ok {
+			log.ErrorR(r, fmt.Errorf("PaymentAuthenticationInterceptor error: invalid AuthUserDetails from UserAuthenticationInterceptor"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// Get user details from request
+		authorisedUser := userDetails.Id
+		if authorisedUser == "" {
+			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor unauthorised: no authorised identity"))
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
@@ -40,42 +58,45 @@ func PaymentAuthenticationInterceptor(next http.Handler) http.Handler {
 		// Get the payment session form the ID in request
 		paymentSession, httpStatus, err := p.GetPaymentSession(id)
 		if err != nil {
-			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor not found: payment session found"))
+			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor error when retrieving payment session: [%v]", err))
 			w.WriteHeader(httpStatus)
 			return
 		}
 
-		// Get user details from request
-		authorisedUser := helpers.GetAuthorisedIdentity(r)
-		if authorisedUser == "" {
-			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor unauthorised: no authorised identity"))
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
+		// Store paymentSession in context to use later in the handler
+		ctx := context.WithValue(r.Context(), helpers.PaymentSessionKey, paymentSession)
 
 		// Set up variables that are used to determine authorisation below
 		isGetRequest := http.MethodGet == r.Method
 		authUserIsPaymentCreator := authorisedUser == paymentSession.CreatedBy.ID
 		authUserHasPaymentLookupRole := helpers.IsRoleAuthorised(r, helpers.AdminPaymentLookupRole)
 
+		// Set up debug map for logging at each exit point
+		debugMap := log.Data{
+			"paymentId":                    id,
+			"authUserIsPaymentCreator":     authUserIsPaymentCreator,
+			"authUserHasPaymentLookupRole": authUserHasPaymentLookupRole,
+			"requestMethod":                r.Method,
+		}
+
 		// Now that we have the payment data and authorized user there are
 		// multiple cases that can be allowed through:
 		if authUserIsPaymentCreator {
 			// 1) Authorized user created the payment
-			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as creator on GET")
+			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as creator", debugMap)
 			// Call the next handler
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(w, r.WithContext(ctx))
 		} else if authUserHasPaymentLookupRole && isGetRequest {
 			// 2) Authorized user has permission to lookup any payment session and
 			// request is a GET i.e. to see payment data but not modify/delete
-			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as payment lookup role on GET")
+			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as payment lookup role on GET", debugMap)
 			// Call the next handler
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(w, r.WithContext(ctx))
 		} else {
 			// If none of the above conditions above are met then the request is
 			// unauthorized
 			w.WriteHeader(http.StatusUnauthorized)
-			log.InfoR(r, "PaymentAuthenticationInterceptor unauthorised")
+			log.InfoR(r, "PaymentAuthenticationInterceptor unauthorised", debugMap)
 		}
 	})
 }

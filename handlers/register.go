@@ -23,7 +23,6 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	}
 
 	mainRouter.HandleFunc("/healthcheck", healthCheck).Methods("GET").Name("get-healthcheck")
-	mainRouter.Use(log.Handler)
 
 	// Create subrouters. All routes except /callback need auth middleware, so router needs to be split up. This allows
 	// per-subrouter middleware.
@@ -46,9 +45,10 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	callbackRouter.HandleFunc("/payments/govpay/{payment_id}", p.HandleGovPayCallback).Methods("GET").Name("handle-govpay-callback")
 
 	// Set middleware for subrouters
-	rootPaymentRouter.Use(interceptors.UserAuthenticationInterceptor)
-	getPaymentRouter.Use(interceptors.UserAuthenticationInterceptor, interceptors.PaymentAuthenticationInterceptor)
-	privateRouter.Use(interceptors.UserAuthenticationInterceptor, interceptors.PaymentAuthenticationInterceptor)
+	rootPaymentRouter.Use(interceptors.UserAuthenticationInterceptor, log.Handler)
+	getPaymentRouter.Use(interceptors.PaymentAuthenticationInterceptor)
+	privateRouter.Use(interceptors.UserAuthenticationInterceptor, interceptors.PaymentAuthenticationInterceptor, log.Handler)
+	callbackRouter.Use(log.Handler)
 }
 
 func healthCheck(w http.ResponseWriter, _ *http.Request) {

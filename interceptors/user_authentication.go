@@ -37,7 +37,7 @@ func UserAuthenticationInterceptor(next http.Handler) http.Handler {
 
 		// Extract user details and add to context
 		userDetails := strings.Split(authorisedUser, ";")
-		authUserDetails := models.AuthUserDetails{ Id: identity }
+		authUserDetails := models.AuthUserDetails{Id: identity}
 
 		switch len(userDetails) {
 		case 1:
@@ -51,7 +51,7 @@ func UserAuthenticationInterceptor(next http.Handler) http.Handler {
 			authUserDetails.Surname = userDetails[2]
 		}
 
-		ctx := context.WithValue(r.Context(), "user_details", authUserDetails)
+		ctx := context.WithValue(r.Context(), helpers.UserDetailsKey, authUserDetails)
 
 		// Call the next handler
 		next.ServeHTTP(w, r.WithContext(ctx))
