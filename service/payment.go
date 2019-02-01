@@ -209,7 +209,7 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 	}
 
 	requestDecoder := json.NewDecoder(req.Body)
-	var PaymentResourceUpdateData models.PaymentResourceData
+	var PaymentResourceUpdateData models.PaymentResourceRest
 	err := requestDecoder.Decode(&PaymentResourceUpdateData)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("request body invalid: [%v]", err))
@@ -218,7 +218,7 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 	}
 
 	var PaymentResourceUpdate models.PaymentResource
-	PaymentResourceUpdate.Data = PaymentResourceUpdateData
+	PaymentResourceUpdate = transformers.PaymentTransformer{}.TransformToDB(PaymentResourceUpdateData)
 
 	httpStatus, err := service.patchPaymentSession(id, PaymentResourceUpdate)
 	if err != nil {
