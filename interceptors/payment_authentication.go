@@ -60,10 +60,8 @@ func PaymentAuthenticationInterceptor(next http.Handler) http.Handler {
 
 		// Now that we have the payment data and authorized user there are
 		// multiple cases that can be allowed through:
-
-		if authUserIsPaymentCreator && isGetRequest {
-			// 1) Authorized user created the payment and request is a GET i.e.
-			// to see payment data but not modify/delete
+		if authUserIsPaymentCreator {
+			// 1) Authorized user created the payment
 			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as creator on GET")
 			// Call the next handler
 			next.ServeHTTP(w, r)
