@@ -16,6 +16,7 @@ import (
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
+	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/transformers"
 	"github.com/gorilla/mux"
@@ -56,143 +57,167 @@ func (paymentStatus PaymentStatus) String() string {
 	return paymentStatuses[paymentStatus-1]
 }
 
+// the start of this func is the responsibility of a payment create handler so split out
+// // CreatePaymentSession creates a payment session and returns a journey URL for the calling app to redirect to
+// func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *http.Request) {
+// 	if req.Body == nil {
+// 		log.ErrorR(req, fmt.Errorf("request body empty"))
+// 		w.WriteHeader(http.StatusBadRequest)
+// 		return
+// 	}
+
+// 	requestDecoder := json.NewDecoder(req.Body)
+// 	var incomingPaymentResourceRequest models.IncomingPaymentResourceRequest
+// 	err := requestDecoder.Decode(&incomingPaymentResourceRequest)
+// 	if err != nil {
+// 		log.ErrorR(req, fmt.Errorf("request body invalid: [%v]", err))
+// 		w.WriteHeader(http.StatusBadRequest)
+// 		return
+// 	}
+
+// if err = validatePaymentCreate(incomingPaymentResourceRequest); err != nil {
+// 	log.ErrorR(req, fmt.Errorf("invalid POST request to create payment session: [%v]", err))
+// 	w.WriteHeader(http.StatusBadRequest)
+// 	return nil, err
+// }
+
+// this service func now just handles the incoming model. request is still passed in for other purposes e.g. log tracing, using models from request context - user auth
+// however the response writer should not be available in any service level call so it has been removed from this func args.
+// instead this func returns errors which can be converted into status codes by the controller - the error types and conversion will need more work going forwards
+// but this split should be put in now
+
 // CreatePaymentSession creates a payment session and returns a journey URL for the calling app to redirect to
-func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *http.Request) {
-	if req.Body == nil {
-		log.ErrorR(req, fmt.Errorf("request body empty"))
-		w.WriteHeader(http.StatusBadRequest)
-		return
+func (service *PaymentService) CreatePaymentSession(req *http.Request, createResource models.IncomingPaymentResourceRequest) (*models.PaymentResourceRest, error) {
+
+	// Get user details from context, put there by UserAuthenticationInterceptor
+	userDetails, ok := req.Context().Value(helpers.UserDetailsKey).(models.AuthUserDetails)
+	if !ok {
+		err := fmt.Errorf("invalid AuthUserDetails in request context")
+		log.ErrorR(req, err)
+		return nil, err
 	}
 
-	requestDecoder := json.NewDecoder(req.Body)
-	var incomingPaymentResourceRequest models.IncomingPaymentResourceRequest
-	err := requestDecoder.Decode(&incomingPaymentResourceRequest)
+	// http status code may not matter here - if there is any error we can treat as internal server error for now
+	costs, _, err := getCosts(createResource.Resource, &service.Config)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("request body invalid: [%v]", err))
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	if err = validatePaymentCreate(incomingPaymentResourceRequest); err != nil {
-		log.ErrorR(req, fmt.Errorf("invalid POST request to create payment session: [%v]", err))
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	costs, httpStatus, err := getCosts(incomingPaymentResourceRequest.Resource, &service.Config)
-	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error getting payment resource: [%v]", err))
-		w.WriteHeader(httpStatus)
-		return
+		err = fmt.Errorf("error getting payment resource: [%v]", err)
+		log.ErrorR(req, err)
+		return nil, err
 	}
 
 	totalAmount, err := getTotalAmount(costs)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error getting amount from costs: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		err = fmt.Errorf("error getting amount from costs: [%v]", err)
+		log.ErrorR(req, err)
+		return nil, err
 	}
 
-	user := strings.Split(req.Header.Get("Eric-Authorised-User"), ";")
-	email := user[0]
-	var forename string
-	var surname string
+	// user details can now be retrieved from request context as their are handled by UserAuthenticationInterceptor
+	// user := strings.Split(req.Header.Get("Eric-Authorised-User"), ";")
+	// email := user[0]
+	// var forename string
+	// var surname string
 
-	for i := 1; i < len(user); i++ {
-		v := strings.Split(user[i], "=")
-		if v[0] == " forename" {
-			forename = v[1]
-		} else if v[0] == " surname" {
-			surname = v[1]
-		} else {
-			log.ErrorR(req, fmt.Errorf("unexpected format in Eric-Authorised-User: %s", user))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-	}
+	// for i := 1; i < len(user); i++ {
+	// 	v := strings.Split(user[i], "=")
+	// 	if v[0] == " forename" {
+	// 		forename = v[1]
+	// 	} else if v[0] == " surname" {
+	// 		surname = v[1]
+	// 	} else {
+	// 		log.ErrorR(req, fmt.Errorf("unexpected format in Eric-Authorised-User: %s", user))
+	// 		w.WriteHeader(http.StatusInternalServerError)
+	// 		return nil, err
+	// 	}
+	// }
 
 	//  Create payment session REST data from writable input fields and decorating with read only fields
-	var paymentResourceRest models.PaymentResourceRest
+	paymentResourceRest := &models.PaymentResourceRest{}
 	paymentResourceRest.CreatedBy = models.CreatedByRest{
-		ID:       req.Header.Get("Eric-Identity"),
-		Email:    email,
-		Forename: forename,
-		Surname:  surname,
+		ID:       userDetails.Id,
+		Email:    userDetails.Email,
+		Forename: userDetails.Forename,
+		Surname:  userDetails.Surname,
 	}
 	paymentResourceRest.Amount = totalAmount
 	// To match the format time is saved to mongo, e.g. "2018-11-22T08:39:16.782Z", truncate the time
 	paymentResourceRest.CreatedAt = time.Now().Truncate(time.Millisecond)
 
-	paymentResourceRest.Reference = incomingPaymentResourceRequest.Reference
+	paymentResourceRest.Reference = createResource.Reference
 	paymentResourceRest.Status = Pending.String()
 	paymentResourceID := generateID()
 
 	journeyURL := service.Config.PaymentsWebURL + "/payments/" + paymentResourceID + "/pay"
 	paymentResourceRest.Links = models.PaymentLinksRest{
 		Journey:  journeyURL,
-		Resource: incomingPaymentResourceRequest.Resource,
+		Resource: createResource.Resource,
 		Self:     fmt.Sprintf("payments/%s", paymentResourceID),
 	}
 
 	// transform the complete REST model to a DB model before writing to the DB
-	paymentResourceEntity := transformers.PaymentTransformer{}.TransformToDB(paymentResourceRest)
+	paymentResourceEntity := transformers.PaymentTransformer{}.TransformToDB(*paymentResourceRest)
 
 	// set metadata fields on the DB model before writing
 	paymentResourceEntity.ID = paymentResourceID
-	paymentResourceEntity.State = incomingPaymentResourceRequest.State
+	paymentResourceEntity.State = createResource.State
 
 	err = service.DAO.CreatePaymentResource(&paymentResourceEntity)
 
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error writing to MongoDB: %v", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	// Add data to response
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Location", journeyURL)
-	w.WriteHeader(http.StatusCreated)
-
-	// response body contains fully decorated REST model
-	err = json.NewEncoder(w).Encode(paymentResourceRest)
-	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
-		return
-	}
-
-	log.InfoR(req, "Successful POST request for new payment resource", log.Data{"payment_id": paymentResourceEntity.ID, "status": http.StatusCreated})
-}
-
-// GetPaymentSessionFromRequest retrieves the payment session
-func (service *PaymentService) GetPaymentSessionFromRequest(w http.ResponseWriter, req *http.Request) {
-	vars := mux.Vars(req)
-	id := vars["payment_id"]
-	if id == "" {
-		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	paymentSession, httpStatus, err := (*PaymentService).GetPaymentSession(service, id)
-	if err != nil {
-		w.WriteHeader(httpStatus)
+		err = fmt.Errorf("error writing to MongoDB: %v", err)
 		log.ErrorR(req, err)
-		return
+		return nil, err
 	}
 
-	paymentSessionResponse := transformers.PaymentTransformer{}.TransformToRest(*paymentSession)
-
-	w.Header().Set("Content-Type", "application/json")
-
-	err = json.NewEncoder(w).Encode(paymentSessionResponse)
-	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
-		return
-	}
-
-	log.InfoR(req, "Successfully GET request for payment resource: ", log.Data{"payment_id": id, "status": http.StatusCreated})
+	return paymentResourceRest, nil
 }
+
+// the end of this func is the responsibility of a payment create handler so split out
+// 	// Add data to response
+// 	w.Header().Set("Content-Type", "application/json")
+// 	w.Header().Set("Location", journeyURL)
+// 	w.WriteHeader(http.StatusCreated)
+
+// 	// response body contains fully decorated REST model
+// 	err = json.NewEncoder(w).Encode(paymentResourceRest)
+// 	if err != nil {
+// 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
+// 		return
+// 	}
+
+// 	log.InfoR(req, "Successful POST request for new payment resource", log.Data{"payment_id": paymentResourceEntity.ID, "status": http.StatusCreated})
+// }
+
+// This func has been moved to the payments handler
+// // GetPaymentSessionFromRequest retrieves the payment session
+// func (service *PaymentService) GetPaymentSessionFromRequest(w http.ResponseWriter, req *http.Request) {
+// 	vars := mux.Vars(req)
+// 	id := vars["payment_id"]
+// 	if id == "" {
+// 		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
+// 		w.WriteHeader(http.StatusBadRequest)
+// 		return
+// 	}
+
+// 	paymentSession, httpStatus, err := (*PaymentService).GetPaymentSession(service, id)
+// 	if err != nil {
+// 		w.WriteHeader(httpStatus)
+// 		log.ErrorR(req, err)
+// 		return
+// 	}
+
+// 	paymentSessionResponse := transformers.PaymentTransformer{}.TransformToRest(*paymentSession)
+
+// 	w.Header().Set("Content-Type", "application/json")
+
+// 	err = json.NewEncoder(w).Encode(paymentSessionResponse)
+// 	if err != nil {
+// 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
+// 		return
+// 	}
+
+// 	log.InfoR(req, "Successfully GET request for payment resource: ", log.Data{"payment_id": id, "status": http.StatusCreated})
+// }
 
 // PatchPaymentSession patches and updates the payment session
 func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *http.Request) {
@@ -260,33 +285,48 @@ func (service *PaymentService) UpdatePaymentStatus(s models.StatusResponse, p mo
 	return nil
 }
 
-func (service *PaymentService) GetPaymentSession(id string) (*models.PaymentResourceDataDB, int, error) {
+// GetPaymentSession retrieves the payment session witht he given id from the database
+func (service *PaymentService) GetPaymentSession(req *http.Request, id string) (*models.PaymentResourceRest, int, error) {
 	paymentResource, err := service.DAO.GetPaymentResource(id)
-	if paymentResource == nil {
-		return nil, http.StatusForbidden, fmt.Errorf("payment session not found. id: %s", id)
-	}
 	if err != nil {
-		return nil, http.StatusInternalServerError, fmt.Errorf("error getting payment resource from db: [%v]", err)
+		err := fmt.Errorf("error getting payment resource from db: [%v]", err)
+		log.ErrorR(req, err)
+		return nil, http.StatusInternalServerError, err
+	}
+
+	if paymentResource == nil {
+		log.TraceR(req, "payment session not found", log.Data{"payment_id": id})
+		return nil, http.StatusNotFound, nil
 	}
 
 	costs, httpStatus, err := getCosts(paymentResource.Data.Links.Resource, &service.Config)
 	if err != nil {
-		return nil, httpStatus, fmt.Errorf("error getting payment resource: [%v]", err)
+		err := fmt.Errorf("error getting payment costs: [%v]", err)
+		log.ErrorR(req, err)
+		return nil, httpStatus, err
 	}
 
 	totalAmount, err := getTotalAmount(costs)
 	if err != nil {
-		return nil, http.StatusInternalServerError, fmt.Errorf("error getting amount from costs: [%v]", err)
+		err := fmt.Errorf("error getting amount from costs: [%v]", err)
+		log.ErrorR(req, err)
+		return nil, http.StatusInternalServerError, err
 	}
 
 	if totalAmount != paymentResource.Data.Amount {
 		// TODO Expire payment session
-		return nil, http.StatusForbidden, fmt.Errorf("amount in payment resource [%s] different from db [%s] for id [%s]", totalAmount, paymentResource.Data.Amount, paymentResource.ID)
+		err := fmt.Errorf("amount in payment resource [%s] different from db [%s] for id [%s]", totalAmount, paymentResource.Data.Amount, paymentResource.ID)
+		log.ErrorR(req, err)
+		return nil, http.StatusForbidden, err
 	}
 
 	paymentResource.Data.Costs = *costs
 
-	return &paymentResource.Data, http.StatusOK, nil
+	// transform the complete DB model to a Rest model before returning to the caller
+	// this is because the DB model is internal to the service layer, nothing dealing with the service ayer should ever know about the internal storage model
+	paymentResourceRest := transformers.PaymentTransformer{}.TransformToRest(paymentResource.Data)
+
+	return &paymentResourceRest, http.StatusOK, nil
 }
 
 func getTotalAmount(costs *[]models.CostResourceDB) (string, error) {
@@ -391,11 +431,11 @@ func validateCosts(costs *[]models.CostResourceDB) error {
 	return nil
 }
 
-func validatePaymentCreate(incomingPaymentResourceRequest models.IncomingPaymentResourceRequest) error {
-	validate := validator.New()
-	err := validate.Struct(incomingPaymentResourceRequest)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+// func validatePaymentCreate(incomingPaymentResourceRequest models.IncomingPaymentResourceRequest) error {
+// 	validate := validator.New()
+// 	err := validate.Struct(incomingPaymentResourceRequest)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }

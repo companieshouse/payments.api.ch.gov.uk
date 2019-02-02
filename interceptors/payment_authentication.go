@@ -3,6 +3,8 @@ package interceptors
 import (
 	"context"
 	"fmt"
+	"net/http"
+
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
@@ -10,7 +12,6 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/gorilla/mux"
-	"net/http"
 )
 
 func PaymentAuthenticationInterceptor(next http.Handler) http.Handler {
@@ -56,7 +57,7 @@ func PaymentAuthenticationInterceptor(next http.Handler) http.Handler {
 		}
 
 		// Get the payment session form the ID in request
-		paymentSession, httpStatus, err := p.GetPaymentSession(id)
+		paymentSession, httpStatus, err := p.GetPaymentSession(req, id)
 		if err != nil {
 			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor error when retrieving payment session: [%v]", err))
 			w.WriteHeader(httpStatus)
