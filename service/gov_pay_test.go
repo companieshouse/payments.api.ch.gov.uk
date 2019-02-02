@@ -26,7 +26,7 @@ func TestUnitGovPay(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, httpmock.NewErrorResponder(fmt.Errorf("error")))
 
-		paymentResourceData := models.PaymentResourceData{Amount: "250.567"}
+		paymentResourceData := models.PaymentResourceDataDB{Amount: "250.567"}
 		govPayResponse, err := mockPaymentService.returnNextURLGovPay(&paymentResourceData, "1234", cfg)
 
 		So(govPayResponse, ShouldEqual, "")
@@ -41,7 +41,7 @@ func TestUnitGovPay(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, httpmock.NewErrorResponder(fmt.Errorf("error")))
 
-		paymentResourceData := models.PaymentResourceData{Amount: "250"}
+		paymentResourceData := models.PaymentResourceDataDB{Amount: "250"}
 		govPayResponse, err := mockPaymentService.returnNextURLGovPay(&paymentResourceData, "1234", cfg)
 
 		So(govPayResponse, ShouldEqual, "")
@@ -58,7 +58,7 @@ func TestUnitGovPay(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(500, "string")
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
 
-		paymentResourceData := models.PaymentResourceData{Amount: "250"}
+		paymentResourceData := models.PaymentResourceDataDB{Amount: "250"}
 		govPayResponse, err := mockPaymentService.returnNextURLGovPay(&paymentResourceData, "1234", cfg)
 
 		So(govPayResponse, ShouldEqual, "")
@@ -76,7 +76,7 @@ func TestUnitGovPay(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(500, IncomingGovPayResponse)
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
 
-		paymentResourceData := models.PaymentResourceData{Amount: "250"}
+		paymentResourceData := models.PaymentResourceDataDB{Amount: "250"}
 		govPayResponse, err := mockPaymentService.returnNextURLGovPay(&paymentResourceData, "1234", cfg)
 
 		So(govPayResponse, ShouldEqual, "")
@@ -101,7 +101,7 @@ func TestUnitGovPay(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusCreated, IncomingGovPayResponse)
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
 
-		paymentResourceData := models.PaymentResourceData{Amount: "250"}
+		paymentResourceData := models.PaymentResourceDataDB{Amount: "250"}
 		govPayResponse, err := mockPaymentService.returnNextURLGovPay(&paymentResourceData, "1234", cfg)
 
 		So(govPayResponse, ShouldEqual, journeyURL)
@@ -117,7 +117,7 @@ func TestUnitGovPay(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, IncomingGovPayResponse)
 		httpmock.RegisterResponder("GET", "testurl", jsonResponse)
 
-		paymentResource := models.PaymentResource{ExternalPaymentStatusURI: "testurl"}
+		paymentResource := models.PaymentResourceDB{ExternalPaymentStatusURI: "testurl"}
 		govPayResponse, err := getGovPayPaymentState(&paymentResource, cfg)
 
 		So(govPayResponse, ShouldResemble, &GovPayState)
