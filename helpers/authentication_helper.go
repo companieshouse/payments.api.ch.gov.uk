@@ -8,7 +8,7 @@ import (
 const (
 	Oauth2IdentityType     = "oauth2"
 	AdminPaymentLookupRole = "/admin/payment-lookup"
-	UserDetailsKey         = "user_details"
+	// UserDetailsKey         = "user_details"
 
 	ericIdentity        = "ERIC-Identity"
 	ericIdentityType    = "ERIC-Identity-Type"

@@ -38,19 +38,27 @@ func (pt PaymentTransformer) TransformToDB(rest models.PaymentResourceRest) mode
 }
 
 // TransformToRest transforms payment resource database model into payment resource rest model
-func (pt PaymentTransformer) TransformToRest(dbResourceData models.PaymentResourceDataDB) models.PaymentResourceRest {
+func (pt PaymentTransformer) TransformToRest(dbResource models.PaymentResourceDB) models.PaymentResourceRest {
 	paymentResource := models.PaymentResourceRest{
-		Amount:                  dbResourceData.Amount,
-		AvailablePaymentMethods: dbResourceData.AvailablePaymentMethods,
-		CompletedAt:             dbResourceData.CompletedAt,
-		CreatedAt:               dbResourceData.CreatedAt,
-		CreatedBy:               models.CreatedByRest(dbResourceData.CreatedBy),
-		Description:             dbResourceData.Description,
-		PaymentMethod:           dbResourceData.PaymentMethod,
-		Reference:               dbResourceData.Reference,
-		Status:                  dbResourceData.Status,
-		Links:                   models.PaymentLinksRest(dbResourceData.Links),
-		Costs:                   pt.transformCostResourcesToRest(dbResourceData.Costs),
+		Amount:                  dbResource.Data.Amount,
+		AvailablePaymentMethods: dbResource.Data.AvailablePaymentMethods,
+		CompletedAt:             dbResource.Data.CompletedAt,
+		CreatedAt:               dbResource.Data.CreatedAt,
+		CreatedBy:               models.CreatedByRest(dbResource.Data.CreatedBy),
+		Description:             dbResource.Data.Description,
+		PaymentMethod:           dbResource.Data.PaymentMethod,
+		Reference:               dbResource.Data.Reference,
+		Status:                  dbResource.Data.Status,
+		Links:                   models.PaymentLinksRest(dbResource.Data.Links),
+		Costs:                   pt.transformCostResourcesToRest(dbResource.Data.Costs),
+	}
+
+	// one way transformation of DB metadata related to but not part of the payment rest data json spec
+	paymentResource.MetaData = models.PaymentResourceMetaDataRest{
+		ID:          dbResource.ID,
+		RedirectURI: dbResource.RedirectURI,
+		State:       dbResource.State,
+		ExternalPaymentStatusURI: dbResource.ExternalPaymentStatusURI,
 	}
 	return paymentResource
 }

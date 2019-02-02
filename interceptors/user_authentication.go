@@ -3,10 +3,11 @@ package interceptors
 import (
 	"context"
 	"fmt"
-	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
-	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"net/http"
 	"strings"
+
+	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
+	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 
 	"github.com/companieshouse/chs.go/log"
 )
@@ -51,7 +52,7 @@ func UserAuthenticationInterceptor(next http.Handler) http.Handler {
 			authUserDetails.Surname = userDetails[2]
 		}
 
-		ctx := context.WithValue(r.Context(), helpers.UserDetailsKey, authUserDetails)
+		ctx := context.WithValue(r.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 
 		// Call the next handler
 		next.ServeHTTP(w, r.WithContext(ctx))

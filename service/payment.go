@@ -19,7 +19,6 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/transformers"
-	"github.com/gorilla/mux"
 	"github.com/shopspring/decimal"
 	"gopkg.in/go-playground/validator.v9"
 )
@@ -33,7 +32,7 @@ type PaymentService struct {
 // PaymentStatus Enum Type
 type PaymentStatus int
 
-const PaymentSessionKey = "payment_session"
+// const PaymentSessionKey = "payment_session"
 
 // Enumeration containing all possible payment statuses
 const (
@@ -90,7 +89,7 @@ func (paymentStatus PaymentStatus) String() string {
 func (service *PaymentService) CreatePaymentSession(req *http.Request, createResource models.IncomingPaymentResourceRequest) (*models.PaymentResourceRest, error) {
 
 	// Get user details from context, put there by UserAuthenticationInterceptor
-	userDetails, ok := req.Context().Value(helpers.UserDetailsKey).(models.AuthUserDetails)
+	userDetails, ok := req.Context().Value(helpers.ContextKeyUserDetails).(models.AuthUserDetails)
 	if !ok {
 		err := fmt.Errorf("invalid AuthUserDetails in request context")
 		log.ErrorR(req, err)
@@ -219,71 +218,92 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 // 	log.InfoR(req, "Successfully GET request for payment resource: ", log.Data{"payment_id": id, "status": http.StatusCreated})
 // }
 
-// PatchPaymentSession patches and updates the payment session
-func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *http.Request) {
-	vars := mux.Vars(req)
-	id := vars["payment_id"]
-	if id == "" {
-		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
+// // PatchPaymentSession patches and updates the payment session
+// func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *http.Request) {
+// 	vars := mux.Vars(req)
+// 	id := vars["payment_id"]
+// 	if id == "" {
+// 		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
+// 		w.WriteHeader(http.StatusBadRequest)
+// 		return
+// 	}
 
-	if req.Body == nil {
-		log.ErrorR(req, fmt.Errorf("request body empty"))
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
+// 	if req.Body == nil {
+// 		log.ErrorR(req, fmt.Errorf("request body empty"))
+// 		w.WriteHeader(http.StatusBadRequest)
+// 		return
+// 	}
 
-	requestDecoder := json.NewDecoder(req.Body)
-	var PaymentResourceUpdateData models.PaymentResourceRest
-	err := requestDecoder.Decode(&PaymentResourceUpdateData)
+// 	requestDecoder := json.NewDecoder(req.Body)
+// 	var PaymentResourceUpdateData models.PaymentResourceRest
+// 	err := requestDecoder.Decode(&PaymentResourceUpdateData)
+// 	if err != nil {
+// 		log.ErrorR(req, fmt.Errorf("request body invalid: [%v]", err))
+// 		w.WriteHeader(http.StatusBadRequest)
+// 		return
+// 	}
+
+// 	var PaymentResourceUpdate models.PaymentResourceDB
+// 	PaymentResourceUpdate = transformers.PaymentTransformer{}.TransformToDB(PaymentResourceUpdateData)
+
+// 	httpStatus, err := service.patchPaymentSession(id, PaymentResourceUpdate)
+// 	if err != nil {
+// 		w.WriteHeader(httpStatus)
+// 		log.ErrorR(req, err)
+// 		return
+// 	}
+
+// 	log.InfoR(req, "Successful PATCH request for payment resource", log.Data{"payment_id": id, "status": http.StatusOK})
+// }
+
+// PatchPaymentSession updates an existing payment session with the data provided from the Rest model
+func (service *PaymentService) PatchPaymentSession(req *http.Request, id string, PaymentResourceUpdateRest models.PaymentResourceRest) error {
+
+	PaymentResourceUpdate := transformers.PaymentTransformer{}.TransformToDB(PaymentResourceUpdateRest)
+
+	err := service.DAO.PatchPaymentResource(id, &PaymentResourceUpdate)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("request body invalid: [%v]", err))
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	var PaymentResourceUpdate models.PaymentResourceDB
-	PaymentResourceUpdate = transformers.PaymentTransformer{}.TransformToDB(PaymentResourceUpdateData)
-
-	httpStatus, err := service.patchPaymentSession(id, PaymentResourceUpdate)
-	if err != nil {
-		w.WriteHeader(httpStatus)
+		// not found case shouldn't be possible any more as the payment auth interceptor would have already caight it
+		// if err.Error() == "not found" {
+		// 	return http.StatusForbidden, fmt.Errorf("could not find payment resource to patch")
+		// }
+		err = fmt.Errorf("error patching payment session on database: [%v]", err)
 		log.ErrorR(req, err)
-		return
+		return err
 	}
 
-	log.InfoR(req, "Successful PATCH request for payment resource", log.Data{"payment_id": id, "status": http.StatusOK})
+	return nil
 }
 
-func (service *PaymentService) patchPaymentSession(id string, PaymentResourceUpdate models.PaymentResourceDB) (int, error) {
+// StoreExternalPaymentStatusURI stores a new value in the payment resource metadata for the ExternalPaymentStatusURI
+func (service *PaymentService) StoreExternalPaymentStatusURI(req *http.Request, id string, externalPaymentStatusURI string) error {
 
-	if PaymentResourceUpdate.Data.PaymentMethod == "" && PaymentResourceUpdate.Data.Status == "" && PaymentResourceUpdate.ExternalPaymentStatusURI == "" {
-		return http.StatusBadRequest, fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", id)
+	PaymentResourceUpdate := models.PaymentResourceDB{
+		ExternalPaymentStatusURI: externalPaymentStatusURI,
 	}
 
 	err := service.DAO.PatchPaymentResource(id, &PaymentResourceUpdate)
 	if err != nil {
-		if err.Error() == "not found" {
-			return http.StatusForbidden, fmt.Errorf("could not find payment resource to patch")
-		}
-		return http.StatusInternalServerError, fmt.Errorf("error patching payment session on database: [%v]", err)
+		err = fmt.Errorf("error storing ExternalPaymentStatusURI on payment session: [%v]", err)
+		log.ErrorR(req, err)
+		return err
 	}
 
-	return http.StatusOK, nil
-}
-
-// UpdatePaymentStatus updates the Status in the Payment Session.
-func (service *PaymentService) UpdatePaymentStatus(s models.StatusResponse, p models.PaymentResourceDB) error {
-	p.Data.Status = s.Status
-	_, err := service.patchPaymentSession(p.ID, p)
-
-	if err != nil {
-		return fmt.Errorf("error updating payment status: [%s]", err)
-	}
 	return nil
 }
+
+// this func is not required, it is a simple wrapper but exposes things in the service layer that are not required
+// removed func and changed callback code to use PatchPaymentSession directly
+// // UpdatePaymentStatus updates the Status in the Payment Session.
+// func (service *PaymentService) UpdatePaymentStatus(s models.StatusResponse, p models.PaymentResourceDB) error {
+// 	p.Data.Status = s.Status
+// 	_, err := service.patchPaymentSession(p.ID, p)
+
+// 	if err != nil {
+// 		return fmt.Errorf("error updating payment status: [%s]", err)
+// 	}
+// 	return nil
+// }
 
 // GetPaymentSession retrieves the payment session witht he given id from the database
 func (service *PaymentService) GetPaymentSession(req *http.Request, id string) (*models.PaymentResourceRest, int, error) {
@@ -324,7 +344,7 @@ func (service *PaymentService) GetPaymentSession(req *http.Request, id string) (
 
 	// transform the complete DB model to a Rest model before returning to the caller
 	// this is because the DB model is internal to the service layer, nothing dealing with the service ayer should ever know about the internal storage model
-	paymentResourceRest := transformers.PaymentTransformer{}.TransformToRest(paymentResource.Data)
+	paymentResourceRest := transformers.PaymentTransformer{}.TransformToRest(*paymentResource)
 
 	return &paymentResourceRest, http.StatusOK, nil
 }

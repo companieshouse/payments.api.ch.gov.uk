@@ -60,9 +60,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "notauth2")
 		// Pass no ID (identity)
-		authUserDetails := models.AuthUserDetails{
-
-		}
+		authUserDetails := models.AuthUserDetails{}
 		ctx := context.WithValue(req.Context(), helpers.UserDetailsKey, authUserDetails)
 		So(err, ShouldBeNil)
 

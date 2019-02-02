@@ -23,6 +23,15 @@ type PaymentResourceRest struct {
 	Reference               string             `json:"reference,omitempty"`
 	Status                  string             `json:"status"`
 	Costs                   []CostResourceRest `json:"items"`
+	MetaData                PaymentResourceMetaDataRest
+}
+
+// PaymentResourceMetaDataRest contains all metadata fields that are relevant to the payment resource but not part of the Rest resource
+type PaymentResourceMetaDataRest struct {
+	ID                       string
+	RedirectURI              string
+	State                    string
+	ExternalPaymentStatusURI string
 }
 
 // CreatedByRest is the user who is creating the payment session
