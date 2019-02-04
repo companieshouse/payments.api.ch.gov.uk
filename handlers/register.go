@@ -17,11 +17,15 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	m := &dao.Mongo{
 		URL: cfg.MongoDBURL,
 	}
+
 	p := &service.PaymentService{
 		DAO:    m,
 		Config: cfg,
 	}
 
+	pa := &interceptors.PaymentAuthenticationInterceptor{
+		Service: *p,
+	}
 	mainRouter.HandleFunc("/healthcheck", healthCheck).Methods("GET").Name("get-healthcheck")
 
 	// Create subrouters. All routes except /callback need auth middleware, so router needs to be split up. This allows
@@ -46,8 +50,8 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 
 	// Set middleware for subrouters
 	rootPaymentRouter.Use(log.Handler, interceptors.UserAuthenticationInterceptor)
-	getPaymentRouter.Use(interceptors.PaymentAuthenticationInterceptor)
-	privateRouter.Use(log.Handler, interceptors.UserAuthenticationInterceptor, interceptors.PaymentAuthenticationInterceptor)
+	getPaymentRouter.Use(pa.PaymentAuthenticationIntercept)
+	privateRouter.Use(log.Handler, interceptors.UserAuthenticationInterceptor, pa.PaymentAuthenticationIntercept)
 	callbackRouter.Use(log.Handler)
 }
 

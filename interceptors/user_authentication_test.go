@@ -12,8 +12,9 @@ import (
 
 // GetTestHandler returns a http.HandlerFunc for testing http middleware
 func GetTestHandler() http.HandlerFunc {
-	fn := func(rw http.ResponseWriter, req *http.Request) {
-		panic("test entered test handler, this should not happen")
+	fn := func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		return
 	}
 	return http.HandlerFunc(fn)
 }
@@ -67,5 +68,22 @@ func TestUnitUserAuthenticationInterceptor(t *testing.T) {
 		test := UserAuthenticationInterceptor(GetTestHandler())
 		test.ServeHTTP(w, req)
 		So(w.Code, ShouldEqual, 401)
+	})
+
+	Convey("Happy path with populated headers", t, func() {
+		path := fmt.Sprintf("/payments/%s", "1234")
+		req, err := http.NewRequest("Get", path, nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
+		req.Header.Set("Eric-Identity", "authorised_identity")
+		req.Header.Set("Eric-Identity-Type", "oauth2")
+		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
+		req.Header.Set("ERIC-Authorised-Roles", "notauth2")
+
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+		test := UserAuthenticationInterceptor(GetTestHandler())
+		test.ServeHTTP(w, req)
+		So(w.Code, ShouldEqual, 200)
 	})
 }

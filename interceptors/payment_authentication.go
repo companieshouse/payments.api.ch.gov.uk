@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/companieshouse/chs.go/log"
-	"github.com/companieshouse/payments.api.ch.gov.uk/config"
-	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
@@ -13,7 +11,12 @@ import (
 	"net/http"
 )
 
-func PaymentAuthenticationInterceptor(next http.Handler) http.Handler {
+// PaymentAuthentication contains the service used in the interceptor
+type PaymentAuthenticationInterceptor struct {
+	Service service.PaymentService
+}
+
+func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) PaymentAuthenticationIntercept(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check for a payment ID in request
 		vars := mux.Vars(r)
@@ -40,23 +43,8 @@ func PaymentAuthenticationInterceptor(next http.Handler) http.Handler {
 			return
 		}
 
-		cfg, err := config.Get()
-		if err != nil {
-			log.Error(fmt.Errorf("error retreiving config: %s. Exiting", err), nil)
-			return
-		}
-
-		m := &dao.Mongo{
-			URL: cfg.MongoDBURL,
-		}
-
-		p := service.PaymentService{
-			DAO:    m,
-			Config: *cfg,
-		}
-
-		// Get the payment session form the ID in request
-		paymentSession, httpStatus, err := p.GetPaymentSession(id)
+		// Get the payment session from the ID in request
+		paymentSession, httpStatus, err := paymentAuthenticationInterceptor.Service.GetPaymentSession(id)
 		if err != nil {
 			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor error when retrieving payment session: [%v]", err))
 			w.WriteHeader(httpStatus)
