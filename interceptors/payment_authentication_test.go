@@ -38,7 +38,7 @@ func createMockPaymentService(dao *dao.MockDAO, config *config.Config) service.P
 	}
 }
 
-func createMockPaymentPaymentAuthenticationInterceptor(service *service.PaymentService) PaymentAuthenticationInterceptor {
+func createPaymentAuthenticationInterceptorWithMockService(service *service.PaymentService) PaymentAuthenticationInterceptor {
 	return PaymentAuthenticationInterceptor{
 		Service: *service,
 	}
@@ -61,10 +61,10 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockPaymentAuthenticationInterceptor := createMockPaymentPaymentAuthenticationInterceptor(&mockPaymentService)
+		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockService(&mockPaymentService)
 
 		w := httptest.NewRecorder()
-		test := mockPaymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
+		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
 		test.ServeHTTP(w, req)
 		So(w.Code, ShouldEqual, 400)
 	})
@@ -86,10 +86,10 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockPaymentAuthenticationInterceptor := createMockPaymentPaymentAuthenticationInterceptor(&mockPaymentService)
+		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockService(&mockPaymentService)
 
 		w := httptest.NewRecorder()
-		test := mockPaymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
+		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
 		test.ServeHTTP(w, req.WithContext(ctx))
 		So(w.Code, ShouldEqual, 500)
 	})
@@ -109,10 +109,10 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockPaymentAuthenticationInterceptor := createMockPaymentPaymentAuthenticationInterceptor(&mockPaymentService)
+		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockService(&mockPaymentService)
 
 		w := httptest.NewRecorder()
-		test := mockPaymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
+		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
 		test.ServeHTTP(w, req.WithContext(ctx))
 		So(w.Code, ShouldEqual, 401)
 	})
@@ -134,7 +134,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockPaymentAuthenticationInterceptor := createMockPaymentPaymentAuthenticationInterceptor(&mockPaymentService)
+		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockService(&mockPaymentService)
 
 		mock.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "10.00", CreatedBy: models.CreatedBy{ID:"identity"}, Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
 
@@ -145,7 +145,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
-		test := mockPaymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
+		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
 		test.ServeHTTP(w, req.WithContext(ctx))
 		So(w.Code, ShouldEqual, 200)
 	})
@@ -166,7 +166,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockPaymentAuthenticationInterceptor := createMockPaymentPaymentAuthenticationInterceptor(&mockPaymentService)
+		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockService(&mockPaymentService)
 
 		mock.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "10.00", CreatedBy: models.CreatedBy{ID:"adminidentity"}, Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
 
@@ -177,7 +177,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
-		test := mockPaymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
+		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
 		test.ServeHTTP(w, req.WithContext(ctx))
 		So(w.Code, ShouldEqual, 200)
 	})
@@ -198,7 +198,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockPaymentAuthenticationInterceptor := createMockPaymentPaymentAuthenticationInterceptor(&mockPaymentService)
+		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockService(&mockPaymentService)
 
 		mock.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "10.00", CreatedBy: models.CreatedBy{ID:"adminidentity"}, Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
 
@@ -209,7 +209,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
-		test := mockPaymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
+		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
 		test.ServeHTTP(w, req.WithContext(ctx))
 		So(w.Code, ShouldEqual, 401)
 	})
