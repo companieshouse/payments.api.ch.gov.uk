@@ -32,17 +32,17 @@ func (g GovPayResponse) checkProvider(paymentResource *models.PaymentResourceDB)
 	}
 }
 
-func (service *PaymentService) returnNextURLGovPay(paymentResourceData *models.PaymentResourceDataDB, id string, cfg *config.Config) (string, error) {
+func (service *PaymentService) returnNextURLGovPay(paymentResource *models.PaymentResourceRest, id string, cfg *config.Config) (string, error) {
 	var govPayRequest models.OutgoingGovPayRequest
 
-	amountToPay, err := convertToPenceFromDecimal(paymentResourceData.Amount)
+	amountToPay, err := convertToPenceFromDecimal(paymentResource.Amount)
 	if err != nil {
 		return "", fmt.Errorf("error converting amount to pay to pence: [%s]", err)
 	}
 
 	govPayRequest.Amount = amountToPay
 	govPayRequest.Description = "Companies House Payment" // TODO - Make description mandatory when creating payment-session so this doesn't have to be hardcoded
-	govPayRequest.Reference = paymentResourceData.Reference
+	govPayRequest.Reference = paymentResource.Reference
 	govPayRequest.ReturnURL = fmt.Sprintf("%s/callback/payments/govpay/%s", cfg.PaymentsApiURL, id)
 
 	requestBody, err := json.Marshal(govPayRequest)

@@ -45,7 +45,7 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 		}
 
 		// Get the payment session from the ID in request
-		paymentSession, _, httpStatus, err := paymentAuthenticationInterceptor.Service.GetPaymentSession(id)
+		paymentSession, httpStatus, err := paymentAuthenticationInterceptor.Service.GetPaymentSession(id)
 		if err != nil {
 			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor error when retrieving payment session: [%v]", err))
 			w.WriteHeader(httpStatus)

@@ -176,19 +176,16 @@ func (service *PaymentService) GetPaymentSessionFromRequest(w http.ResponseWrite
 		return
 	}
 
-	paymentSession, costs, httpStatus, err := (*PaymentService).GetPaymentSession(service, id)
+	paymentSession, httpStatus, err := (*PaymentService).GetPaymentSession(service, id)
 	if err != nil {
 		w.WriteHeader(httpStatus)
 		log.ErrorR(req, err)
 		return
 	}
 
-	paymentSessionResponse := transformers.PaymentTransformer{}.TransformToRest(*paymentSession)
-	paymentSessionResponse.Costs = *costs
-
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(paymentSessionResponse)
+	err = json.NewEncoder(w).Encode(paymentSession)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
 		return
@@ -263,31 +260,34 @@ func (service *PaymentService) UpdatePaymentStatus(s models.StatusResponse, p mo
 	return nil
 }
 
-func (service *PaymentService) GetPaymentSession(id string) (*models.PaymentResourceDataDB, *[]models.CostResourceRest, int, error) {
+func (service *PaymentService) GetPaymentSession(id string) (*models.PaymentResourceRest, int, error) {
 	paymentResource, err := service.DAO.GetPaymentResource(id)
 	if paymentResource == nil {
-		return nil, nil, http.StatusForbidden, fmt.Errorf("payment session not found. id: %s", id)
+		return nil, http.StatusForbidden, fmt.Errorf("payment session not found. id: %s", id)
 	}
 	if err != nil {
-		return nil, nil, http.StatusInternalServerError, fmt.Errorf("error getting payment resource from db: [%v]", err)
+		return nil, http.StatusInternalServerError, fmt.Errorf("error getting payment resource from db: [%v]", err)
 	}
 
 	costs, httpStatus, err := getCosts(paymentResource.Data.Links.Resource, &service.Config)
 	if err != nil {
-		return nil, nil, httpStatus, fmt.Errorf("error getting payment resource: [%v]", err)
+		return nil, httpStatus, fmt.Errorf("error getting payment resource: [%v]", err)
 	}
 
 	totalAmount, err := getTotalAmount(costs)
 	if err != nil {
-		return nil, nil, http.StatusInternalServerError, fmt.Errorf("error getting amount from costs: [%v]", err)
+		return nil, http.StatusInternalServerError, fmt.Errorf("error getting amount from costs: [%v]", err)
 	}
 
 	if totalAmount != paymentResource.Data.Amount {
 		// TODO Expire payment session
-		return nil, nil, http.StatusForbidden, fmt.Errorf("amount in payment resource [%s] different from db [%s] for id [%s]", totalAmount, paymentResource.Data.Amount, paymentResource.ID)
+		return nil, http.StatusForbidden, fmt.Errorf("amount in payment resource [%s] different from db [%s] for id [%s]", totalAmount, paymentResource.Data.Amount, paymentResource.ID)
 	}
 
-	return &paymentResource.Data, costs, http.StatusOK, nil
+	paymentResourceRest := transformers.PaymentTransformer{}.TransformToRest(paymentResource.Data)
+	paymentResourceRest.Costs = *costs
+
+	return &paymentResourceRest, http.StatusOK, nil
 }
 
 func getTotalAmount(costs *[]models.CostResourceRest) (string, error) {
