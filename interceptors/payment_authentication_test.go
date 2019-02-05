@@ -1,8 +1,8 @@
 package interceptors
 
 import (
-	"context"
 	"fmt"
+	"context"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
@@ -37,7 +37,16 @@ func createMockPaymentService(dao *dao.MockDAO, config *config.Config) service.P
 		Config: *config,
 	}
 }
+// Function to create a PaymentAuthenticationInterceptor with mock mongo DAO and a mock payment service
+func createPaymentAuthenticationInterceptorWithMockDAOandService(controller *gomock.Controller, cfg *config.Config) PaymentAuthenticationInterceptor {
+	mockDAO := dao.NewMockDAO(controller)
+	mockPaymentService := createMockPaymentService(mockDAO, cfg)
+	return PaymentAuthenticationInterceptor{
+		Service: mockPaymentService,
+	}
+}
 
+// Function to create a PaymentAuthenticationInterceptor with the supplied payment service
 func createPaymentAuthenticationInterceptorWithMockService(service *service.PaymentService) PaymentAuthenticationInterceptor {
 	return PaymentAuthenticationInterceptor{
 		Service: *service,
@@ -59,9 +68,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("ERIC-Authorised-Roles", "noroles")
 		So(err, ShouldBeNil)
 
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockService(&mockPaymentService)
+		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockDAOandService(mockCtrl, cfg)
 
 		w := httptest.NewRecorder()
 		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
@@ -84,9 +91,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		ctx := context.WithValue(req.Context(), helpers.UserDetailsKey, authUserDetails)
 		So(err, ShouldBeNil)
 
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockService(&mockPaymentService)
+		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockDAOandService(mockCtrl, cfg)
 
 		w := httptest.NewRecorder()
 		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
@@ -107,9 +112,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		ctx := context.WithValue(req.Context(), helpers.UserDetailsKey, authUserDetails)
 		So(err, ShouldBeNil)
 
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockService(&mockPaymentService)
+		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockDAOandService(mockCtrl, cfg)
 
 		w := httptest.NewRecorder()
 		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
@@ -125,18 +128,17 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("Eric-Identity-Type", "oauth2")
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "noroles")
-		// Pass no ID (identity)
 		authUserDetails := models.AuthUserDetails{
 			Id: "identity",
 		}
 		ctx := context.WithValue(req.Context(), helpers.UserDetailsKey, authUserDetails)
 		So(err, ShouldBeNil)
 
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockDAO := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mockDAO, cfg)
 		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockService(&mockPaymentService)
 
-		mock.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "10.00", CreatedBy: models.CreatedBy{ID:"identity"}, Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
+		mockDAO.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "10.00", CreatedBy: models.CreatedBy{ID: "identity"}, Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
 
 		w := httptest.NewRecorder()
 		httpmock.Activate()
@@ -164,11 +166,11 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		ctx := context.WithValue(req.Context(), helpers.UserDetailsKey, authUserDetails)
 		So(err, ShouldBeNil)
 
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockDAO := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mockDAO, cfg)
 		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockService(&mockPaymentService)
 
-		mock.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "10.00", CreatedBy: models.CreatedBy{ID:"adminidentity"}, Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
+		mockDAO.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "10.00", CreatedBy: models.CreatedBy{ID: "adminidentity"}, Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
 
 		w := httptest.NewRecorder()
 		httpmock.Activate()
@@ -196,11 +198,11 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		ctx := context.WithValue(req.Context(), helpers.UserDetailsKey, authUserDetails)
 		So(err, ShouldBeNil)
 
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockDAO := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mockDAO, cfg)
 		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockService(&mockPaymentService)
 
-		mock.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "10.00", CreatedBy: models.CreatedBy{ID:"adminidentity"}, Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
+		mockDAO.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResource{ID: "1234", Data: models.PaymentResourceData{Amount: "10.00", CreatedBy: models.CreatedBy{ID: "adminidentity"}, Links: models.Links{Resource: "http://dummy-resource"}}}, nil)
 
 		w := httptest.NewRecorder()
 		httpmock.Activate()

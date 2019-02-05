@@ -11,7 +11,7 @@ import (
 	"net/http"
 )
 
-// PaymentAuthentication contains the service used in the interceptor
+// PaymentAuthenticationInterceptor contains the payment service used in the interceptor
 type PaymentAuthenticationInterceptor struct {
 	Service service.PaymentService
 }
