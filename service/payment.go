@@ -121,6 +121,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	}
 	paymentResourceRest.Amount = totalAmount
 	// To match the format time is saved to mongo, e.g. "2018-11-22T08:39:16.782Z", truncate the time
+	paymentResourceRest.Costs = *costs
 	paymentResourceRest.CreatedAt = time.Now().Truncate(time.Millisecond)
 
 	paymentResourceRest.Reference = incomingPaymentResourceRequest.Reference
