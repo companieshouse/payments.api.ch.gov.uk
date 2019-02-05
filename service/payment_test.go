@@ -19,16 +19,16 @@ import (
 	"gopkg.in/jarcoal/httpmock.v1"
 )
 
-var defaultCost = models.CostResourceDB{
+var defaultCost = models.CostResourceRest{
 	Amount:                  "10",
 	AvailablePaymentMethods: []string{"method"},
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
-	Links:                   models.CostLinksDB{Self: "self"},
+	Links: models.CostLinksRest{Self: "self"},
 }
 
-var defaultCostArray = []models.CostResourceDB{
+var defaultCostArray = []models.CostResourceRest{
 	defaultCost,
 }
 
@@ -94,7 +94,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResourceDB{defaultCost}
+		costArray := []models.CostResourceRest{defaultCost}
 		costArray[0].Amount = "x"
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 
@@ -218,7 +218,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResourceDB{defaultCost, defaultCost}
+		costArray := []models.CostResourceRest{defaultCost, defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
@@ -322,7 +322,7 @@ func TestUnitGetPayment(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResourceDB{defaultCost}
+		costArray := []models.CostResourceRest{defaultCost}
 		costArray[0].Amount = "x"
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 
@@ -344,7 +344,7 @@ func TestUnitGetPayment(t *testing.T) {
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResourceDB{defaultCost}
+		costArray := []models.CostResourceRest{defaultCost}
 		costArray[0].Amount = "99"
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
@@ -364,7 +364,7 @@ func TestUnitGetPayment(t *testing.T) {
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResourceDB{defaultCost}
+		costArray := []models.CostResourceRest{defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 		mockPaymentService.GetPaymentSessionFromRequest(w, req)
@@ -383,7 +383,7 @@ func TestUnitGetPayment(t *testing.T) {
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResourceDB{defaultCost, defaultCost}
+		costArray := []models.CostResourceRest{defaultCost, defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 		mockPaymentService.GetPaymentSessionFromRequest(w, req)
@@ -508,7 +508,7 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 
 func TestUnitGetTotalAmount(t *testing.T) {
 	Convey("Get Total Amount - valid", t, func() {
-		costs := []models.CostResourceDB{{Amount: "10"}, {Amount: "13"}, {Amount: "13.01"}}
+		costs := []models.CostResourceRest{{Amount: "10"}, {Amount: "13"}, {Amount: "13.01"}}
 		amount, err := getTotalAmount(&costs)
 		So(err, ShouldBeNil)
 		So(amount, ShouldEqual, "36.01")
@@ -516,7 +516,7 @@ func TestUnitGetTotalAmount(t *testing.T) {
 	Convey("Test invalid amounts", t, func() {
 		invalidAmounts := []string{"alpha", "12,", "12.", "12,00", "12.012", "a.9", "9.a"}
 		for _, amount := range invalidAmounts {
-			totalAmount, err := getTotalAmount(&[]models.CostResourceDB{{Amount: amount}})
+			totalAmount, err := getTotalAmount(&[]models.CostResourceRest{{Amount: amount}})
 			So(totalAmount, ShouldEqual, "")
 			So(err.Error(), ShouldEqual, fmt.Sprintf("amount [%s] format incorrect", amount))
 		}
@@ -542,36 +542,36 @@ func TestUnitValidateResource(t *testing.T) {
 
 func TestUnitValidateCosts(t *testing.T) {
 	Convey("Invalid Cost", t, func() {
-		cost := []models.CostResourceDB{{
+		cost := []models.CostResourceRest{{
 			Amount:                  "10",
 			AvailablePaymentMethods: []string{"method"},
 			ClassOfPayment:          []string{"class"},
 			Description:             "",
 			DescriptionIdentifier:   "identifier",
-			Links:                   models.CostLinksDB{Self: "self"},
+			Links: models.CostLinksRest{Self: "self"},
 		}}
 		So(validateCosts(&cost), ShouldNotBeNil)
 	})
 	Convey("Valid Cost", t, func() {
-		cost := []models.CostResourceDB{{
+		cost := []models.CostResourceRest{{
 			Amount:                  "10",
 			AvailablePaymentMethods: []string{"method"},
 			ClassOfPayment:          []string{"class"},
 			Description:             "desc",
 			DescriptionIdentifier:   "identifier",
-			Links:                   models.CostLinksDB{Self: "self"},
+			Links: models.CostLinksRest{Self: "self"},
 		}}
 		So(validateCosts(&cost), ShouldBeNil)
 	})
 	Convey("Multiple Costs", t, func() {
-		cost := []models.CostResourceDB{
+		cost := []models.CostResourceRest{
 			{
 				Amount:                  "10",
 				AvailablePaymentMethods: []string{"method"},
 				ClassOfPayment:          []string{"class"},
 				Description:             "desc",
 				DescriptionIdentifier:   "identifier",
-				Links:                   models.CostLinksDB{Self: "self"},
+				Links: models.CostLinksRest{Self: "self"},
 			},
 			{
 				Amount:                  "20",
@@ -579,7 +579,7 @@ func TestUnitValidateCosts(t *testing.T) {
 				ClassOfPayment:          []string{"class"},
 				Description:             "",
 				DescriptionIdentifier:   "identifier",
-				Links:                   models.CostLinksDB{Self: "self"},
+				Links: models.CostLinksRest{Self: "self"},
 			},
 		}
 		So(validateCosts(&cost), ShouldNotBeNil)

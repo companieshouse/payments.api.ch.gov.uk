@@ -28,7 +28,6 @@ func (pt PaymentTransformer) TransformToDB(rest models.PaymentResourceRest) mode
 
 	paymentResourceData.CreatedBy = models.CreatedByDB(rest.CreatedBy)
 	paymentResourceData.Links = models.PaymentLinksDB(rest.Links)
-	paymentResourceData.Costs = pt.transformCostResourcesToDB(rest.Costs)
 
 	paymentResource := models.PaymentResourceDB{
 		Data: paymentResourceData,
@@ -50,47 +49,6 @@ func (pt PaymentTransformer) TransformToRest(dbResourceData models.PaymentResour
 		Reference:               dbResourceData.Reference,
 		Status:                  dbResourceData.Status,
 		Links:                   models.PaymentLinksRest(dbResourceData.Links),
-		Costs:                   pt.transformCostResourcesToRest(dbResourceData.Costs),
 	}
 	return paymentResource
-}
-
-func (pt PaymentTransformer) transformCostResourcesToDB(rest []models.CostResourceRest) []models.CostResourceDB {
-	costResources := make([]models.CostResourceDB, len(rest))
-	for i, restCost := range rest {
-		costResources[i] = pt.transformCostResourceToDB(restCost)
-	}
-	return costResources
-}
-
-func (pt PaymentTransformer) transformCostResourcesToRest(dbCostResources []models.CostResourceDB) []models.CostResourceRest {
-	costResources := make([]models.CostResourceRest, len(dbCostResources))
-	for i, cost := range dbCostResources {
-		costResources[i] = pt.transformCostResourceToRest(cost)
-	}
-	return costResources
-}
-
-func (pt PaymentTransformer) transformCostResourceToDB(rest models.CostResourceRest) models.CostResourceDB {
-	return models.CostResourceDB{
-		Amount:                  rest.Amount,
-		AvailablePaymentMethods: rest.AvailablePaymentMethods,
-		ClassOfPayment:          rest.ClassOfPayment,
-		Description:             rest.Description,
-		DescriptionIdentifier:   rest.DescriptionIdentifier,
-		DescriptionValues:       rest.DescriptionValues,
-		Links:                   models.CostLinksDB(rest.Links),
-	}
-}
-
-func (pt PaymentTransformer) transformCostResourceToRest(dbCostResource models.CostResourceDB) models.CostResourceRest {
-	return models.CostResourceRest{
-		Amount:                  dbCostResource.Amount,
-		AvailablePaymentMethods: dbCostResource.AvailablePaymentMethods,
-		ClassOfPayment:          dbCostResource.ClassOfPayment,
-		Description:             dbCostResource.Description,
-		DescriptionIdentifier:   dbCostResource.DescriptionIdentifier,
-		DescriptionValues:       dbCostResource.DescriptionValues,
-		Links:                   models.CostLinksRest(dbCostResource.Links),
-	}
 }

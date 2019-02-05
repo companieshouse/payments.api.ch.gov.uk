@@ -284,12 +284,10 @@ func (service *PaymentService) GetPaymentSession(id string) (*models.PaymentReso
 		return nil, http.StatusForbidden, fmt.Errorf("amount in payment resource [%s] different from db [%s] for id [%s]", totalAmount, paymentResource.Data.Amount, paymentResource.ID)
 	}
 
-	paymentResource.Data.Costs = *costs
-
 	return &paymentResource.Data, http.StatusOK, nil
 }
 
-func getTotalAmount(costs *[]models.CostResourceDB) (string, error) {
+func getTotalAmount(costs *[]models.CostResourceRest) (string, error) {
 	r, err := regexp.Compile(`^\d+(\.\d{2})?$`)
 	if err != nil {
 		return "", err
@@ -307,7 +305,7 @@ func getTotalAmount(costs *[]models.CostResourceDB) (string, error) {
 	return totalAmount.StringFixed(2), nil
 }
 
-func getCosts(resource string, cfg *config.Config) (*[]models.CostResourceDB, int, error) {
+func getCosts(resource string, cfg *config.Config) (*[]models.CostResourceRest, int, error) {
 	err := validateResource(resource, cfg)
 	if err != nil {
 		return nil, http.StatusBadRequest, err
@@ -336,7 +334,7 @@ func getCosts(resource string, cfg *config.Config) (*[]models.CostResourceDB, in
 		return nil, http.StatusInternalServerError, fmt.Errorf("error reading Cost Resource: [%v]", err)
 	}
 
-	costs := &[]models.CostResourceDB{}
+	costs := &[]models.CostResourceRest{}
 	err = json.Unmarshal(body, costs)
 	if err != nil {
 		return nil, http.StatusBadRequest, fmt.Errorf("error reading Cost Resource: [%v]", err)
@@ -380,7 +378,7 @@ func validateResource(resource string, cfg *config.Config) error {
 	return err
 }
 
-func validateCosts(costs *[]models.CostResourceDB) error {
+func validateCosts(costs *[]models.CostResourceRest) error {
 	validate := validator.New()
 	for _, cost := range *costs {
 		err := validate.Struct(cost)

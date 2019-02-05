@@ -80,32 +80,6 @@ func TestUnitTransformToDB(t *testing.T) {
 				PaymentMethod: "method",
 				Reference:     "ref",
 				Status:        "pending",
-				Costs: []models.CostResourceDB{
-					{
-						Amount:                  "65",
-						AvailablePaymentMethods: []string{"method1", "method2"},
-						ClassOfPayment:          []string{"class1", "class2"},
-						Description:             "desc1",
-						DescriptionIdentifier:   "desc_identifier1",
-						DescriptionValues:       map[string]string{"val": "val1"},
-						Links: models.CostLinksDB{
-							Resource: "resource1",
-							Self:     "self1",
-						},
-					},
-					{
-						Amount:                  "73",
-						AvailablePaymentMethods: []string{"method3", "method4"},
-						ClassOfPayment:          []string{"class3", "class4"},
-						Description:             "desc2",
-						DescriptionIdentifier:   "desc_identifier2",
-						DescriptionValues:       map[string]string{"val": "val2"},
-						Links: models.CostLinksDB{
-							Resource: "resource2",
-							Self:     "self2",
-						},
-					},
-				},
 			},
 		}
 		paymentResourceDB := PaymentTransformer{}.TransformToDB(paymentResourceRest)
@@ -136,32 +110,6 @@ func TestUnitTransformToRest(t *testing.T) {
 			PaymentMethod: "method",
 			Reference:     "ref",
 			Status:        "pending",
-			Costs: []models.CostResourceDB{
-				{
-					Amount:                  "65",
-					AvailablePaymentMethods: []string{"method1", "method2"},
-					ClassOfPayment:          []string{"class1", "class2"},
-					Description:             "desc1",
-					DescriptionIdentifier:   "desc_identifier1",
-					DescriptionValues:       map[string]string{"val": "val1"},
-					Links: models.CostLinksDB{
-						Resource: "resource1",
-						Self:     "self1",
-					},
-				},
-				{
-					Amount:                  "73",
-					AvailablePaymentMethods: []string{"method3", "method4"},
-					ClassOfPayment:          []string{"class3", "class4"},
-					Description:             "desc2",
-					DescriptionIdentifier:   "desc_identifier2",
-					DescriptionValues:       map[string]string{"val": "val2"},
-					Links: models.CostLinksDB{
-						Resource: "resource2",
-						Self:     "self2",
-					},
-				},
-			},
 		}
 		expectedPaymentResourceRest := models.PaymentResourceRest{
 			Amount:                  "123",
@@ -183,32 +131,6 @@ func TestUnitTransformToRest(t *testing.T) {
 			PaymentMethod: "method",
 			Reference:     "ref",
 			Status:        "pending",
-			Costs: []models.CostResourceRest{
-				{
-					Amount:                  "65",
-					AvailablePaymentMethods: []string{"method1", "method2"},
-					ClassOfPayment:          []string{"class1", "class2"},
-					Description:             "desc1",
-					DescriptionIdentifier:   "desc_identifier1",
-					DescriptionValues:       map[string]string{"val": "val1"},
-					Links: models.CostLinksRest{
-						Resource: "resource1",
-						Self:     "self1",
-					},
-				},
-				{
-					Amount:                  "73",
-					AvailablePaymentMethods: []string{"method3", "method4"},
-					ClassOfPayment:          []string{"class3", "class4"},
-					Description:             "desc2",
-					DescriptionIdentifier:   "desc_identifier2",
-					DescriptionValues:       map[string]string{"val": "val2"},
-					Links: models.CostLinksRest{
-						Resource: "resource2",
-						Self:     "self2",
-					},
-				},
-			},
 		}
 
 		paymentResourceRest := PaymentTransformer{}.TransformToRest(paymentResourceDataDB)

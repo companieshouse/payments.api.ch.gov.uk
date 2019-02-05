@@ -13,17 +13,16 @@ type PaymentResourceDB struct {
 
 // PaymentResourceData is public facing payment details to be returned in the response
 type PaymentResourceDataDB struct {
-	Amount                  string           `bson:"amount"`
-	AvailablePaymentMethods []string         `bson:"available_payment_methods,omitempty"`
-	CompletedAt             time.Time        `bson:"completed_at,omitempty"`
-	CreatedAt               time.Time        `bson:"created_at,omitempty"`
-	CreatedBy               CreatedByDB      `bson:"created_by"`
-	Description             string           `bson:"description"`
-	Links                   PaymentLinksDB   `bson:"links"`
-	PaymentMethod           string           `bson:"payment_method"`
-	Reference               string           `bson:"reference,omitempty"`
-	Status                  string           `bson:"status"`
-	Costs                   []CostResourceDB `bson:"items"`
+	Amount                  string         `bson:"amount"`
+	AvailablePaymentMethods []string       `bson:"available_payment_methods,omitempty"`
+	CompletedAt             time.Time      `bson:"completed_at,omitempty"`
+	CreatedAt               time.Time      `bson:"created_at,omitempty"`
+	CreatedBy               CreatedByDB    `bson:"created_by"`
+	Description             string         `bson:"description"`
+	Links                   PaymentLinksDB `bson:"links"`
+	PaymentMethod           string         `bson:"payment_method"`
+	Reference               string         `bson:"reference,omitempty"`
+	Status                  string         `bson:"status"`
 }
 
 // CreatedBy is the user who is creating the payment session
@@ -39,17 +38,6 @@ type PaymentLinksDB struct {
 	Journey  string `bson:"journey"`
 	Resource string `bson:"resource"`
 	Self     string `bson:"self" validate:"required"`
-}
-
-// CostResource contains the details of an individual Cost Resource
-type CostResourceDB struct {
-	Amount                  string            `json:"amount"                    validate:"required"`
-	AvailablePaymentMethods []string          `json:"available_payment_methods" validate:"required"`
-	ClassOfPayment          []string          `json:"class_of_payment"          validate:"required"`
-	Description             string            `json:"description"               validate:"required"`
-	DescriptionIdentifier   string            `json:"description_identifier"    validate:"required"`
-	DescriptionValues       map[string]string `json:"description_values"`
-	Links                   CostLinksDB       `json:"links"                     validate:"required"`
 }
 
 // CostLinks is a set of URLs related to the resource, including self
