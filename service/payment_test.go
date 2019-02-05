@@ -25,7 +25,7 @@ var defaultCost = models.CostResource{
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
-	Links:                   models.Links{Self: "self"},
+	Links: models.Links{Self: "self"},
 }
 
 var defaultCostArray = []models.CostResource{
@@ -264,7 +264,7 @@ func TestUnitGetPayment(t *testing.T) {
 		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockPaymentService.GetPaymentSession(w, req)
+		mockPaymentService.GetPaymentSessionFromRequest(w, req)
 		So(w.Code, ShouldEqual, 400)
 	})
 
@@ -277,7 +277,7 @@ func TestUnitGetPayment(t *testing.T) {
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "invalid"})
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockPaymentService.GetPaymentSession(w, req)
+		mockPaymentService.GetPaymentSessionFromRequest(w, req)
 		So(w.Code, ShouldEqual, 403)
 	})
 
@@ -290,7 +290,7 @@ func TestUnitGetPayment(t *testing.T) {
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockPaymentService.GetPaymentSession(w, req)
+		mockPaymentService.GetPaymentSessionFromRequest(w, req)
 		So(w.Code, ShouldEqual, 500)
 	})
 
@@ -303,7 +303,7 @@ func TestUnitGetPayment(t *testing.T) {
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
-		mockPaymentService.GetPaymentSession(w, req)
+		mockPaymentService.GetPaymentSessionFromRequest(w, req)
 		So(w.Code, ShouldEqual, 400)
 	})
 
@@ -328,7 +328,7 @@ func TestUnitGetPayment(t *testing.T) {
 
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 		w := httptest.NewRecorder()
-		mockPaymentService.GetPaymentSession(w, req)
+		mockPaymentService.GetPaymentSessionFromRequest(w, req)
 		So(w.Code, ShouldEqual, 500)
 	})
 
@@ -348,7 +348,7 @@ func TestUnitGetPayment(t *testing.T) {
 		costArray[0].Amount = "99"
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
-		mockPaymentService.GetPaymentSession(w, req)
+		mockPaymentService.GetPaymentSessionFromRequest(w, req)
 		So(w.Code, ShouldEqual, 403)
 	})
 
@@ -367,7 +367,7 @@ func TestUnitGetPayment(t *testing.T) {
 		costArray := []models.CostResource{defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
-		mockPaymentService.GetPaymentSession(w, req)
+		mockPaymentService.GetPaymentSessionFromRequest(w, req)
 		So(w.Code, ShouldEqual, 200)
 	})
 
@@ -386,7 +386,7 @@ func TestUnitGetPayment(t *testing.T) {
 		costArray := []models.CostResource{defaultCost, defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
-		mockPaymentService.GetPaymentSession(w, req)
+		mockPaymentService.GetPaymentSessionFromRequest(w, req)
 		So(w.Code, ShouldEqual, 200)
 	})
 }
@@ -548,7 +548,7 @@ func TestUnitValidateCosts(t *testing.T) {
 			ClassOfPayment:          []string{"class"},
 			Description:             "",
 			DescriptionIdentifier:   "identifier",
-			Links:                   models.Links{Self: "self"},
+			Links: models.Links{Self: "self"},
 		}}
 		So(validateCosts(&cost), ShouldNotBeNil)
 	})
@@ -559,7 +559,7 @@ func TestUnitValidateCosts(t *testing.T) {
 			ClassOfPayment:          []string{"class"},
 			Description:             "desc",
 			DescriptionIdentifier:   "identifier",
-			Links:                   models.Links{Self: "self"},
+			Links: models.Links{Self: "self"},
 		}}
 		So(validateCosts(&cost), ShouldBeNil)
 	})
@@ -571,7 +571,7 @@ func TestUnitValidateCosts(t *testing.T) {
 				ClassOfPayment:          []string{"class"},
 				Description:             "desc",
 				DescriptionIdentifier:   "identifier",
-				Links:                   models.Links{Self: "self"},
+				Links: models.Links{Self: "self"},
 			},
 			{
 				Amount:                  "20",
@@ -579,7 +579,7 @@ func TestUnitValidateCosts(t *testing.T) {
 				ClassOfPayment:          []string{"class"},
 				Description:             "",
 				DescriptionIdentifier:   "identifier",
-				Links:                   models.Links{Self: "self"},
+				Links: models.Links{Self: "self"},
 			},
 		}
 		So(validateCosts(&cost), ShouldNotBeNil)

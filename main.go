@@ -8,11 +8,7 @@ import (
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/handlers"
-
-	eric "github.com/companieshouse/eric/chain" // Identity bridge
-
 	"github.com/gorilla/mux"
-	"github.com/justinas/alice"
 )
 
 func main() {
@@ -25,15 +21,13 @@ func main() {
 		return
 	}
 
-	router := mux.NewRouter()
-	chain := alice.New()
+	// Create router
+	mainRouter := mux.NewRouter()
 
-	chain = eric.Register(chain)
-
-	handlers.Register(router, *cfg)
+	handlers.Register(mainRouter, *cfg)
 
 	log.Info("Starting " + namespace)
-	err = http.ListenAndServe(cfg.BindAddr, chain.Then(router))
+	err = http.ListenAndServe(cfg.BindAddr, mainRouter)
 	if err != nil {
 		log.Error(err)
 	}
