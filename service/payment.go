@@ -140,6 +140,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	// set metadata fields on the DB model before writing
 	paymentResourceEntity.ID = paymentResourceID
 	paymentResourceEntity.State = incomingPaymentResourceRequest.State
+	paymentResourceEntity.RedirectURI = incomingPaymentResourceRequest.RedirectURI
 
 	err = service.DAO.CreatePaymentResource(&paymentResourceEntity)
 
