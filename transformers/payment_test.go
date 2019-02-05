@@ -114,7 +114,7 @@ func TestUnitTransformToDB(t *testing.T) {
 }
 
 func TestUnitTransformToRest(t *testing.T) {
-	Convey("Rest converted to DB", t, func() {
+	Convey("DB converted to Rest", t, func() {
 		now := time.Now()
 		paymentResourceDataDB := models.PaymentResourceDataDB{
 			Amount:                  "123",
