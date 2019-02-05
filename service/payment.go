@@ -32,6 +32,8 @@ type PaymentService struct {
 // PaymentStatus Enum Type
 type PaymentStatus int
 
+const PaymentSessionKey = "payment_session"
+
 // Enumeration containing all possible payment statuses
 const (
 	Pending PaymentStatus = 1 + iota
@@ -162,8 +164,8 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	log.InfoR(req, "Successful POST request for new payment resource", log.Data{"payment_id": paymentResourceEntity.ID, "status": http.StatusCreated})
 }
 
-// GetPaymentSession retrieves the payment session
-func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *http.Request) {
+// GetPaymentSessionFromRequest retrieves the payment session
+func (service *PaymentService) GetPaymentSessionFromRequest(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	id := vars["payment_id"]
 	if id == "" {
@@ -172,7 +174,7 @@ func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *htt
 		return
 	}
 
-	paymentSession, httpStatus, err := (*PaymentService).getPaymentSession(service, id)
+	paymentSession, httpStatus, err := (*PaymentService).GetPaymentSession(service, id)
 	if err != nil {
 		w.WriteHeader(httpStatus)
 		log.ErrorR(req, err)
@@ -258,7 +260,7 @@ func (service *PaymentService) UpdatePaymentStatus(s models.StatusResponse, p mo
 	return nil
 }
 
-func (service *PaymentService) getPaymentSession(id string) (*models.PaymentResourceDataDB, int, error) {
+func (service *PaymentService) GetPaymentSession(id string) (*models.PaymentResourceDataDB, int, error) {
 	paymentResource, err := service.DAO.GetPaymentResource(id)
 	if paymentResource == nil {
 		return nil, http.StatusForbidden, fmt.Errorf("payment session not found. id: %s", id)
