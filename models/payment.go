@@ -33,7 +33,7 @@ type PaymentResourceData struct {
 	Status                  string         `json:"status"                              bson:"status"`
 	Costs                   []CostResource `json:"items"`
 	Etag                    string         `json:"etag"`
-	Kind                    string         `jgson:"kind"`
+	Kind                    string         `json:"kind"`
 }
 
 // CreatedBy is the user who is creating the payment session
