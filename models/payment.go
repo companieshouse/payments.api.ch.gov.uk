@@ -32,6 +32,8 @@ type PaymentResourceData struct {
 	Reference               string         `json:"reference,omitempty"                 bson:"reference,omitempty"`
 	Status                  string         `json:"status"                              bson:"status"`
 	Costs                   []CostResource `json:"items"`
+	Etag                    string         `bson:"etag"`
+	Kind                    string         `bson:"kind"`
 }
 
 // CreatedBy is the user who is creating the payment session
