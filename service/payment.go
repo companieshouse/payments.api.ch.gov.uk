@@ -32,6 +32,9 @@ type PaymentService struct {
 // PaymentStatus Enum Type
 type PaymentStatus int
 
+// PaymentSessionKind
+const PaymentSessionKind = "payment-session#payment-session"
+
 // Enumeration containing all possible payment statuses
 const (
 	Pending PaymentStatus = 1 + iota
@@ -124,6 +127,7 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	paymentResource.State = incomingPaymentResourceRequest.State
 	paymentResource.RedirectURI = incomingPaymentResourceRequest.RedirectURI
 	paymentResource.Data.Status = Pending.String()
+	paymentResource.Data.Kind = PaymentSessionKind
 	paymentResource.ID = generateID()
 
 	journeyURL := service.Config.PaymentsWebURL + "/payments/" + paymentResource.ID + "/pay"
