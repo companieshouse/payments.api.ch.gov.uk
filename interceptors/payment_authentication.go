@@ -3,12 +3,13 @@ package interceptors
 import (
 	"context"
 	"fmt"
+	"net/http"
+
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/gorilla/mux"
-	"net/http"
 )
 
 // PaymentAuthenticationInterceptor contains the payment service used in the interceptor
