@@ -145,8 +145,6 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	paymentResourceEntity.ID = paymentResourceID
 	paymentResourceEntity.State = incomingPaymentResourceRequest.State
 	paymentResourceEntity.RedirectURI = incomingPaymentResourceRequest.RedirectURI
-	paymentResourceEntity.State = incomingPaymentResourceRequest.State
-	paymentResourceEntity.RedirectURI = incomingPaymentResourceRequest.RedirectURI
 
 	err = service.DAO.CreatePaymentResource(&paymentResourceEntity)
 
