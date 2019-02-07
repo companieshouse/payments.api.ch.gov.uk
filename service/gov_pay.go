@@ -13,7 +13,7 @@ import (
 
 type GovPayResponse struct{}
 
-func (g GovPayResponse) checkProvider(paymentResource *models.PaymentResource) (*models.StatusResponse, error) {
+func (g GovPayResponse) checkProvider(paymentResource *models.PaymentResourceDB) (*models.StatusResponse, error) {
 	// Call the getGovPayPaymentState method down below to get state
 	cfg, err := config.Get()
 	if err != nil {
@@ -32,17 +32,17 @@ func (g GovPayResponse) checkProvider(paymentResource *models.PaymentResource) (
 	}
 }
 
-func (service *PaymentService) returnNextURLGovPay(paymentResourceData *models.PaymentResourceData, id string, cfg *config.Config) (string, error) {
+func (service *PaymentService) returnNextURLGovPay(paymentResource *models.PaymentResourceRest, id string, cfg *config.Config) (string, error) {
 	var govPayRequest models.OutgoingGovPayRequest
 
-	amountToPay, err := convertToPenceFromDecimal(paymentResourceData.Amount)
+	amountToPay, err := convertToPenceFromDecimal(paymentResource.Amount)
 	if err != nil {
 		return "", fmt.Errorf("error converting amount to pay to pence: [%s]", err)
 	}
 
 	govPayRequest.Amount = amountToPay
 	govPayRequest.Description = "Companies House Payment" // TODO - Make description mandatory when creating payment-session so this doesn't have to be hardcoded
-	govPayRequest.Reference = paymentResourceData.Reference
+	govPayRequest.Reference = paymentResource.Reference
 	govPayRequest.ReturnURL = fmt.Sprintf("%s/callback/payments/govpay/%s", cfg.PaymentsApiURL, id)
 
 	requestBody, err := json.Marshal(govPayRequest)
@@ -79,7 +79,7 @@ func (service *PaymentService) returnNextURLGovPay(paymentResourceData *models.P
 		return "", fmt.Errorf("error status [%v] back from GovPay: [%s]", resp.StatusCode, govPayResponse.Description)
 	}
 
-	var PaymentResourceUpdate models.PaymentResource
+	var PaymentResourceUpdate models.PaymentResourceDB
 	PaymentResourceUpdate.ExternalPaymentStatusURI = govPayResponse.GovPayLinks.Self.HREF
 
 	_, err = service.patchPaymentSession(id, PaymentResourceUpdate)
@@ -91,7 +91,7 @@ func (service *PaymentService) returnNextURLGovPay(paymentResourceData *models.P
 }
 
 // To get the status of a GovPay payment, GET the payment resource from GovPay and return the State block
-func getGovPayPaymentState(paymentResource *models.PaymentResource, cfg *config.Config) (*models.State, error) {
+func getGovPayPaymentState(paymentResource *models.PaymentResourceDB, cfg *config.Config) (*models.State, error) {
 	request, err := http.NewRequest("GET", paymentResource.ExternalPaymentStatusURI, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error generating request for GovPay: [%s]", err)

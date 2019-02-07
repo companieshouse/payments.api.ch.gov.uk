@@ -33,7 +33,7 @@ func (m *MockDAO) EXPECT() *MockDAOMockRecorder {
 }
 
 // CreatePaymentResource mocks base method
-func (m *MockDAO) CreatePaymentResource(paymentResource *models.PaymentResource) error {
+func (m *MockDAO) CreatePaymentResource(paymentResource *models.PaymentResourceDB) error {
 	ret := m.ctrl.Call(m, "CreatePaymentResource", paymentResource)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -45,9 +45,9 @@ func (mr *MockDAOMockRecorder) CreatePaymentResource(paymentResource interface{}
 }
 
 // GetPaymentResource mocks base method
-func (m *MockDAO) GetPaymentResource(arg0 string) (*models.PaymentResource, error) {
+func (m *MockDAO) GetPaymentResource(arg0 string) (*models.PaymentResourceDB, error) {
 	ret := m.ctrl.Call(m, "GetPaymentResource", arg0)
-	ret0, _ := ret[0].(*models.PaymentResource)
+	ret0, _ := ret[0].(*models.PaymentResourceDB)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -58,7 +58,7 @@ func (mr *MockDAOMockRecorder) GetPaymentResource(arg0 interface{}) *gomock.Call
 }
 
 // PatchPaymentResource mocks base method
-func (m *MockDAO) PatchPaymentResource(id string, paymentUpdate *models.PaymentResource) error {
+func (m *MockDAO) PatchPaymentResource(id string, paymentUpdate *models.PaymentResourceDB) error {
 	ret := m.ctrl.Call(m, "PatchPaymentResource", id, paymentUpdate)
 	ret0, _ := ret[0].(error)
 	return ret0

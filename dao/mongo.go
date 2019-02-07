@@ -33,7 +33,7 @@ func getMongoSession() (*mgo.Session, error) {
 }
 
 // CreatePaymentResource writes a new payment resource to the DB
-func (m *Mongo) CreatePaymentResource(paymentResource *models.PaymentResource) error {
+func (m *Mongo) CreatePaymentResource(paymentResource *models.PaymentResourceDB) error {
 	paymentSession, err := getMongoSession()
 	if err != nil {
 		return err
@@ -51,8 +51,8 @@ func (m *Mongo) CreatePaymentResource(paymentResource *models.PaymentResource) e
 
 // GetPaymentResource gets a payment resource from the DB
 // If payment not found in DB, return nil
-func (m *Mongo) GetPaymentResource(id string) (*models.PaymentResource, error) {
-	var resource models.PaymentResource
+func (m *Mongo) GetPaymentResource(id string) (*models.PaymentResourceDB, error) {
+	var resource models.PaymentResourceDB
 	paymentSession, err := getMongoSession()
 	if err != nil {
 		return &resource, err
@@ -76,7 +76,7 @@ func (m *Mongo) GetPaymentResource(id string) (*models.PaymentResource, error) {
 }
 
 // PatchPaymentResource patches a payment resource from the DB
-func (m *Mongo) PatchPaymentResource(id string, paymentUpdate *models.PaymentResource) error {
+func (m *Mongo) PatchPaymentResource(id string, paymentUpdate *models.PaymentResourceDB) error {
 	paymentSession, err := getMongoSession()
 	if err != nil {
 		return err

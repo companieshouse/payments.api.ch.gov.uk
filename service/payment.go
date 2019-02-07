@@ -13,12 +13,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gorilla/mux"
-
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/companieshouse/payments.api.ch.gov.uk/transformers"
+	"github.com/gorilla/mux"
 	"github.com/shopspring/decimal"
 	"gopkg.in/go-playground/validator.v9"
 )
@@ -34,6 +34,7 @@ type PaymentStatus int
 
 // PaymentSessionKind
 const PaymentSessionKind = "payment-session#payment-session"
+const PaymentSessionKey = "payment_session"
 
 // Enumeration containing all possible payment statuses
 const (
@@ -112,32 +113,43 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 		}
 	}
 
-	var paymentResource models.PaymentResource
-	paymentResource.Data.CreatedBy = models.CreatedBy{
+	//  Create payment session REST data from writable input fields and decorating with read only fields
+	var paymentResourceRest models.PaymentResourceRest
+	paymentResourceRest.CreatedBy = models.CreatedByRest{
 		ID:       req.Header.Get("Eric-Identity"),
 		Email:    email,
 		Forename: forename,
 		Surname:  surname,
 	}
-	paymentResource.Data.Amount = totalAmount
+	paymentResourceRest.Costs = *costs
+	paymentResourceRest.Amount = totalAmount
 	// To match the format time is saved to mongo, e.g. "2018-11-22T08:39:16.782Z", truncate the time
-	paymentResource.Data.CreatedAt = time.Now().Truncate(time.Millisecond)
+	paymentResourceRest.CreatedAt = time.Now().Truncate(time.Millisecond)
 
-	paymentResource.Data.Reference = incomingPaymentResourceRequest.Reference
-	paymentResource.State = incomingPaymentResourceRequest.State
-	paymentResource.RedirectURI = incomingPaymentResourceRequest.RedirectURI
-	paymentResource.Data.Status = Pending.String()
-	paymentResource.Data.Kind = PaymentSessionKind
-	paymentResource.ID = generateID()
+	paymentResourceRest.Reference = incomingPaymentResourceRequest.Reference
+	paymentResourceRest.Status = Pending.String()
+	paymentResourceRest.Kind = PaymentSessionKind
+	paymentResourceID := generateID()
 
-	journeyURL := service.Config.PaymentsWebURL + "/payments/" + paymentResource.ID + "/pay"
-	paymentResource.Data.Links = models.Links{
+	journeyURL := service.Config.PaymentsWebURL + "/payments/" + paymentResourceID + "/pay"
+	paymentResourceRest.Links = models.PaymentLinksRest{
 		Journey:  journeyURL,
 		Resource: incomingPaymentResourceRequest.Resource,
-		Self:     fmt.Sprintf("payments/%s", paymentResource.ID),
+		Self:     fmt.Sprintf("payments/%s", paymentResourceID),
 	}
 
-	err = service.DAO.CreatePaymentResource(&paymentResource)
+	// transform the complete REST model to a DB model before writing to the DB
+	paymentResourceEntity := transformers.PaymentTransformer{}.TransformToDB(paymentResourceRest)
+
+	// set metadata fields on the DB model before writing
+	paymentResourceEntity.ID = paymentResourceID
+	paymentResourceEntity.State = incomingPaymentResourceRequest.State
+	paymentResourceEntity.RedirectURI = incomingPaymentResourceRequest.RedirectURI
+	paymentResourceEntity.State = incomingPaymentResourceRequest.State
+	paymentResourceEntity.RedirectURI = incomingPaymentResourceRequest.RedirectURI
+
+	err = service.DAO.CreatePaymentResource(&paymentResourceEntity)
+
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing to MongoDB: %v", err))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -149,17 +161,18 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 	w.Header().Set("Location", journeyURL)
 	w.WriteHeader(http.StatusCreated)
 
-	err = json.NewEncoder(w).Encode(paymentResource.Data)
+	// response body contains fully decorated REST model
+	err = json.NewEncoder(w).Encode(paymentResourceRest)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
 		return
 	}
 
-	log.InfoR(req, "Successful POST request for new payment resource", log.Data{"payment_id": paymentResource.ID, "status": http.StatusCreated})
+	log.InfoR(req, "Successful POST request for new payment resource", log.Data{"payment_id": paymentResourceEntity.ID, "status": http.StatusCreated})
 }
 
-// GetPaymentSession retrieves the payment session
-func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *http.Request) {
+// GetPaymentSessionFromRequest retrieves the payment session
+func (service *PaymentService) GetPaymentSessionFromRequest(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	id := vars["payment_id"]
 	if id == "" {
@@ -168,7 +181,7 @@ func (service *PaymentService) GetPaymentSession(w http.ResponseWriter, req *htt
 		return
 	}
 
-	paymentSession, httpStatus, err := (*PaymentService).getPaymentSession(service, id)
+	paymentSession, httpStatus, err := (*PaymentService).GetPaymentSession(service, id)
 	if err != nil {
 		w.WriteHeader(httpStatus)
 		log.ErrorR(req, err)
@@ -203,7 +216,7 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 	}
 
 	requestDecoder := json.NewDecoder(req.Body)
-	var PaymentResourceUpdateData models.PaymentResourceData
+	var PaymentResourceUpdateData models.PaymentResourceRest
 	err := requestDecoder.Decode(&PaymentResourceUpdateData)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("request body invalid: [%v]", err))
@@ -211,8 +224,8 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 		return
 	}
 
-	var PaymentResourceUpdate models.PaymentResource
-	PaymentResourceUpdate.Data = PaymentResourceUpdateData
+	var PaymentResourceUpdate models.PaymentResourceDB
+	PaymentResourceUpdate = transformers.PaymentTransformer{}.TransformToDB(PaymentResourceUpdateData)
 
 	httpStatus, err := service.patchPaymentSession(id, PaymentResourceUpdate)
 	if err != nil {
@@ -224,7 +237,7 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 	log.InfoR(req, "Successful PATCH request for payment resource", log.Data{"payment_id": id, "status": http.StatusOK})
 }
 
-func (service *PaymentService) patchPaymentSession(id string, PaymentResourceUpdate models.PaymentResource) (int, error) {
+func (service *PaymentService) patchPaymentSession(id string, PaymentResourceUpdate models.PaymentResourceDB) (int, error) {
 
 	if PaymentResourceUpdate.Data.PaymentMethod == "" && PaymentResourceUpdate.Data.Status == "" && PaymentResourceUpdate.ExternalPaymentStatusURI == "" {
 		return http.StatusBadRequest, fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", id)
@@ -241,7 +254,8 @@ func (service *PaymentService) patchPaymentSession(id string, PaymentResourceUpd
 	return http.StatusOK, nil
 }
 
-func (service *PaymentService) UpdatePaymentStatus(s models.StatusResponse, p models.PaymentResource) error {
+// UpdatePaymentStatus updates the Status in the Payment Session.
+func (service *PaymentService) UpdatePaymentStatus(s models.StatusResponse, p models.PaymentResourceDB) error {
 	p.Data.Status = s.Status
 	_, err := service.patchPaymentSession(p.ID, p)
 
@@ -251,7 +265,7 @@ func (service *PaymentService) UpdatePaymentStatus(s models.StatusResponse, p mo
 	return nil
 }
 
-func (service *PaymentService) getPaymentSession(id string) (*models.PaymentResourceData, int, error) {
+func (service *PaymentService) GetPaymentSession(id string) (*models.PaymentResourceRest, int, error) {
 	paymentResource, err := service.DAO.GetPaymentResource(id)
 	if paymentResource == nil {
 		return nil, http.StatusForbidden, fmt.Errorf("payment session not found. id: %s", id)
@@ -275,12 +289,13 @@ func (service *PaymentService) getPaymentSession(id string) (*models.PaymentReso
 		return nil, http.StatusForbidden, fmt.Errorf("amount in payment resource [%s] different from db [%s] for id [%s]", totalAmount, paymentResource.Data.Amount, paymentResource.ID)
 	}
 
-	paymentResource.Data.Costs = *costs
+	paymentResourceRest := transformers.PaymentTransformer{}.TransformToRest(paymentResource.Data)
+	paymentResourceRest.Costs = *costs
 
-	return &paymentResource.Data, http.StatusOK, nil
+	return &paymentResourceRest, http.StatusOK, nil
 }
 
-func getTotalAmount(costs *[]models.CostResource) (string, error) {
+func getTotalAmount(costs *[]models.CostResourceRest) (string, error) {
 	r, err := regexp.Compile(`^\d+(\.\d{2})?$`)
 	if err != nil {
 		return "", err
@@ -298,7 +313,7 @@ func getTotalAmount(costs *[]models.CostResource) (string, error) {
 	return totalAmount.StringFixed(2), nil
 }
 
-func getCosts(resource string, cfg *config.Config) (*[]models.CostResource, int, error) {
+func getCosts(resource string, cfg *config.Config) (*[]models.CostResourceRest, int, error) {
 	err := validateResource(resource, cfg)
 	if err != nil {
 		return nil, http.StatusBadRequest, err
@@ -327,7 +342,7 @@ func getCosts(resource string, cfg *config.Config) (*[]models.CostResource, int,
 		return nil, http.StatusInternalServerError, fmt.Errorf("error reading Cost Resource: [%v]", err)
 	}
 
-	costs := &[]models.CostResource{}
+	costs := &[]models.CostResourceRest{}
 	err = json.Unmarshal(body, costs)
 	if err != nil {
 		return nil, http.StatusBadRequest, fmt.Errorf("error reading Cost Resource: [%v]", err)
@@ -371,7 +386,7 @@ func validateResource(resource string, cfg *config.Config) error {
 	return err
 }
 
-func validateCosts(costs *[]models.CostResource) error {
+func validateCosts(costs *[]models.CostResourceRest) error {
 	validate := validator.New()
 	for _, cost := range *costs {
 		err := validate.Struct(cost)
