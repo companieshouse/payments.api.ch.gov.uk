@@ -32,7 +32,7 @@ type PaymentService struct {
 // PaymentStatus Enum Type
 type PaymentStatus int
 
-// PaymentSessionKind
+// PaymentSessionKind constant is the value stored in the payment resource kind field
 const PaymentSessionKind = "payment-session#payment-session"
 const PaymentSessionKey = "payment_session"
 
