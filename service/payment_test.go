@@ -25,7 +25,7 @@ var defaultCost = models.CostResourceRest{
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
-	Links: models.CostLinksRest{Self: "self"},
+	Links:                   models.CostLinksRest{Self: "self"},
 }
 
 var defaultCostArray = []models.CostResourceRest{
@@ -548,7 +548,7 @@ func TestUnitValidateCosts(t *testing.T) {
 			ClassOfPayment:          []string{"class"},
 			Description:             "",
 			DescriptionIdentifier:   "identifier",
-			Links: models.CostLinksRest{Self: "self"},
+			Links:                   models.CostLinksRest{Self: "self"},
 		}}
 		So(validateCosts(&cost), ShouldNotBeNil)
 	})
@@ -559,7 +559,7 @@ func TestUnitValidateCosts(t *testing.T) {
 			ClassOfPayment:          []string{"class"},
 			Description:             "desc",
 			DescriptionIdentifier:   "identifier",
-			Links: models.CostLinksRest{Self: "self"},
+			Links:                   models.CostLinksRest{Self: "self"},
 		}}
 		So(validateCosts(&cost), ShouldBeNil)
 	})
@@ -571,7 +571,7 @@ func TestUnitValidateCosts(t *testing.T) {
 				ClassOfPayment:          []string{"class"},
 				Description:             "desc",
 				DescriptionIdentifier:   "identifier",
-				Links: models.CostLinksRest{Self: "self"},
+				Links:                   models.CostLinksRest{Self: "self"},
 			},
 			{
 				Amount:                  "20",
@@ -579,7 +579,7 @@ func TestUnitValidateCosts(t *testing.T) {
 				ClassOfPayment:          []string{"class"},
 				Description:             "",
 				DescriptionIdentifier:   "identifier",
-				Links: models.CostLinksRest{Self: "self"},
+				Links:                   models.CostLinksRest{Self: "self"},
 			},
 		}
 		So(validateCosts(&cost), ShouldNotBeNil)

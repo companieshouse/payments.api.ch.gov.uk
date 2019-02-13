@@ -1,6 +1,8 @@
 package service
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -32,6 +34,8 @@ type PaymentService struct {
 // PaymentStatus Enum Type
 type PaymentStatus int
 
+// PaymentSessionKind constant is the value stored in the payment resource kind field
+const PaymentSessionKind = "payment-session#payment-session"
 const PaymentSessionKey = "payment_session"
 
 // Enumeration containing all possible payment statuses
@@ -126,6 +130,8 @@ func (service *PaymentService) CreatePaymentSession(w http.ResponseWriter, req *
 
 	paymentResourceRest.Reference = incomingPaymentResourceRequest.Reference
 	paymentResourceRest.Status = Pending.String()
+	paymentResourceRest.Kind = PaymentSessionKind
+	paymentResourceRest.Etag = generateEtag()
 	paymentResourceID := generateID()
 
 	journeyURL := service.Config.PaymentsWebURL + "/payments/" + paymentResourceID + "/pay"
@@ -221,6 +227,7 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 
 	var PaymentResourceUpdate models.PaymentResourceDB
 	PaymentResourceUpdate = transformers.PaymentTransformer{}.TransformToDB(PaymentResourceUpdateData)
+	PaymentResourceUpdate.Data.Etag = generateEtag()
 
 	httpStatus, err := service.patchPaymentSession(id, PaymentResourceUpdate)
 	if err != nil {
@@ -252,6 +259,7 @@ func (service *PaymentService) patchPaymentSession(id string, PaymentResourceUpd
 // UpdatePaymentStatus updates the Status in the Payment Session.
 func (service *PaymentService) UpdatePaymentStatus(s models.StatusResponse, p models.PaymentResourceDB) error {
 	p.Data.Status = s.Status
+	p.Data.Etag = generateEtag()
 	_, err := service.patchPaymentSession(p.ID, p)
 
 	if err != nil {
@@ -357,6 +365,20 @@ func generateID() (i string) {
 	ranNumber := fmt.Sprintf("%07d", rand.Intn(9999999))
 	millis := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
 	return ranNumber + millis
+}
+
+// generateEtag generates a random etag which is generated on every write action on the payment session
+func generateEtag() string {
+	// Get a random number and the time in seconds and milliseconds
+	rand.Seed(time.Now().UTC().UnixNano())
+	randomNumber := fmt.Sprintf("%07d", rand.Intn(9999999))
+	timeInMillis := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
+	timeInSeconds := strconv.FormatInt(time.Now().UnixNano()/int64(time.Second), 10)
+	// Calculate a SHA-1 digest
+	shaDigest := sha1.New()
+	shaDigest.Write([]byte(randomNumber + timeInMillis + timeInSeconds))
+	sha1_hash := hex.EncodeToString(shaDigest.Sum(nil))
+	return sha1_hash
 }
 
 func validateResource(resource string, cfg *config.Config) error {
