@@ -23,6 +23,8 @@ type PaymentResourceRest struct {
 	Reference               string             `json:"reference,omitempty"`
 	Status                  string             `json:"status"`
 	Costs                   []CostResourceRest `json:"items"`
+	Etag                    string             `json:"etag"`
+	Kind                    string             `json:"kind"`
 }
 
 // CreatedByRest is the user who is creating the payment session

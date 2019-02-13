@@ -24,6 +24,8 @@ func (pt PaymentTransformer) TransformToDB(rest models.PaymentResourceRest) mode
 		PaymentMethod:           rest.PaymentMethod,
 		Reference:               rest.Reference,
 		Status:                  rest.Status,
+		Etag:                    rest.Etag,
+		Kind:                    rest.Kind,
 	}
 
 	paymentResourceData.CreatedBy = models.CreatedByDB(rest.CreatedBy)
@@ -49,6 +51,8 @@ func (pt PaymentTransformer) TransformToRest(dbResourceData models.PaymentResour
 		Reference:               dbResourceData.Reference,
 		Status:                  dbResourceData.Status,
 		Links:                   models.PaymentLinksRest(dbResourceData.Links),
+		Etag:                    dbResourceData.Etag,
+		Kind:                    dbResourceData.Kind,
 	}
 	return paymentResource
 }

@@ -23,6 +23,8 @@ type PaymentResourceDataDB struct {
 	PaymentMethod           string         `bson:"payment_method"`
 	Reference               string         `bson:"reference,omitempty"`
 	Status                  string         `bson:"status"`
+	Etag                    string         `bson:"etag"`
+	Kind                    string         `bson:"kind"`
 }
 
 // CreatedBy is the user who is creating the payment session
