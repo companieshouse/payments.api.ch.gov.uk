@@ -2,9 +2,10 @@ package service
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/gorilla/mux"
-	"net/http"
 
 	"github.com/companieshouse/chs.go/log"
 )
@@ -57,6 +58,8 @@ func (service *PaymentService) HandleGovPayCallback(w http.ResponseWriter, req *
 
 	// Prepare parameters needed for redirecting
 	params := models.RedirectParams{State: paymentResource.State, Ref: paymentResource.Data.Reference, Status: paymentResource.Data.Status}
+
+	log.InfoR(req, "Successfully Closed payment session", log.Data{"payment_id": id, "status": *statusResponse})
 
 	produceKafkaMessage()
 	redirectUser(w, req, paymentResource.RedirectURI, params)
