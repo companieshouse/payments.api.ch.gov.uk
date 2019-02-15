@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-// PaymentResource contains all payment details to be stored in the DB
+// PaymentResourceDB contains all payment details to be stored in the DB
 type PaymentResourceDB struct {
 	ID                       string                `bson:"_id"`
 	RedirectURI              string                `bson:"redirect_uri"`
@@ -11,21 +11,20 @@ type PaymentResourceDB struct {
 	Data                     PaymentResourceDataDB `bson:"data"`
 }
 
-// PaymentResourceData is public facing payment details to be returned in the response
+// PaymentResourceDataDB is public facing payment details to be returned in the response
 type PaymentResourceDataDB struct {
-	Amount                  string         `bson:"amount"`
-	AvailablePaymentMethods []string       `bson:"available_payment_methods,omitempty"`
-	CompletedAt             time.Time      `bson:"completed_at,omitempty"`
-	CreatedAt               time.Time      `bson:"created_at,omitempty"`
-	CreatedBy               CreatedByDB    `bson:"created_by"`
-	Description             string         `bson:"description"`
-	Links                   PaymentLinksDB `bson:"links"`
-	PaymentMethod           string         `bson:"payment_method"`
-	Reference               string         `bson:"reference,omitempty"`
-	Status                  string         `bson:"status"`
+	Amount        string         `bson:"amount"`
+	CompletedAt   time.Time      `bson:"completed_at,omitempty"`
+	CreatedAt     time.Time      `bson:"created_at,omitempty"`
+	CreatedBy     CreatedByDB    `bson:"created_by"`
+	Description   string         `bson:"description"`
+	Links         PaymentLinksDB `bson:"links"`
+	PaymentMethod string         `bson:"payment_method"`
+	Reference     string         `bson:"reference,omitempty"`
+	Status        string         `bson:"status"`
 }
 
-// CreatedBy is the user who is creating the payment session
+// CreatedByDB is the user who is creating the payment session
 type CreatedByDB struct {
 	Email    string `bson:"email"`
 	Forename string `bson:"forename"`
@@ -33,14 +32,14 @@ type CreatedByDB struct {
 	Surname  string `bson:"surname"`
 }
 
-// PaymentLinks is a set of URLs related to the resource, including self
+// PaymentLinksDB is a set of URLs related to the resource, including self
 type PaymentLinksDB struct {
 	Journey  string `bson:"journey"`
 	Resource string `bson:"resource"`
 	Self     string `bson:"self" validate:"required"`
 }
 
-// CostLinks is a set of URLs related to the resource, including self
+// CostLinksDB is a set of URLs related to the resource, including self
 type CostLinksDB struct {
 	Resource string `bson:"resource"`
 	Self     string `bson:"self" validate:"required"`

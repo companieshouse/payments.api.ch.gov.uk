@@ -17,6 +17,7 @@ type PaymentAuthenticationInterceptor struct {
 	Service service.PaymentService
 }
 
+// PaymentAuthenticationIntercept checks that the user is authenticated for the payment
 func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) PaymentAuthenticationIntercept(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check for a payment ID in request
@@ -29,7 +30,7 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 		}
 
 		// Get user details from context, passed in by UserAuthenticationInterceptor
-		userDetails, ok := r.Context().Value(helpers.UserDetailsKey).(models.AuthUserDetails)
+		userDetails, ok := r.Context().Value(helpers.ContextKeyUserDetails).(models.AuthUserDetails)
 		if !ok {
 			log.ErrorR(r, fmt.Errorf("PaymentAuthenticationInterceptor error: invalid AuthUserDetails from UserAuthenticationInterceptor"))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -45,7 +46,7 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 		}
 
 		// Get the payment session from the ID in request
-		paymentSession, httpStatus, err := paymentAuthenticationInterceptor.Service.GetPaymentSession(id)
+		paymentSession, httpStatus, err := paymentAuthenticationInterceptor.Service.GetPaymentSession(r, id)
 		if err != nil {
 			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor error when retrieving payment session: [%v]", err))
 			w.WriteHeader(httpStatus)
@@ -53,7 +54,7 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 		}
 
 		// Store paymentSession in context to use later in the handler
-		ctx := context.WithValue(r.Context(), service.PaymentSessionKey, paymentSession)
+		ctx := context.WithValue(r.Context(), helpers.ContextKeyPaymentSession, paymentSession)
 
 		// Set up variables that are used to determine authorisation below
 		isGetRequest := http.MethodGet == r.Method

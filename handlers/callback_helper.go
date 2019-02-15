@@ -1,10 +1,11 @@
-package service
+package handlers
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
-	"net/http"
 )
 
 // redirectUser redirects user to the provided redirect_uri with query params

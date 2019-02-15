@@ -1,27 +1,25 @@
 package service
 
 import (
-	"bytes"
-	"encoding/json"
+	"context"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"net/http/httptest"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
+	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/golang/mock/gomock"
-	"github.com/gorilla/mux"
+	"github.com/jarcoal/httpmock"
 	. "github.com/smartystreets/goconvey/convey"
-	"gopkg.in/jarcoal/httpmock.v1"
 )
 
 var defaultCost = models.CostResourceRest{
 	Amount:                  "10",
-	AvailablePaymentMethods: []string{"method"},
+	AvailablePaymentMethods: []string{"GovPay"},
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
@@ -32,6 +30,13 @@ var defaultCostArray = []models.CostResourceRest{
 	defaultCost,
 }
 
+var defaultUserDetails = models.AuthUserDetails{
+	Email:    "email@companieshouse.gov.uk",
+	Forename: "forename",
+	Id:       "id",
+	Surname:  "surname",
+}
+
 func createMockPaymentService(dao *dao.MockDAO, config *config.Config) PaymentService {
 	return PaymentService{
 		DAO:    dao,
@@ -39,110 +44,65 @@ func createMockPaymentService(dao *dao.MockDAO, config *config.Config) PaymentSe
 	}
 }
 
+func TestUnitPaymentStatus(t *testing.T) {
+	Convey("Payment Status", t, func() {
+		status := Pending.String()
+		So(status, ShouldEqual, "pending")
+	})
+}
+
 func TestUnitCreatePaymentSession(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
-	reqBody := []byte("{\"redirect_uri\": \"dummy-redirect-uri\",\"resource\": \"http://dummy-resource\",\"state\": \"dummy-state\",\"reference\": \"dummy-reference\"}")
+	cfg.DomainWhitelist = "http://dummy-url"
 
 	Convey("Empty Request Body", t, func() {
 		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
-		req, err := http.NewRequest("GET", "", nil)
-		So(err, ShouldBeNil)
-		w := httptest.NewRecorder()
-		mockPaymentService.CreatePaymentSession(w, req)
-		So(w.Code, ShouldEqual, 400)
-	})
+		req := httptest.NewRequest("GET", "/test", nil)
 
-	Convey("Invalid Request Body", t, func() {
-		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
-		req, err := http.NewRequest("GET", "", nil)
-		So(err, ShouldBeNil)
-		req.Body = ioutil.NopCloser(bytes.NewReader([]byte("invalid_body")))
-		w := httptest.NewRecorder()
-		mockPaymentService.CreatePaymentSession(w, req)
-		So(w.Code, ShouldEqual, 400)
-	})
-
-	Convey("Invalid POST request with missing required fields", t, func() {
-		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
-		req, err := http.NewRequest("GET", "", nil)
-		So(err, ShouldBeNil)
-		req.Body = ioutil.NopCloser(bytes.NewReader([]byte("{\"redirect_uri\": \"dummy-redirect-uri\"}")))
-		w := httptest.NewRecorder()
-		mockPaymentService.CreatePaymentSession(w, req)
-		So(w.Code, ShouldEqual, 400)
-	})
-
-	Convey("Invalid Resource Domain", t, func() {
-		req, err := http.NewRequest("Get", "", nil)
-		So(err, ShouldBeNil)
-		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
-		CostResource, httpStatus, err := getCosts("http://dummy-resource", cfg)
-		So(CostResource, ShouldEqual, nil)
-		So(err, ShouldNotBeNil)
-		So(httpStatus, ShouldEqual, 400)
-	})
-
-	cfg.DomainWhitelist = "http://dummy-resource"
-
-	Convey("Invalid cost", t, func() {
-		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
-		req, err := http.NewRequest("Get", "", nil)
-		So(err, ShouldBeNil)
-		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
-
-		httpmock.Activate()
-		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResourceRest{defaultCost}
-		costArray[0].Amount = "x"
-		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
-
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
-		w := httptest.NewRecorder()
-		mockPaymentService.CreatePaymentSession(w, req)
-		So(w.Code, ShouldEqual, 500)
+		paymentResourceRest, err := mockPaymentService.CreatePaymentSession(req, models.IncomingPaymentResourceRequest{})
+		So(paymentResourceRest, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "invalid AuthUserDetails in request context")
 	})
 
 	Convey("Error getting cost resource", t, func() {
 		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
-		req, err := http.NewRequest("Get", "", nil)
-		So(err, ShouldBeNil)
-		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
-		w := httptest.NewRecorder()
-		httpmock.Activate()
-		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("GET", "http://dummy-resource", httpmock.NewErrorResponder(fmt.Errorf("error")))
-		mockPaymentService.CreatePaymentSession(w, req)
-		So(w.Code, ShouldEqual, 500)
+		req := httptest.NewRequest("Get", "/test", nil)
+
+		authUserDetails := models.AuthUserDetails{
+			Id: "identity",
+		}
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+
+		paymentResourceRest, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), models.IncomingPaymentResourceRequest{})
+		So(paymentResourceRest, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "error getting payment resource: [invalid resource domain: ://]")
 	})
 
 	Convey("Error reading cost resource", t, func() {
-		req, err := http.NewRequest("Get", "", nil)
-		So(err, ShouldBeNil)
-		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
-		httpmock.Activate()
-		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("GET", "http://dummy-resource", httpmock.NewStringResponder(502, "string"))
-		CostResource, httpStatus, err := getCosts("http://dummy-resource", cfg)
-		So(CostResource, ShouldEqual, nil)
-		So(err, ShouldNotBeNil)
-		So(httpStatus, ShouldEqual, 400)
-	})
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		req := httptest.NewRequest("Get", "/test", nil)
 
-	Convey("Invalid user header", t, func() {
-		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
-		req, err := http.NewRequest("Get", "", nil)
-		So(err, ShouldBeNil)
-		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
-		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s; invalid=invalid")
-		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCostArray)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
-		mockPaymentService.CreatePaymentSession(w, req)
-		So(w.Code, ShouldEqual, 500)
+		costResource := defaultCost
+		costResource.Amount = "invalid_amount"
+		jsonResponse, _ := httpmock.NewJsonResponder(200, []models.CostResourceRest{costResource})
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+
+		authUserDetails := models.AuthUserDetails{
+			Id: "identity",
+		}
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+
+		resource := models.IncomingPaymentResourceRequest{
+			Resource: "http://dummy-url",
+		}
+		paymentResourceRest, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
+		So(paymentResourceRest, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "error getting amount from costs: [amount [invalid_amount] format incorrect]")
 	})
 
 	Convey("Error Creating DB Resource", t, func() {
@@ -150,20 +110,24 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		mockPaymentService := createMockPaymentService(mock, cfg)
 		mock.EXPECT().CreatePaymentResource(gomock.Any()).Return(fmt.Errorf("error"))
 
-		req, err := http.NewRequest("Get", "", nil)
-		So(err, ShouldBeNil)
-
-		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
-		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
-		w := httptest.NewRecorder()
+		req := httptest.NewRequest("Get", "/test", nil)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCostArray)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
 
-		mockPaymentService.CreatePaymentSession(w, req)
-		So(w.Code, ShouldEqual, 500)
+		authUserDetails := models.AuthUserDetails{
+			Id: "identity",
+		}
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+
+		resource := models.IncomingPaymentResourceRequest{
+			Resource: "http://dummy-url",
+		}
+		paymentResourceRest, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
+		So(paymentResourceRest, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "error writing to MongoDB: error")
 	})
 
 	cfg.PaymentsWebURL = "https://payments.companieshouse.gov.uk"
@@ -173,221 +137,99 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		mockPaymentService := createMockPaymentService(mock, cfg)
 		mock.EXPECT().CreatePaymentResource(gomock.Any())
 
-		path := fmt.Sprintf("/payments/%s", "1234")
-		req, err := http.NewRequest("Get", path, nil)
-		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
-		So(err, ShouldBeNil)
-
-		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
-		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
-		w := httptest.NewRecorder()
+		req := httptest.NewRequest("Get", "/test", nil)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCostArray)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
-		mockPaymentService.CreatePaymentSession(w, req)
-		So(w.Code, ShouldEqual, 201)
-		responseByteArray := w.Body.Bytes()
-		var createdPaymentResource models.PaymentResourceDataDB
-		if err := json.Unmarshal(responseByteArray, &createdPaymentResource); err != nil {
-			panic(err)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, defaultUserDetails)
+
+		resource := models.IncomingPaymentResourceRequest{
+			Resource:  "http://dummy-url",
+			Reference: "ref",
 		}
 
-		So(createdPaymentResource.Links.Journey, ShouldNotBeEmpty)
-		// Regex format for journey url
-		regJourney := regexp.MustCompile("https://payments.companieshouse.gov.uk/payments/(.*)/pay")
-		So(regJourney.MatchString(createdPaymentResource.Links.Journey), ShouldEqual, true)
-		So(regJourney.MatchString(w.Header().Get("Location")), ShouldEqual, true)
-		So(createdPaymentResource.Status, ShouldEqual, Pending.String())
-		So(createdPaymentResource.CreatedBy, ShouldNotBeEmpty)
-		// Regex format for self url
-		regSelf := regexp.MustCompile("payments/(.*)")
-		So(regSelf.MatchString(createdPaymentResource.Links.Self), ShouldEqual, true)
+		paymentResourceRest, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
 
+		So(paymentResourceRest.Amount, ShouldEqual, "10.00")
+		So(paymentResourceRest.AvailablePaymentMethods, ShouldResemble, []string{"GovPay"})
+		So(paymentResourceRest.CompletedAt, ShouldHaveSameTypeAs, time.Now())
+		So(paymentResourceRest.CreatedAt, ShouldHaveSameTypeAs, time.Now())
+		So(paymentResourceRest.CreatedBy, ShouldResemble, models.CreatedByRest{
+			Email:    "email@companieshouse.gov.uk",
+			Forename: "forename",
+			ID:       "id",
+			Surname:  "surname",
+		})
+		So(paymentResourceRest.Description, ShouldBeEmpty) // TODO implement this
+		So(paymentResourceRest.Links.Resource, ShouldEqual, "http://dummy-url")
+		regJourney := regexp.MustCompile("https://payments.companieshouse.gov.uk/payments/(.*)/pay")
+		So(regJourney.MatchString(paymentResourceRest.Links.Journey), ShouldEqual, true)
+		regSelf := regexp.MustCompile("payments/(.*)")
+		So(regSelf.MatchString(paymentResourceRest.Links.Self), ShouldEqual, true)
+		So(paymentResourceRest.PaymentMethod, ShouldBeEmpty)
+		So(paymentResourceRest.Reference, ShouldEqual, "ref")
+		So(paymentResourceRest.Status, ShouldEqual, "pending")
+		So(paymentResourceRest.Costs, ShouldResemble, defaultCostArray)
+		So(paymentResourceRest.MetaData, ShouldResemble, models.PaymentResourceMetaDataRest{
+			ID:          "",
+			RedirectURI: "",
+			State:       "",
+			ExternalPaymentStatusURI: "",
+		})
+
+		So(err, ShouldBeNil)
 	})
 
 	Convey("Valid request - multiple costs", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 		mock.EXPECT().CreatePaymentResource(gomock.Any())
-		req, err := http.NewRequest("Get", "", nil)
-		So(err, ShouldBeNil)
-		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
-		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
-		w := httptest.NewRecorder()
+		req := httptest.NewRequest("Get", "/test", nil)
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		costArray := []models.CostResourceRest{defaultCost, defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
 
-		mockPaymentService.CreatePaymentSession(w, req)
-		So(w.Code, ShouldEqual, 201)
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, defaultUserDetails)
 
-		responseByteArray := w.Body.Bytes()
-		var createdPaymentResource models.PaymentResourceDataDB
-		if err := json.Unmarshal(responseByteArray, &createdPaymentResource); err != nil {
-			panic(err)
+		resource := models.IncomingPaymentResourceRequest{
+			Resource:  "http://dummy-url",
+			Reference: "ref",
 		}
 
-		So(createdPaymentResource.Links.Journey, ShouldNotBeEmpty)
-		// Regex format for journey url
+		paymentResourceRest, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
+		So(paymentResourceRest.Amount, ShouldEqual, "20.00")
+		So(paymentResourceRest.AvailablePaymentMethods, ShouldResemble, []string{"GovPay"})
+		So(paymentResourceRest.CompletedAt, ShouldHaveSameTypeAs, time.Now())
+		So(paymentResourceRest.CreatedAt, ShouldHaveSameTypeAs, time.Now())
+		So(paymentResourceRest.CreatedBy, ShouldResemble, models.CreatedByRest{
+			Email:    "email@companieshouse.gov.uk",
+			Forename: "forename",
+			ID:       "id",
+			Surname:  "surname",
+		})
+		So(paymentResourceRest.Description, ShouldBeEmpty) // TODO implement this
+		So(paymentResourceRest.Links.Resource, ShouldEqual, "http://dummy-url")
 		regJourney := regexp.MustCompile("https://payments.companieshouse.gov.uk/payments/(.*)/pay")
-		So(regJourney.MatchString(createdPaymentResource.Links.Journey), ShouldEqual, true)
-		So(regJourney.MatchString(w.Header().Get("Location")), ShouldEqual, true)
-		So(createdPaymentResource.Status, ShouldEqual, Pending.String())
-		So(createdPaymentResource.CreatedBy, ShouldNotBeEmpty)
+		So(regJourney.MatchString(paymentResourceRest.Links.Journey), ShouldEqual, true)
 		regSelf := regexp.MustCompile("payments/(.*)")
-		So(regSelf.MatchString(createdPaymentResource.Links.Self), ShouldEqual, true)
-		So(createdPaymentResource.Amount, ShouldEqual, "20.00")
-	})
+		So(regSelf.MatchString(paymentResourceRest.Links.Self), ShouldEqual, true)
+		So(paymentResourceRest.PaymentMethod, ShouldBeEmpty)
+		So(paymentResourceRest.Reference, ShouldEqual, "ref")
+		So(paymentResourceRest.Status, ShouldEqual, "pending")
+		So(paymentResourceRest.Costs, ShouldResemble, []models.CostResourceRest{defaultCost, defaultCost})
+		So(paymentResourceRest.MetaData, ShouldResemble, models.PaymentResourceMetaDataRest{
+			ID:          "",
+			RedirectURI: "",
+			State:       "",
+			ExternalPaymentStatusURI: "",
+		})
 
-	Convey("Valid generated PaymentResource ID", t, func() {
-		generatedID := generateID()
-		// Generated ID should be 20 characters
-		So(len(generatedID), ShouldEqual, 20)
-		// Generated ID should contain only numbers
-		re := regexp.MustCompile("^[0-9]*$")
-		So(re.MatchString(generatedID), ShouldEqual, true)
-	})
-
-}
-
-func TestUnitGetPayment(t *testing.T) {
-	mockCtrl := gomock.NewController(t)
-	cfg, _ := config.Get()
-	defer resetConfig()
-
-	Convey("Payment ID missing", t, func() {
-		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
-		req, err := http.NewRequest("Get", "", nil)
 		So(err, ShouldBeNil)
-		w := httptest.NewRecorder()
-		mockPaymentService.GetPaymentSessionFromRequest(w, req)
-		So(w.Code, ShouldEqual, 400)
-	})
-
-	Convey("Payment ID not found", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource("invalid").Return(nil, nil)
-		path := fmt.Sprintf("/payments/%s", "invalid")
-		req, err := http.NewRequest("Get", path, nil)
-		req = mux.SetURLVars(req, map[string]string{"payment_id": "invalid"})
-		So(err, ShouldBeNil)
-		w := httptest.NewRecorder()
-		mockPaymentService.GetPaymentSessionFromRequest(w, req)
-		So(w.Code, ShouldEqual, 403)
-	})
-
-	Convey("Error getting payment from DB", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResourceDB{}, fmt.Errorf("error"))
-		path := fmt.Sprintf("/payments/%s", "1234")
-		req, err := http.NewRequest("Get", path, nil)
-		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
-		So(err, ShouldBeNil)
-		w := httptest.NewRecorder()
-		mockPaymentService.GetPaymentSessionFromRequest(w, req)
-		So(w.Code, ShouldEqual, 500)
-	})
-
-	Convey("Error getting payment resource", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResourceDB{}, nil)
-		path := fmt.Sprintf("/payments/%s", "1234")
-		req, err := http.NewRequest("Get", path, nil)
-		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
-		So(err, ShouldBeNil)
-		w := httptest.NewRecorder()
-		mockPaymentService.GetPaymentSessionFromRequest(w, req)
-		So(w.Code, ShouldEqual, 400)
-	})
-
-	cfg.DomainWhitelist = "http://dummy-resource"
-	reqBody := []byte("{\"redirect_uri\": \"dummy-redirect-uri\",\"resource\": \"http://dummy-resource\",\"state\": \"dummy-state\",\"reference\": \"dummy-reference\"}")
-
-	Convey("Invalid cost", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceDataDB{Amount: "x", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
-		path := fmt.Sprintf("/payments/%s", "1234")
-		req, err := http.NewRequest("Get", path, nil)
-		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
-		So(err, ShouldBeNil)
-		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
-
-		httpmock.Activate()
-		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResourceRest{defaultCost}
-		costArray[0].Amount = "x"
-		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
-
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
-		w := httptest.NewRecorder()
-		mockPaymentService.GetPaymentSessionFromRequest(w, req)
-		So(w.Code, ShouldEqual, 500)
-	})
-
-	Convey("Amount mismatch", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceDataDB{Amount: "100", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
-		path := fmt.Sprintf("/payments/%s", "1234")
-		req, err := http.NewRequest("Get", path, nil)
-		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
-		So(err, ShouldBeNil)
-		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
-		w := httptest.NewRecorder()
-		httpmock.Activate()
-		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResourceRest{defaultCost}
-		costArray[0].Amount = "99"
-		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
-		mockPaymentService.GetPaymentSessionFromRequest(w, req)
-		So(w.Code, ShouldEqual, 403)
-	})
-
-	Convey("Get Payment session - success - Single cost", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceDataDB{Amount: "10.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
-		path := fmt.Sprintf("/payments/%s", "1234")
-		req, err := http.NewRequest("Get", path, nil)
-		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
-		So(err, ShouldBeNil)
-		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
-		w := httptest.NewRecorder()
-		httpmock.Activate()
-		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResourceRest{defaultCost}
-		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
-		mockPaymentService.GetPaymentSessionFromRequest(w, req)
-		So(w.Code, ShouldEqual, 200)
-	})
-
-	Convey("Get Payment session - success - Multiple costs", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceDataDB{Amount: "20.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
-		path := fmt.Sprintf("/payments/%s", "1234")
-		req, err := http.NewRequest("Get", path, nil)
-		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
-		So(err, ShouldBeNil)
-		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
-		w := httptest.NewRecorder()
-		httpmock.Activate()
-		defer httpmock.DeactivateAndReset()
-		costArray := []models.CostResourceRest{defaultCost, defaultCost}
-		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
-		mockPaymentService.GetPaymentSessionFromRequest(w, req)
-		So(w.Code, ShouldEqual, 200)
 	})
 }
 
@@ -395,114 +237,203 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
-	reqBodyPatchInvalid := []byte("{\"amount\": \"130.00\"}")
-	reqBodyPatch := []byte("{\"payment_method\": \"dummy-payment-method\",\"status\": \"dummy-status\"}")
 
-	Convey("Payment ID missing", t, func() {
-		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
-		req, err := http.NewRequest("GET", "", nil)
-		So(err, ShouldBeNil)
-		w := httptest.NewRecorder()
-		mockPaymentService.PatchPaymentSession(w, req)
-		So(w.Code, ShouldEqual, 400)
-	})
-
-	Convey("Empty Request Body", t, func() {
-		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
-		path := fmt.Sprintf("/payments/%s", "1234")
-		req, err := http.NewRequest("Get", path, nil)
-		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
-		So(err, ShouldBeNil)
-
-		w := httptest.NewRecorder()
-		mockPaymentService.PatchPaymentSession(w, req)
-		So(w.Code, ShouldEqual, 400)
-	})
-
-	Convey("Invalid Request Body", t, func() {
-		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
-		path := fmt.Sprintf("/payments/%s", "1234")
-		req, err := http.NewRequest("Get", path, nil)
-		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
-		So(err, ShouldBeNil)
-		req.Body = ioutil.NopCloser(bytes.NewReader([]byte("invalid_body")))
-		w := httptest.NewRecorder()
-		mockPaymentService.PatchPaymentSession(w, req)
-		So(w.Code, ShouldEqual, 400)
-	})
-
-	Convey("Error getting session from DB", t, func() {
+	Convey("Error Patching Payment Resource", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
+		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
 
-		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(fmt.Errorf("error"))
+		req := httptest.NewRequest("Get", "/test", nil)
 
-		path := fmt.Sprintf("/payments/%s", "1234")
-		req, err := http.NewRequest("Get", path, nil)
-		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
-		So(err, ShouldBeNil)
-
-		req.Body = ioutil.NopCloser(bytes.NewReader(reqBodyPatch))
-		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
-		w := httptest.NewRecorder()
-
-		mockPaymentService.PatchPaymentSession(w, req)
-		So(w.Code, ShouldEqual, 500)
+		resource := models.PaymentResourceRest{}
+		err := mockPaymentService.PatchPaymentSession(req, "1234", resource)
+		So(err.Error(), ShouldEqual, "error patching payment session on database: [error]")
 	})
 
-	Convey("No valid fields for the patch request supplied", t, func() {
+	Convey("Successful Patch Payment Resource", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-
-		path := fmt.Sprintf("/payments/%s", "1234")
-		req, err := http.NewRequest("Get", path, nil)
-		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
-		So(err, ShouldBeNil)
-
-		req.Body = ioutil.NopCloser(bytes.NewReader(reqBodyPatchInvalid))
-		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
-		w := httptest.NewRecorder()
-
-		mockPaymentService.PatchPaymentSession(w, req)
-		So(w.Code, ShouldEqual, 400)
-	})
-
-	Convey("Could not find payment resource to patch", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-
-		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(fmt.Errorf("not found"))
-
-		path := fmt.Sprintf("/payments/%s", "1234")
-		req, err := http.NewRequest("Get", path, nil)
-		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
-		So(err, ShouldBeNil)
-
-		req.Body = ioutil.NopCloser(bytes.NewReader(reqBodyPatch))
-		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
-		w := httptest.NewRecorder()
-
-		mockPaymentService.PatchPaymentSession(w, req)
-		So(w.Code, ShouldEqual, 403)
-	})
-
-	Convey("Valid request - Patch resource", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-
 		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(nil)
 
-		path := fmt.Sprintf("/payments/%s", "1234")
-		req, err := http.NewRequest("Get", path, nil)
-		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
+		req := httptest.NewRequest("Get", "/test", nil)
+
+		resource := models.PaymentResourceRest{
+			PaymentMethod: "GovPay",
+			Status:        "status",
+		}
+
+		err := mockPaymentService.PatchPaymentSession(req, "1234", resource)
 		So(err, ShouldBeNil)
 
-		req.Body = ioutil.NopCloser(bytes.NewReader(reqBodyPatch))
-		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
-		w := httptest.NewRecorder()
+	})
+}
 
-		mockPaymentService.PatchPaymentSession(w, req)
-		So(w.Code, ShouldEqual, 200)
+func TestUnitGetPayment(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	cfg, _ := config.Get()
+	defer resetConfig()
+
+	Convey("Error getting payment from DB", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{}, fmt.Errorf("error"))
+
+		req := httptest.NewRequest("Get", "/test", nil)
+
+		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "1234")
+		So(paymentResourceRest, ShouldBeNil)
+		So(status, ShouldEqual, 500)
+		So(err.Error(), ShouldEqual, "error getting payment resource from db: [error]")
+	})
+
+	Convey("Payment ID not found", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mock.EXPECT().GetPaymentResource("invalid").Return(nil, nil)
+
+		req := httptest.NewRequest("Get", "/test", nil)
+
+		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "invalid")
+		So(paymentResourceRest, ShouldBeNil)
+		So(status, ShouldEqual, 404)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Error getting payment resource", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mock.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResourceDB{}, nil)
+
+		req := httptest.NewRequest("Get", "/test", nil)
+
+		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "1234")
+		So(paymentResourceRest, ShouldBeNil)
+		So(status, ShouldEqual, 400)
+		So(err.Error(), ShouldEqual, "error getting payment resource: [invalid resource domain: ://]")
+	})
+
+	cfg.DomainWhitelist = "http://dummy-resource"
+
+	Convey("Invalid cost", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceDataDB{Amount: "x", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
+
+		req := httptest.NewRequest("Get", "/test", nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		costArray := []models.CostResourceRest{defaultCost}
+		costArray[0].Amount = "x"
+		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+
+		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "1234")
+		So(paymentResourceRest, ShouldBeNil)
+		So(status, ShouldEqual, 500)
+		So(err.Error(), ShouldEqual, "error getting amount from costs: [amount [x] format incorrect]")
+	})
+
+	Convey("Amount mismatch", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceDataDB{Amount: "100", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
+
+		req := httptest.NewRequest("Get", "/test", nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		costArray := []models.CostResourceRest{defaultCost}
+		costArray[0].Amount = "99"
+		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+
+		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "1234")
+		So(paymentResourceRest, ShouldBeNil)
+		So(status, ShouldEqual, 403)
+		So(err.Error(), ShouldEqual, "amount in payment resource [99.00] different from db [100] for id [1234]")
+	})
+
+	Convey("Get Payment session - success - Single cost", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceDataDB{Amount: "10.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
+
+		req := httptest.NewRequest("Get", "/test", nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		costArray := []models.CostResourceRest{defaultCost}
+		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+
+		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "1234")
+		So(paymentResourceRest, ShouldResemble, &models.PaymentResourceRest{
+			Amount: "10.00",
+			Links: models.PaymentLinksRest{
+				Resource: "http://dummy-resource",
+			},
+			Costs: []models.CostResourceRest{
+				{
+					Amount:                  "10",
+					AvailablePaymentMethods: []string{"GovPay"},
+					ClassOfPayment:          []string{"class"},
+					Description:             "desc",
+					DescriptionIdentifier:   "identifier",
+					Links: models.CostLinksRest{
+						Self: "self",
+					},
+				},
+			},
+		})
+		So(status, ShouldEqual, 200)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Get Payment session - success - Multiple costs", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceDataDB{Amount: "20.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
+
+		req := httptest.NewRequest("Get", "/test", nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		costArray := []models.CostResourceRest{defaultCost, defaultCost}
+		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+
+		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "1234")
+		So(paymentResourceRest, ShouldResemble, &models.PaymentResourceRest{
+			Amount: "20.00",
+			Links: models.PaymentLinksRest{
+				Resource: "http://dummy-resource",
+			},
+			Costs: []models.CostResourceRest{
+				{
+					Amount:                  "10",
+					AvailablePaymentMethods: []string{"GovPay"},
+					ClassOfPayment:          []string{"class"},
+					Description:             "desc",
+					DescriptionIdentifier:   "identifier",
+					Links: models.CostLinksRest{
+						Self: "self",
+					},
+				},
+				{
+					Amount:                  "10",
+					AvailablePaymentMethods: []string{"GovPay"},
+					ClassOfPayment:          []string{"class"},
+					Description:             "desc",
+					DescriptionIdentifier:   "identifier",
+					Links: models.CostLinksRest{
+						Self: "self",
+					},
+				},
+			},
+		})
+		So(status, ShouldEqual, 200)
+		So(err, ShouldBeNil)
 	})
 }
 
@@ -523,13 +454,70 @@ func TestUnitGetTotalAmount(t *testing.T) {
 	})
 }
 
+func TestUnitGetCosts(t *testing.T) {
+	cfg, _ := config.Get()
+	cfg.DomainWhitelist = "http://dummy-resource"
+	defer resetConfig()
+
+	Convey("Invalid Resource", t, func() {
+		costResourceRest, status, err := getCosts("invalid", cfg)
+		So(costResourceRest, ShouldBeNil)
+		So(status, ShouldEqual, 400)
+		So(err.Error(), ShouldEqual, "invalid resource domain: ://")
+	})
+
+	Convey("Error getting Cost Resource", t, func() {
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("GET", "http://dummy-resource", nil)
+
+		costResourceRest, status, err := getCosts("http://dummy-resource", cfg)
+		So(costResourceRest, ShouldBeNil)
+		So(status, ShouldEqual, 500)
+		So(err.Error(), ShouldEqual, "error getting Cost Resource: [Get http://dummy-resource: no responder found]")
+	})
+
+	Convey("Failure status when getting Cost Resource", t, func() {
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(400, nil)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+
+		costResourceRest, status, err := getCosts("http://dummy-resource", cfg)
+		So(costResourceRest, ShouldBeNil)
+		So(status, ShouldEqual, 400)
+		So(err.Error(), ShouldEqual, "error getting Cost Resource")
+	})
+
+	Convey("Error reading Cost Resource", t, func() {
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		cost := defaultCost
+		cost.Amount = ""
+		jsonResponse, _ := httpmock.NewJsonResponder(200, []models.CostResourceRest{cost})
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+
+		costResourceRest, status, err := getCosts("http://dummy-resource", cfg)
+		So(costResourceRest, ShouldBeNil)
+		So(status, ShouldEqual, 400)
+		So(err.Error(), ShouldEqual, "Key: 'CostResourceRest.Amount' Error:Field validation for 'Amount' failed on the 'required' tag")
+	})
+}
+
+func TestUnitGenerateID(t *testing.T) {
+	Convey("Valid generated PaymentResource ID", t, func() {
+		re := regexp.MustCompile("^[0-9]{20}$")
+		So(re.MatchString(generateID()), ShouldEqual, true)
+	})
+}
+
 func TestUnitValidateResource(t *testing.T) {
 	cfg, _ := config.Get()
 	defer resetConfig()
 
 	Convey("Invalid Resource Domain", t, func() {
 		err := validateResource("http://dummy-resource", cfg)
-		So(err.Error(), ShouldStartWith, "invalid resource domain")
+		So(err.Error(), ShouldEqual, "invalid resource domain: http://dummy-resource")
 	})
 
 	cfg.DomainWhitelist = "http://dummy-resource"
@@ -583,51 +571,6 @@ func TestUnitValidateCosts(t *testing.T) {
 			},
 		}
 		So(validateCosts(&cost), ShouldNotBeNil)
-	})
-}
-
-func TestUnitValidatePaymentCreate(t *testing.T) {
-	Convey("Invalid Payment Create, Redirect URL missing", t, func() {
-		paymentCreate := models.IncomingPaymentResourceRequest{
-			Resource:  "http://chs-dev:4000/payment-service-test-harness/payable-resource?amount=150",
-			State:     "application-nonce-value",
-			Reference: "customer-reference",
-		}
-		So(validatePaymentCreate(paymentCreate), ShouldNotBeNil)
-	})
-	Convey("Invalid Payment Create, Resource missing", t, func() {
-		paymentCreate := models.IncomingPaymentResourceRequest{
-			RedirectURI: "https://client.web.domain/payment-complete-callback",
-			State:       "application-nonce-value",
-			Reference:   "customer-reference",
-		}
-		So(validatePaymentCreate(paymentCreate), ShouldNotBeNil)
-	})
-	Convey("Invalid Payment Create, State missing", t, func() {
-		paymentCreate := models.IncomingPaymentResourceRequest{
-			RedirectURI: "https://client.web.domain/payment-complete-callback",
-			Resource:    "http://chs-dev:4000/payment-service-test-harness/payable-resource?amount=150",
-			Reference:   "customer-reference",
-		}
-		So(validatePaymentCreate(paymentCreate), ShouldNotBeNil)
-	})
-
-	Convey("Valid Payment Create, Reference present", t, func() {
-		paymentCreate := models.IncomingPaymentResourceRequest{
-			RedirectURI: "https://client.web.domain/payment-complete-callback",
-			Resource:    "http://chs-dev:4000/payment-service-test-harness/payable-resource?amount=150",
-			State:       "application-nonce-value",
-			Reference:   "customer-reference",
-		}
-		So(validatePaymentCreate(paymentCreate), ShouldBeNil)
-	})
-	Convey("Valid Payment Create, Reference missing", t, func() {
-		paymentCreate := models.IncomingPaymentResourceRequest{
-			RedirectURI: "https://client.web.domain/payment-complete-callback",
-			Resource:    "http://chs-dev:4000/payment-service-test-harness/payable-resource?amount=150",
-			State:       "application-nonce-value",
-		}
-		So(validatePaymentCreate(paymentCreate), ShouldBeNil)
 	})
 }
 

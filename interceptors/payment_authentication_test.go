@@ -28,10 +28,6 @@ var defaultCostRest = models.CostResourceRest{
 	Links: models.CostLinksRest{Self: "self"},
 }
 
-var defaultCostArray = []models.CostResourceRest{
-	defaultCostRest,
-}
-
 func createMockPaymentService(dao *dao.MockDAO, config *config.Config) service.PaymentService {
 	return service.PaymentService{
 		DAO:    dao,
@@ -40,7 +36,7 @@ func createMockPaymentService(dao *dao.MockDAO, config *config.Config) service.P
 }
 
 // Function to create a PaymentAuthenticationInterceptor with mock mongo DAO and a mock payment service
-func createPaymentAuthenticationInterceptorWithMockDAOandService(controller *gomock.Controller, cfg *config.Config) PaymentAuthenticationInterceptor {
+func createPaymentAuthenticationInterceptorWithMockDAOAndService(controller *gomock.Controller, cfg *config.Config) PaymentAuthenticationInterceptor {
 	mockDAO := dao.NewMockDAO(controller)
 	mockPaymentService := createMockPaymentService(mockDAO, cfg)
 	return PaymentAuthenticationInterceptor{
@@ -64,13 +60,13 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 	Convey("No payment ID in request", t, func() {
 		path := fmt.Sprintf("/payments/")
 		req, err := http.NewRequest("GET", path, nil)
+		So(err, ShouldBeNil)
 		req.Header.Set("Eric-Identity", "authorised_identity")
 		req.Header.Set("Eric-Identity-Type", "oauth2")
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "noroles")
-		So(err, ShouldBeNil)
 
-		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockDAOandService(mockCtrl, cfg)
+		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockDAOAndService(mockCtrl, cfg)
 
 		w := httptest.NewRecorder()
 		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
@@ -81,6 +77,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 	Convey("Invalid user details in context", t, func() {
 		path := fmt.Sprintf("/payments/%s", "1234")
 		req, err := http.NewRequest("GET", path, nil)
+		So(err, ShouldBeNil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		req.Header.Set("Eric-Identity", "authorised_identity")
 		req.Header.Set("Eric-Identity-Type", "oauth2")
@@ -90,10 +87,9 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		authUserDetails := models.PaymentResourceRest{
 			Status: "test",
 		}
-		ctx := context.WithValue(req.Context(), helpers.UserDetailsKey, authUserDetails)
-		So(err, ShouldBeNil)
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 
-		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockDAOandService(mockCtrl, cfg)
+		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockDAOAndService(mockCtrl, cfg)
 
 		w := httptest.NewRecorder()
 		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
@@ -104,6 +100,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 	Convey("No authorised identity", t, func() {
 		path := fmt.Sprintf("/payments/%s", "1234")
 		req, err := http.NewRequest("GET", path, nil)
+		So(err, ShouldBeNil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		req.Header.Set("Eric-Identity", "authorised_identity")
 		req.Header.Set("Eric-Identity-Type", "oauth2")
@@ -111,10 +108,9 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("ERIC-Authorised-Roles", "noroles")
 		// Pass no ID (identity)
 		authUserDetails := models.AuthUserDetails{}
-		ctx := context.WithValue(req.Context(), helpers.UserDetailsKey, authUserDetails)
-		So(err, ShouldBeNil)
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 
-		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockDAOandService(mockCtrl, cfg)
+		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockDAOAndService(mockCtrl, cfg)
 
 		w := httptest.NewRecorder()
 		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
@@ -125,6 +121,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 	Convey("Happy path where user is creator", t, func() {
 		path := fmt.Sprintf("/payments/%s", "1234")
 		req, err := http.NewRequest("GET", path, nil)
+		So(err, ShouldBeNil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		req.Header.Set("Eric-Identity", "identity")
 		req.Header.Set("Eric-Identity-Type", "oauth2")
@@ -133,8 +130,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		authUserDetails := models.AuthUserDetails{
 			Id: "identity",
 		}
-		ctx := context.WithValue(req.Context(), helpers.UserDetailsKey, authUserDetails)
-		So(err, ShouldBeNil)
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 
 		mockDAO := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mockDAO, cfg)
@@ -157,6 +153,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 	Convey("Happy path where user is admin and request is GET", t, func() {
 		path := fmt.Sprintf("/payments/%s", "1234")
 		req, err := http.NewRequest("GET", path, nil)
+		So(err, ShouldBeNil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		req.Header.Set("Eric-Identity", "identity")
 		req.Header.Set("Eric-Identity-Type", "oauth2")
@@ -165,8 +162,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		authUserDetails := models.AuthUserDetails{
 			Id: "identity",
 		}
-		ctx := context.WithValue(req.Context(), helpers.UserDetailsKey, authUserDetails)
-		So(err, ShouldBeNil)
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 
 		mockDAO := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mockDAO, cfg)
@@ -189,6 +185,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 	Convey("Unauthorised where user is admin and request is POST", t, func() {
 		path := fmt.Sprintf("/payments/%s", "1234")
 		req, err := http.NewRequest("POST", path, nil)
+		So(err, ShouldBeNil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		req.Header.Set("Eric-Identity", "identity")
 		req.Header.Set("Eric-Identity-Type", "oauth2")
@@ -197,8 +194,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		authUserDetails := models.AuthUserDetails{
 			Id: "identity",
 		}
-		ctx := context.WithValue(req.Context(), helpers.UserDetailsKey, authUserDetails)
-		So(err, ShouldBeNil)
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 
 		mockDAO := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mockDAO, cfg)

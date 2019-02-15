@@ -61,10 +61,9 @@ func TestUnitTransformToDB(t *testing.T) {
 
 		expectedPaymentResourceDB := models.PaymentResourceDB{
 			Data: models.PaymentResourceDataDB{
-				Amount:                  "123",
-				AvailablePaymentMethods: []string{"pay1", "pay2"},
-				CompletedAt:             now,
-				CreatedAt:               now,
+				Amount:      "123",
+				CompletedAt: now,
+				CreatedAt:   now,
 				CreatedBy: models.CreatedByDB{
 					Email:    "created_by@companieshouse.gov.uk",
 					Forename: "user_forename",
@@ -90,32 +89,32 @@ func TestUnitTransformToDB(t *testing.T) {
 func TestUnitTransformToRest(t *testing.T) {
 	Convey("DB converted to Rest", t, func() {
 		now := time.Now()
-		paymentResourceDataDB := models.PaymentResourceDataDB{
-			Amount:                  "123",
-			AvailablePaymentMethods: []string{"pay1", "pay2"},
-			CompletedAt:             now,
-			CreatedAt:               now,
-			CreatedBy: models.CreatedByDB{
-				Email:    "created_by@companieshouse.gov.uk",
-				Forename: "user_forename",
-				ID:       "abc",
-				Surname:  "user_surname",
+		paymentResourceDB := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount:      "123",
+				CompletedAt: now,
+				CreatedAt:   now,
+				CreatedBy: models.CreatedByDB{
+					Email:    "created_by@companieshouse.gov.uk",
+					Forename: "user_forename",
+					ID:       "abc",
+					Surname:  "user_surname",
+				},
+				Description: "payment_description",
+				Links: models.PaymentLinksDB{
+					Journey:  "links_journey",
+					Resource: "links_resource",
+					Self:     "links_self",
+				},
+				PaymentMethod: "method",
+				Reference:     "ref",
+				Status:        "pending",
 			},
-			Description: "payment_description",
-			Links: models.PaymentLinksDB{
-				Journey:  "links_journey",
-				Resource: "links_resource",
-				Self:     "links_self",
-			},
-			PaymentMethod: "method",
-			Reference:     "ref",
-			Status:        "pending",
 		}
 		expectedPaymentResourceRest := models.PaymentResourceRest{
-			Amount:                  "123",
-			AvailablePaymentMethods: []string{"pay1", "pay2"},
-			CompletedAt:             now,
-			CreatedAt:               now,
+			Amount:      "123",
+			CompletedAt: now,
+			CreatedAt:   now,
 			CreatedBy: models.CreatedByRest{
 				Email:    "created_by@companieshouse.gov.uk",
 				Forename: "user_forename",
@@ -133,7 +132,7 @@ func TestUnitTransformToRest(t *testing.T) {
 			Status:        "pending",
 		}
 
-		paymentResourceRest := PaymentTransformer{}.TransformToRest(paymentResourceDataDB)
+		paymentResourceRest := PaymentTransformer{}.TransformToRest(paymentResourceDB)
 		So(paymentResourceRest, ShouldResemble, expectedPaymentResourceRest)
 	})
 }
