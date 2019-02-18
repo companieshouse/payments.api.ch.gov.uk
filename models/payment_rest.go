@@ -22,7 +22,9 @@ type PaymentResourceRest struct {
 	PaymentMethod           string             `json:"payment_method,omitempty"`
 	Reference               string             `json:"reference,omitempty"`
 	Status                  string             `json:"status"`
-	Costs                   []CostResourceRest `json:"items"`
+	Costs                   []CostResourceRest `json:"costs"`
+	Etag                    string             `json:"etag"`
+	Kind                    string             `json:"kind"`
 	MetaData                PaymentResourceMetaDataRest
 }
 

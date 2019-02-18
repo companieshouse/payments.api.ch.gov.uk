@@ -13,15 +13,18 @@ type PaymentResourceDB struct {
 
 // PaymentResourceDataDB is public facing payment details to be returned in the response
 type PaymentResourceDataDB struct {
-	Amount        string         `bson:"amount"`
-	CompletedAt   time.Time      `bson:"completed_at,omitempty"`
-	CreatedAt     time.Time      `bson:"created_at,omitempty"`
-	CreatedBy     CreatedByDB    `bson:"created_by"`
-	Description   string         `bson:"description"`
-	Links         PaymentLinksDB `bson:"links"`
-	PaymentMethod string         `bson:"payment_method"`
-	Reference     string         `bson:"reference,omitempty"`
-	Status        string         `bson:"status"`
+	Amount                  string         `bson:"amount"`
+	AvailablePaymentMethods []string       `bson:"available_payment_methods,omitempty"`
+	CompletedAt             time.Time      `bson:"completed_at,omitempty"`
+	CreatedAt               time.Time      `bson:"created_at,omitempty"`
+	CreatedBy               CreatedByDB    `bson:"created_by"`
+	Description             string         `bson:"description"`
+	Links                   PaymentLinksDB `bson:"links"`
+	PaymentMethod           string         `bson:"payment_method"`
+	Reference               string         `bson:"reference,omitempty"`
+	Status                  string         `bson:"status"`
+	Etag                    string         `bson:"etag"`
+	Kind                    string         `bson:"kind"`
 }
 
 // CreatedByDB is the user who is creating the payment session

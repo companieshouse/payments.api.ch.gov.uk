@@ -1,6 +1,8 @@
 package service
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -31,6 +33,10 @@ type PaymentService struct {
 
 // PaymentStatus Enum Type
 type PaymentStatus int
+
+// PaymentSessionKind constant is the value stored in the payment resource kind field
+const PaymentSessionKind = "payment-session#payment-session"
+const PaymentSessionKey = "payment_session"
 
 // Enumeration containing all possible payment statuses
 const (
@@ -105,6 +111,8 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 
 	paymentResourceRest.Reference = createResource.Reference
 	paymentResourceRest.Status = Pending.String()
+	paymentResourceRest.Kind = PaymentSessionKind
+	paymentResourceRest.Etag = generateEtag()
 	paymentResourceID := generateID()
 
 	journeyURL := service.Config.PaymentsWebURL + "/payments/" + paymentResourceID + "/pay"
@@ -135,8 +143,8 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 
 // PatchPaymentSession updates an existing payment session with the data provided from the Rest model
 func (service *PaymentService) PatchPaymentSession(req *http.Request, id string, PaymentResourceUpdateRest models.PaymentResourceRest) error {
-
 	PaymentResourceUpdate := transformers.PaymentTransformer{}.TransformToDB(PaymentResourceUpdateRest)
+	PaymentResourceUpdate.Data.Etag = generateEtag()
 	err := service.DAO.PatchPaymentResource(id, &PaymentResourceUpdate)
 	if err != nil {
 		err = fmt.Errorf("error patching payment session on database: [%v]", err)
@@ -266,6 +274,20 @@ func generateID() (i string) {
 	ranNumber := fmt.Sprintf("%07d", rand.Intn(9999999))
 	millis := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
 	return ranNumber + millis
+}
+
+// generateEtag generates a random etag which is generated on every write action on the payment session
+func generateEtag() string {
+	// Get a random number and the time in seconds and milliseconds
+	rand.Seed(time.Now().UTC().UnixNano())
+	randomNumber := fmt.Sprintf("%07d", rand.Intn(9999999))
+	timeInMillis := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
+	timeInSeconds := strconv.FormatInt(time.Now().UnixNano()/int64(time.Second), 10)
+	// Calculate a SHA-1 digest
+	shaDigest := sha1.New()
+	shaDigest.Write([]byte(randomNumber + timeInMillis + timeInSeconds))
+	sha1_hash := hex.EncodeToString(shaDigest.Sum(nil))
+	return sha1_hash
 }
 
 func validateResource(resource string, cfg *config.Config) error {
