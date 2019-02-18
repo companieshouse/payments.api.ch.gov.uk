@@ -8,20 +8,32 @@ import (
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/gorilla/mux"
 )
 
 // HandleCreateExternalPaymentJourney creates an external payment session with a Payment Provider that is given, e.g. GOV.UK Pay
 func HandleCreateExternalPaymentJourney(w http.ResponseWriter, req *http.Request) {
 	// get payment resource from context, put there by PaymentAuthenticationInterceptor
-	paymentSession, ok := req.Context().Value(helpers.ContextKeyPaymentSession).(models.PaymentResourceRest)
+	paymentSession, ok := req.Context().Value(helpers.ContextKeyPaymentSession).(*models.PaymentResourceRest)
 	if !ok {
 		log.ErrorR(req, fmt.Errorf("invalid PaymentResourceRest in request context"))
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	externalPaymentJourney, err := paymentService.CreateExternalPaymentJourney(req, &paymentSession)
+	vars := mux.Vars(req)
+	id := vars["payment_id"]
+	if id == "" {
+		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	paymentSession.MetaData.ID = id
+
+	externalPaymentJourney, err := paymentService.CreateExternalPaymentJourney(req, paymentSession)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error creating external payment journey: %s", err))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
