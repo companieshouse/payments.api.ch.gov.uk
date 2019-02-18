@@ -53,6 +53,12 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 			return
 		}
 
+		if httpStatus != http.StatusFound {
+			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor error when retrieving payment session. Status: [%d]", httpStatus))
+			w.WriteHeader(httpStatus)
+			return
+		}
+
 		// Store paymentSession in context to use later in the handler
 		ctx := context.WithValue(r.Context(), helpers.ContextKeyPaymentSession, paymentSession)
 
