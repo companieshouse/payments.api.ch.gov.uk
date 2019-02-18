@@ -52,5 +52,14 @@ func (pt PaymentTransformer) TransformToRest(dbResource models.PaymentResourceDB
 		Etag:          dbResource.Data.Etag,
 		Kind:          dbResource.Data.Kind,
 	}
+
+	// One-way transformation of DB metadata: related to, but not part of the payment rest data json spec
+	paymentResource.MetaData = models.PaymentResourceMetaDataRest{
+		ID:                       dbResource.ID,
+		RedirectURI:              dbResource.RedirectURI,
+		State:                    dbResource.State,
+		ExternalPaymentStatusURI: dbResource.ExternalPaymentStatusURI,
+	}
+
 	return paymentResource
 }
