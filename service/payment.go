@@ -71,7 +71,6 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 		return nil, http.StatusBadRequest, err
 	}
 
-	// http status code should not matter here - if there is any error we can treat as internal server error
 	costs, status, err := getCosts(createResource.Resource, &service.Config)
 	if err != nil {
 		err = fmt.Errorf("error getting payment resource: [%v]", err)
