@@ -123,8 +123,8 @@ func HandlePatchPaymentSession(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if PaymentResourceUpdateData.PaymentMethod == "" {
-		log.ErrorR(req, fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", id))
-		w.WriteHeader(http.StatusInternalServerError)
+		log.ErrorR(req, fmt.Errorf("no valid fields for the patch request have been supplied for resource [%s]", id))
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 

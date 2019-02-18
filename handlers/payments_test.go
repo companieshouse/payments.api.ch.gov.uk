@@ -95,6 +95,6 @@ func TestUnitHandlePatchPaymentSession(t *testing.T) {
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
 		w := httptest.NewRecorder()
 		HandlePatchPaymentSession(w, req)
-		So(w.Code, ShouldEqual, 500)
+		So(w.Code, ShouldEqual, 400)
 	})
 }
