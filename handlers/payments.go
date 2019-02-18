@@ -38,18 +38,18 @@ func HandleCreatePaymentSession(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// once we've read and decoded request body call the payment service handle internal business logic
-	paymentResource, err := paymentService.CreatePaymentSession(req, incomingPaymentResourceRequest)
+	paymentResource, status, err := paymentService.CreatePaymentSession(req, incomingPaymentResourceRequest)
 
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error creating payment resource: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(status)
 		return
 	}
 
 	// response body contains fully decorated REST model
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Location", paymentResource.Links.Journey)
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(status)
 
 	err = json.NewEncoder(w).Encode(paymentResource)
 	if err != nil {

@@ -61,29 +61,29 @@ func (paymentStatus PaymentStatus) String() string {
 }
 
 // CreatePaymentSession creates a payment session and returns a journey URL for the calling app to redirect to
-func (service *PaymentService) CreatePaymentSession(req *http.Request, createResource models.IncomingPaymentResourceRequest) (*models.PaymentResourceRest, error) {
+func (service *PaymentService) CreatePaymentSession(req *http.Request, createResource models.IncomingPaymentResourceRequest) (*models.PaymentResourceRest, int, error) {
 
 	// Get user details from context, put there by UserAuthenticationInterceptor
 	userDetails, ok := req.Context().Value(helpers.ContextKeyUserDetails).(models.AuthUserDetails)
 	if !ok {
 		err := fmt.Errorf("invalid AuthUserDetails in request context")
 		log.ErrorR(req, err)
-		return nil, err
+		return nil, http.StatusBadRequest, err
 	}
 
 	// http status code should not matter here - if there is any error we can treat as internal server error
-	costs, _, err := getCosts(createResource.Resource, &service.Config)
+	costs, status, err := getCosts(createResource.Resource, &service.Config)
 	if err != nil {
 		err = fmt.Errorf("error getting payment resource: [%v]", err)
 		log.ErrorR(req, err)
-		return nil, err
+		return nil, status, err
 	}
 
 	totalAmount, err := getTotalAmount(costs)
 	if err != nil {
 		err = fmt.Errorf("error getting amount from costs: [%v]", err)
 		log.ErrorR(req, err)
-		return nil, err
+		return nil, http.StatusInternalServerError, err
 	}
 
 	//  Create payment session REST data from writable input fields and decorating with read only fields
@@ -135,10 +135,10 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 	if err != nil {
 		err = fmt.Errorf("error writing to MongoDB: %v", err)
 		log.ErrorR(req, err)
-		return nil, err
+		return nil, http.StatusInternalServerError, err
 	}
 
-	return &paymentResourceRest, nil
+	return &paymentResourceRest, http.StatusCreated, nil
 }
 
 // PatchPaymentSession updates an existing payment session with the data provided from the Rest model
@@ -307,7 +307,6 @@ func validateResource(resource string, cfg *config.Config) error {
 	}
 	if !matched {
 		err = fmt.Errorf("invalid resource domain: %s", resourceDomain)
-		return err
 	}
 	return err
 }

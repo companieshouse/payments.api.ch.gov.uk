@@ -42,7 +42,7 @@ func TestUnitHandleCreatePaymentSession(t *testing.T) {
 		req := httptest.NewRequest("GET", "/test", ioutil.NopCloser(bytes.NewReader(reqBody)))
 		w := httptest.NewRecorder()
 		HandleCreatePaymentSession(w, req)
-		So(w.Code, ShouldEqual, 500)
+		So(w.Code, ShouldEqual, 400)
 	})
 
 }
