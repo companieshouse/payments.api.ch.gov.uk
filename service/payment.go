@@ -142,7 +142,7 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 }
 
 // PatchPaymentSession updates an existing payment session with the data provided from the Rest model
-func (service *PaymentService) PatchPaymentSession(req *http.Request, id string, PaymentResourceUpdateRest models.PaymentResourceRest) error {
+func (service *PaymentService) PatchPaymentSession(id string, PaymentResourceUpdateRest models.PaymentResourceRest) error {
 	PaymentResourceUpdate := transformers.PaymentTransformer{}.TransformToDB(PaymentResourceUpdateRest)
 	PaymentResourceUpdate.Data.Etag = generateEtag()
 	err := service.DAO.PatchPaymentResource(id, &PaymentResourceUpdate)

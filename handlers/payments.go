@@ -128,7 +128,7 @@ func HandlePatchPaymentSession(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = paymentService.PatchPaymentSession(req, id, PaymentResourceUpdateData)
+	err = paymentService.PatchPaymentSession(id, PaymentResourceUpdateData)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error patching payment session: [%v]", err))
 		w.WriteHeader(http.StatusInternalServerError)

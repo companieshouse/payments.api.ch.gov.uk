@@ -25,7 +25,7 @@ var defaultCostRest = models.CostResourceRest{
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
-	Links: models.CostLinksRest{Self: "self"},
+	Links:                   models.CostLinksRest{Self: "self"},
 }
 
 func createMockPaymentService(dao *dao.MockDAO, config *config.Config) service.PaymentService {
