@@ -218,6 +218,7 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 
 	requestDecoder := json.NewDecoder(req.Body)
 	var PaymentResourceUpdateData models.PaymentResourceRest
+	PaymentResourceUpdateData.Status = paymentStatuses[1]
 	err := requestDecoder.Decode(&PaymentResourceUpdateData)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("request body invalid: [%v]", err))
