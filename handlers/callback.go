@@ -54,7 +54,7 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 
 	// Set the status of the payment
 	paymentResource.Status = statusResponse.Status
-	err = paymentService.PatchPaymentSession(req, id, *paymentResource)
+	err = paymentService.PatchPaymentSession(id, *paymentResource)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error setting payment status: [%v]", err))
 		w.WriteHeader(http.StatusInternalServerError)
