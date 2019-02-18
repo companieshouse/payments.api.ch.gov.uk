@@ -31,7 +31,7 @@ func (gp GovPayService) CheckProvider(paymentResource *models.PaymentResourceRes
 		return nil, fmt.Errorf("error getting state of GovPay payment: [%s]", err)
 	}
 	// Return state
-	if state.Finished == true && state.Status == "success" {
+	if state.Finished && state.Status == "success" {
 		return &models.StatusResponse{Status: "paid"}, nil
 	}
 	return &models.StatusResponse{Status: "failed"}, nil
