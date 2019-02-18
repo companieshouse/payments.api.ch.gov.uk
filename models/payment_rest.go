@@ -12,20 +12,20 @@ type IncomingPaymentResourceRequest struct {
 
 // PaymentResourceRest is public facing payment details to be returned in the response
 type PaymentResourceRest struct {
-	Amount                  string             `json:"amount"`
-	AvailablePaymentMethods []string           `json:"available_payment_methods,omitempty"`
-	CompletedAt             time.Time          `json:"completed_at,omitempty"`
-	CreatedAt               time.Time          `json:"created_at,omitempty"`
-	CreatedBy               CreatedByRest      `json:"created_by"`
-	Description             string             `json:"description"`
-	Links                   PaymentLinksRest   `json:"links"`
-	PaymentMethod           string             `json:"payment_method,omitempty"`
-	Reference               string             `json:"reference,omitempty"`
-	Status                  string             `json:"status"`
-	Costs                   []CostResourceRest `json:"costs"`
-	Etag                    string             `json:"etag"`
-	Kind                    string             `json:"kind"`
-	MetaData                PaymentResourceMetaDataRest
+	Amount                  string                      `json:"amount"`
+	AvailablePaymentMethods []string                    `json:"available_payment_methods,omitempty"`
+	CompletedAt             time.Time                   `json:"completed_at,omitempty"`
+	CreatedAt               time.Time                   `json:"created_at,omitempty"`
+	CreatedBy               CreatedByRest               `json:"created_by"`
+	Description             string                      `json:"description"`
+	Links                   PaymentLinksRest            `json:"links"`
+	PaymentMethod           string                      `json:"payment_method,omitempty"`
+	Reference               string                      `json:"reference,omitempty"`
+	Status                  string                      `json:"status"`
+	Costs                   []CostResourceRest          `json:"costs"`
+	Etag                    string                      `json:"etag"`
+	Kind                    string                      `json:"kind"`
+	MetaData                PaymentResourceMetaDataRest `json:"-"`
 }
 
 // PaymentResourceMetaDataRest contains all metadata fields that are relevant to the payment resource but not part of the Rest resource
