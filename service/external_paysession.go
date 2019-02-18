@@ -28,7 +28,7 @@ func (service *PaymentService) CreateExternalPaymentJourney(w http.ResponseWrite
 		log.ErrorR(req, err)
 		return
 	}
-	if paymentSession.Status != paymentStatuses[1] {
+	if paymentSession.Status != InProgress.String() {
 		log.ErrorR(req, fmt.Errorf("payment session is not in progress"))
 		w.WriteHeader(http.StatusBadRequest)
 		return
