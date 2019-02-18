@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"regexp"
 	"testing"
@@ -61,8 +62,9 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
 		req := httptest.NewRequest("GET", "/test", nil)
 
-		paymentResourceRest, err := mockPaymentService.CreatePaymentSession(req, models.IncomingPaymentResourceRequest{})
+		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req, models.IncomingPaymentResourceRequest{})
 		So(paymentResourceRest, ShouldBeNil)
+		So(status, ShouldEqual, http.StatusBadRequest)
 		So(err.Error(), ShouldEqual, "invalid AuthUserDetails in request context")
 	})
 
@@ -70,13 +72,18 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
 		req := httptest.NewRequest("Get", "/test", nil)
 
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("GET", "http://dummy-resource", nil)
+
 		authUserDetails := models.AuthUserDetails{
 			Id: "identity",
 		}
 		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 
-		paymentResourceRest, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), models.IncomingPaymentResourceRequest{})
+		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), models.IncomingPaymentResourceRequest{})
 		So(paymentResourceRest, ShouldBeNil)
+		So(status, ShouldEqual, http.StatusBadRequest)
 		So(err.Error(), ShouldEqual, "error getting payment resource: [invalid resource domain: ://]")
 	})
 
@@ -100,8 +107,9 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		resource := models.IncomingPaymentResourceRequest{
 			Resource: "http://dummy-url",
 		}
-		paymentResourceRest, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
+		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
 		So(paymentResourceRest, ShouldBeNil)
+		So(status, ShouldEqual, http.StatusInternalServerError)
 		So(err.Error(), ShouldEqual, "error getting amount from costs: [amount [invalid_amount] format incorrect]")
 	})
 
@@ -125,8 +133,9 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		resource := models.IncomingPaymentResourceRequest{
 			Resource: "http://dummy-url",
 		}
-		paymentResourceRest, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
+		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
 		So(paymentResourceRest, ShouldBeNil)
+		So(status, ShouldEqual, http.StatusInternalServerError)
 		So(err.Error(), ShouldEqual, "error writing to MongoDB: error")
 	})
 
@@ -151,7 +160,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 			Reference: "ref",
 		}
 
-		paymentResourceRest, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
+		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
 
 		So(paymentResourceRest.Amount, ShouldEqual, "10.00")
 		So(paymentResourceRest.AvailablePaymentMethods, ShouldResemble, []string{"GovPay"})
@@ -180,6 +189,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 			ExternalPaymentStatusURI: "",
 		})
 
+		So(status, ShouldEqual, http.StatusCreated)
 		So(err, ShouldBeNil)
 	})
 
@@ -201,7 +211,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 			Reference: "ref",
 		}
 
-		paymentResourceRest, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
+		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
 		So(paymentResourceRest.Amount, ShouldEqual, "20.00")
 		So(paymentResourceRest.AvailablePaymentMethods, ShouldResemble, []string{"GovPay"})
 		So(paymentResourceRest.CompletedAt, ShouldHaveSameTypeAs, time.Now())
@@ -229,6 +239,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 			ExternalPaymentStatusURI: "",
 		})
 
+		So(status, ShouldEqual, http.StatusCreated)
 		So(err, ShouldBeNil)
 	})
 }
