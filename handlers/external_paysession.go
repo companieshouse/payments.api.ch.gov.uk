@@ -8,7 +8,6 @@ import (
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
-	"github.com/gorilla/mux"
 )
 
 // HandleCreateExternalPaymentJourney creates an external payment session with a Payment Provider that is given, e.g. GOV.UK Pay
@@ -20,15 +19,6 @@ func HandleCreateExternalPaymentJourney(w http.ResponseWriter, req *http.Request
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
-	vars := mux.Vars(req)
-	id := vars["payment_id"]
-	if id == "" {
-		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	paymentSession.MetaData.ID = id
 
 	externalPaymentJourney, err := paymentService.CreateExternalPaymentJourney(req, paymentSession)
 	if err != nil {
