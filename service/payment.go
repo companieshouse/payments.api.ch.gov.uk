@@ -204,7 +204,7 @@ func (service *PaymentService) GetPaymentSession(req *http.Request, id string) (
 	paymentResourceRest := transformers.PaymentTransformer{}.TransformToRest(*paymentResource)
 	paymentResourceRest.Costs = *costs
 
-	return &paymentResourceRest, http.StatusOK, nil
+	return &paymentResourceRest, http.StatusFound, nil
 }
 
 func getTotalAmount(costs *[]models.CostResourceRest) (string, error) {

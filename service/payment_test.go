@@ -400,7 +400,7 @@ func TestUnitGetPayment(t *testing.T) {
 				ID: "1234",
 			},
 		})
-		So(status, ShouldEqual, 200)
+		So(status, ShouldEqual, http.StatusFound)
 		So(err, ShouldBeNil)
 	})
 
@@ -449,7 +449,7 @@ func TestUnitGetPayment(t *testing.T) {
 				ID: "1234",
 			},
 		})
-		So(status, ShouldEqual, 200)
+		So(status, ShouldEqual, http.StatusFound)
 		So(err, ShouldBeNil)
 	})
 }
