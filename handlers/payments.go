@@ -8,7 +8,6 @@ import (
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
 	"gopkg.in/go-playground/validator.v9"
 )
@@ -79,7 +78,6 @@ func HandleGetPaymentSession(w http.ResponseWriter, req *http.Request) {
 	paymentSession, ok := req.Context().Value(helpers.ContextKeyPaymentSession).(*models.PaymentResourceRest)
 
 	if !ok {
-		spew.Dump(paymentSession)
 		log.ErrorR(req, fmt.Errorf("invalid PaymentResourceRest in request context"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
