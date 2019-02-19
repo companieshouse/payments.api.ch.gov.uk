@@ -45,6 +45,10 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		mockPaymentService.CreateExternalPaymentJourney(w, req)
 		So(w.Code, ShouldEqual, 500)
 	})
+
+	cfg.DomainWhitelist = "http://dummy-resource"
+	defer resetConfig()
+
 	Convey("Payment session not in progress", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
@@ -67,9 +71,6 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		mockPaymentService.CreateExternalPaymentJourney(w, req)
 		So(w.Code, ShouldEqual, 400)
 	})
-
-	cfg.DomainWhitelist = "http://dummy-resource"
-	defer resetConfig()
 
 	Convey("Invalid payment method", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
