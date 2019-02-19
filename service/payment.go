@@ -224,6 +224,13 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	if PaymentResourceUpdateData.PaymentMethod == "" && PaymentResourceUpdateData.Status == "" {
+		log.ErrorR(req, fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", id))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	PaymentResourceUpdateData.Status = InProgress.String()
 
 	var PaymentResourceUpdate models.PaymentResourceDB
 	PaymentResourceUpdate = transformers.PaymentTransformer{}.TransformToDB(PaymentResourceUpdateData)
@@ -240,11 +247,6 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 }
 
 func (service *PaymentService) patchPaymentSession(id string, PaymentResourceUpdate models.PaymentResourceDB) (int, error) {
-
-	if PaymentResourceUpdate.Data.PaymentMethod == "" && PaymentResourceUpdate.Data.Status == "" && PaymentResourceUpdate.ExternalPaymentStatusURI == "" {
-		return http.StatusBadRequest, fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", id)
-	}
-
 	err := service.DAO.PatchPaymentResource(id, &PaymentResourceUpdate)
 	if err != nil {
 		if err.Error() == "not found" {
