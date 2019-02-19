@@ -29,22 +29,6 @@ func TestUnitHandleCreatePaymentSession(t *testing.T) {
 		So(w.Code, ShouldEqual, 400)
 	})
 
-	Convey("Invalid Request", t, func() {
-		reqBody := []byte(`{"redirect_uri": "", "reference": "", "resource": "", "state": ""}`)
-		req := httptest.NewRequest("GET", "/test", ioutil.NopCloser(bytes.NewReader(reqBody)))
-		w := httptest.NewRecorder()
-		HandleCreatePaymentSession(w, req)
-		So(w.Code, ShouldEqual, 400)
-	})
-
-	Convey("Error Creating Payment Resource", t, func() {
-		reqBody := []byte(`{"redirect_uri": "uri", "reference": "ref", "resource": "ref", "state": "state"}`)
-		req := httptest.NewRequest("GET", "/test", ioutil.NopCloser(bytes.NewReader(reqBody)))
-		w := httptest.NewRecorder()
-		HandleCreatePaymentSession(w, req)
-		So(w.Code, ShouldEqual, 400)
-	})
-
 }
 
 func TestUnitHandleGetPaymentSession(t *testing.T) {

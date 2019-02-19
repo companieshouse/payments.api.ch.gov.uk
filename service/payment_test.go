@@ -14,8 +14,8 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/golang/mock/gomock"
-	"github.com/jarcoal/httpmock"
 	. "github.com/smartystreets/goconvey/convey"
+	"gopkg.in/jarcoal/httpmock.v1"
 )
 
 var defaultCost = models.CostResourceRest{
@@ -65,6 +65,21 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req, models.IncomingPaymentResourceRequest{})
 		So(paymentResourceRest, ShouldBeNil)
 		So(status, ShouldEqual, http.StatusBadRequest)
+		So(err.Error(), ShouldEqual, "invalid incoming payment: [Key: 'IncomingPaymentResourceRequest.RedirectURI' Error:Field validation for 'RedirectURI' failed on the 'required' tag\nKey: 'IncomingPaymentResourceRequest.Resource' Error:Field validation for 'Resource' failed on the 'required' tag\nKey: 'IncomingPaymentResourceRequest.State' Error:Field validation for 'State' failed on the 'required' tag]")
+	})
+
+	Convey("Empty Request Body", t, func() {
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
+		req := httptest.NewRequest("GET", "/test", nil)
+
+		resource := models.IncomingPaymentResourceRequest{
+			RedirectURI: "http://www.companieshouse.gov.uk",
+			Resource:    "http://dummy-url",
+			State:       "state",
+		}
+		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req, resource)
+		So(paymentResourceRest, ShouldBeNil)
+		So(status, ShouldEqual, http.StatusBadRequest)
 		So(err.Error(), ShouldEqual, "invalid AuthUserDetails in request context")
 	})
 
@@ -79,15 +94,22 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		authUserDetails := models.AuthUserDetails{
 			Id: "identity",
 		}
+
 		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 
-		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), models.IncomingPaymentResourceRequest{})
+		resource := models.IncomingPaymentResourceRequest{
+			RedirectURI: "http://www.companieshouse.gov.uk",
+			Resource:    "http://dummy-url",
+			State:       "state",
+		}
+
+		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, http.StatusBadRequest)
-		So(err.Error(), ShouldEqual, "error getting payment resource: [invalid resource domain: ://]")
+		So(status, ShouldEqual, http.StatusInternalServerError)
+		So(err.Error(), ShouldEqual, "error getting payment resource: [error getting Cost Resource: [Get http://dummy-url: no responder found]]")
 	})
 
-	Convey("Error reading cost resource", t, func() {
+	Convey("Error getting total amount from costs", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 		req := httptest.NewRequest("Get", "/test", nil)
@@ -105,7 +127,9 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 
 		resource := models.IncomingPaymentResourceRequest{
-			Resource: "http://dummy-url",
+			Resource:    "http://dummy-url",
+			RedirectURI: "http://www.companieshouse.gov.uk",
+			State:       "state",
 		}
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
 		So(paymentResourceRest, ShouldBeNil)
@@ -131,7 +155,9 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 
 		resource := models.IncomingPaymentResourceRequest{
-			Resource: "http://dummy-url",
+			RedirectURI: "http://www.companieshouse.gov.uk",
+			Resource:    "http://dummy-url",
+			State:       "state",
 		}
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
 		So(paymentResourceRest, ShouldBeNil)
@@ -156,11 +182,16 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, defaultUserDetails)
 
 		resource := models.IncomingPaymentResourceRequest{
-			Resource:  "http://dummy-url",
-			Reference: "ref",
+			Resource:    "http://dummy-url",
+			Reference:   "ref",
+			RedirectURI: "http://www.companieshouse.gov.uk",
+			State:       "state",
 		}
 
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
+
+		So(err, ShouldBeNil)
+		So(status, ShouldEqual, http.StatusCreated)
 
 		So(paymentResourceRest.Amount, ShouldEqual, "10.00")
 		So(paymentResourceRest.AvailablePaymentMethods, ShouldResemble, []string{"GovPay"})
@@ -189,8 +220,6 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 			ExternalPaymentStatusURI: "",
 		})
 
-		So(status, ShouldEqual, http.StatusCreated)
-		So(err, ShouldBeNil)
 	})
 
 	Convey("Valid request - multiple costs", t, func() {
@@ -207,11 +236,17 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, defaultUserDetails)
 
 		resource := models.IncomingPaymentResourceRequest{
-			Resource:  "http://dummy-url",
-			Reference: "ref",
+			Resource:    "http://dummy-url",
+			Reference:   "ref",
+			RedirectURI: "http://www.companieshouse.gov.uk",
+			State:       "state",
 		}
 
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
+
+		So(status, ShouldEqual, http.StatusCreated)
+		So(err, ShouldBeNil)
+
 		So(paymentResourceRest.Amount, ShouldEqual, "20.00")
 		So(paymentResourceRest.AvailablePaymentMethods, ShouldResemble, []string{"GovPay"})
 		So(paymentResourceRest.CompletedAt, ShouldHaveSameTypeAs, time.Now())
@@ -239,8 +274,6 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 			ExternalPaymentStatusURI: "",
 		})
 
-		So(status, ShouldEqual, http.StatusCreated)
-		So(err, ShouldBeNil)
 	})
 }
 
@@ -313,10 +346,14 @@ func TestUnitGetPayment(t *testing.T) {
 
 		req := httptest.NewRequest("Get", "/test", nil)
 
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		httpmock.RegisterResponder("GET", "http://dummy-resource", nil)
+
 		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "1234")
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, 400)
-		So(err.Error(), ShouldEqual, "error getting payment resource: [invalid resource domain: ://]")
+		So(status, ShouldEqual, 500)
+		So(err.Error(), ShouldEqual, "error getting payment resource: [error getting Cost Resource: [Get : no responder found]]")
 	})
 
 	cfg.DomainWhitelist = "http://dummy-resource"
@@ -468,23 +505,13 @@ func TestUnitGetTotalAmount(t *testing.T) {
 }
 
 func TestUnitGetCosts(t *testing.T) {
-	cfg, _ := config.Get()
-	cfg.DomainWhitelist = "http://dummy-resource"
-	defer resetConfig()
-
-	Convey("Invalid Resource", t, func() {
-		costResourceRest, status, err := getCosts("invalid", cfg)
-		So(costResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, 400)
-		So(err.Error(), ShouldEqual, "invalid resource domain: ://")
-	})
 
 	Convey("Error getting Cost Resource", t, func() {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("GET", "http://dummy-resource", nil)
 
-		costResourceRest, status, err := getCosts("http://dummy-resource", cfg)
+		costResourceRest, status, err := getCosts("http://dummy-resource")
 		So(costResourceRest, ShouldBeNil)
 		So(status, ShouldEqual, 500)
 		So(err.Error(), ShouldEqual, "error getting Cost Resource: [Get http://dummy-resource: no responder found]")
@@ -496,7 +523,7 @@ func TestUnitGetCosts(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(400, nil)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
-		costResourceRest, status, err := getCosts("http://dummy-resource", cfg)
+		costResourceRest, status, err := getCosts("http://dummy-resource")
 		So(costResourceRest, ShouldBeNil)
 		So(status, ShouldEqual, 400)
 		So(err.Error(), ShouldEqual, "error getting Cost Resource")
@@ -510,7 +537,7 @@ func TestUnitGetCosts(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(200, []models.CostResourceRest{cost})
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
-		costResourceRest, status, err := getCosts("http://dummy-resource", cfg)
+		costResourceRest, status, err := getCosts("http://dummy-resource")
 		So(costResourceRest, ShouldBeNil)
 		So(status, ShouldEqual, 400)
 		So(err.Error(), ShouldEqual, "Key: 'CostResourceRest.Amount' Error:Field validation for 'Amount' failed on the 'required' tag")
@@ -524,19 +551,34 @@ func TestUnitGenerateID(t *testing.T) {
 	})
 }
 
-func TestUnitValidateResource(t *testing.T) {
+func TestUnitValidateIncomingPayment(t *testing.T) {
 	cfg, _ := config.Get()
 	defer resetConfig()
 
+	Convey("Invalid request", t, func() {
+		err := validateIncomingPayment(models.IncomingPaymentResourceRequest{}, cfg)
+		So(err.Error(), ShouldEqual, "Key: 'IncomingPaymentResourceRequest.RedirectURI' Error:Field validation for 'RedirectURI' failed on the 'required' tag\nKey: 'IncomingPaymentResourceRequest.Resource' Error:Field validation for 'Resource' failed on the 'required' tag\nKey: 'IncomingPaymentResourceRequest.State' Error:Field validation for 'State' failed on the 'required' tag")
+	})
+
 	Convey("Invalid Resource Domain", t, func() {
-		err := validateResource("http://dummy-resource", cfg)
+		request := models.IncomingPaymentResourceRequest{
+			Resource:    "http://dummy-resource",
+			RedirectURI: "http://www.companieshouse.gov.uk",
+			State:       "state",
+		}
+		err := validateIncomingPayment(request, cfg)
 		So(err.Error(), ShouldEqual, "invalid resource domain: http://dummy-resource")
 	})
 
 	cfg.DomainWhitelist = "http://dummy-resource"
 
 	Convey("Valid Resource Domain", t, func() {
-		err := validateResource("http://dummy-resource", cfg)
+		request := models.IncomingPaymentResourceRequest{
+			Resource:    "http://dummy-resource",
+			RedirectURI: "http://dummy-resource",
+			State:       "state",
+		}
+		err := validateIncomingPayment(request, cfg)
 		So(err, ShouldBeNil)
 	})
 }

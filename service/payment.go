@@ -63,15 +63,22 @@ func (paymentStatus PaymentStatus) String() string {
 // CreatePaymentSession creates a payment session and returns a journey URL for the calling app to redirect to
 func (service *PaymentService) CreatePaymentSession(req *http.Request, createResource models.IncomingPaymentResourceRequest) (*models.PaymentResourceRest, int, error) {
 
-	// Get user details from context, put there by UserAuthenticationInterceptor
-	userDetails, ok := req.Context().Value(helpers.ContextKeyUserDetails).(models.AuthUserDetails)
-	if !ok {
-		err := fmt.Errorf("invalid AuthUserDetails in request context")
+	err := validateIncomingPayment(createResource, &service.Config)
+	if err != nil {
+		err = fmt.Errorf("invalid incoming payment: [%v]", err)
 		log.ErrorR(req, err)
 		return nil, http.StatusBadRequest, err
 	}
 
-	costs, status, err := getCosts(createResource.Resource, &service.Config)
+	// Get user details from context, put there by UserAuthenticationInterceptor
+	userDetails, ok := req.Context().Value(helpers.ContextKeyUserDetails).(models.AuthUserDetails)
+	if !ok {
+		err = fmt.Errorf("invalid AuthUserDetails in request context")
+		log.ErrorR(req, err)
+		return nil, http.StatusBadRequest, err
+	}
+
+	costs, status, err := getCosts(createResource.Resource)
 	if err != nil {
 		err = fmt.Errorf("error getting payment resource: [%v]", err)
 		log.ErrorR(req, err)
@@ -179,7 +186,7 @@ func (service *PaymentService) GetPaymentSession(req *http.Request, id string) (
 		return nil, http.StatusNotFound, nil
 	}
 
-	costs, httpStatus, err := getCosts(paymentResource.Data.Links.Resource, &service.Config)
+	costs, httpStatus, err := getCosts(paymentResource.Data.Links.Resource)
 	if err != nil {
 		err = fmt.Errorf("error getting payment resource: [%v]", err)
 		log.ErrorR(req, err)
@@ -224,11 +231,7 @@ func getTotalAmount(costs *[]models.CostResourceRest) (string, error) {
 	return totalAmount.StringFixed(2), nil
 }
 
-func getCosts(resource string, cfg *config.Config) (*[]models.CostResourceRest, int, error) {
-	err := validateResource(resource, cfg)
-	if err != nil {
-		return nil, http.StatusBadRequest, err
-	}
+func getCosts(resource string) (*[]models.CostResourceRest, int, error) {
 
 	resourceReq, err := http.NewRequest("GET", resource, nil)
 	if err != nil {
@@ -289,8 +292,14 @@ func generateEtag() string {
 	return sha1_hash
 }
 
-func validateResource(resource string, cfg *config.Config) error {
-	parsedURL, err := url.Parse(resource)
+func validateIncomingPayment(incomingPaymentResourceRequest models.IncomingPaymentResourceRequest, cfg *config.Config) error {
+	validate := validator.New()
+	err := validate.Struct(incomingPaymentResourceRequest)
+	if err != nil {
+		return err
+	}
+
+	parsedURL, err := url.Parse(incomingPaymentResourceRequest.Resource)
 	if err != nil {
 		return err
 	}

@@ -4,9 +4,9 @@ import "time"
 
 // IncomingPaymentResourceRequest is the data received in the body of the incoming request
 type IncomingPaymentResourceRequest struct {
-	RedirectURI string `json:"redirect_uri" validate:"required"`
+	RedirectURI string `json:"redirect_uri" validate:"required,url"`
 	Reference   string `json:"reference"`
-	Resource    string `json:"resource"     validate:"required"`
+	Resource    string `json:"resource"     validate:"required,url"`
 	State       string `json:"state"        validate:"required"`
 }
 
