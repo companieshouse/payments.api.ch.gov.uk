@@ -20,10 +20,10 @@ func HandleCreateExternalPaymentJourney(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	externalPaymentJourney, err := paymentService.CreateExternalPaymentJourney(req, paymentSession)
+	externalPaymentJourney, status, err := paymentService.CreateExternalPaymentJourney(req, paymentSession)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error creating external payment journey: %s", err))
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(status)
 		return
 	}
 
