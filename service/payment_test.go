@@ -461,9 +461,10 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBodyPatchInvalid))
 		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
+		w := httptest.NewRecorder()
 
-		statusResponse, _ := mockPaymentService.patchPaymentSession("1234", models.PaymentResourceDB{})
-		So(statusResponse, ShouldEqual, 400)
+		mockPaymentService.PatchPaymentSession(w, req)
+		So(w.Code, ShouldEqual, 400)
 	})
 
 	Convey("Could not find payment resource to patch", t, func() {

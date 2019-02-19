@@ -75,7 +75,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 
-		mock.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceDataDB{Amount: "10.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}, PaymentMethod: "PayPal"}}, nil)
+		mock.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceDataDB{Amount: "10.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}, PaymentMethod: "PayPal", Status: InProgress.String()}}, nil)
 
 		path := fmt.Sprintf("/payments/%s", "1234")
 		req, err := http.NewRequest("Get", path, nil)
@@ -124,6 +124,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		mockPaymentService := createMockPaymentService(mock, cfg)
 
 		mock.EXPECT().GetPaymentResource("1234").Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceDataDB{Amount: "10.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}, PaymentMethod: "GovPay", Status: InProgress.String()}}, nil)
+		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(nil)
 
 		path := fmt.Sprintf("/payments/%s", "1234")
 		req, err := http.NewRequest("Get", path, nil)
