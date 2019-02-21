@@ -41,19 +41,27 @@ func HandleCreatePaymentSession(w http.ResponseWriter, req *http.Request) {
 
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error creating payment resource: [%v]", err))
-		w.WriteHeader(status)
-		return
+		switch status {
+		case models.InvalidData:
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		case models.Error:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 
 	// response body contains fully decorated REST model
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Location", paymentResource.Links.Journey)
-	w.WriteHeader(status)
+	w.WriteHeader(http.StatusCreated)
 
 	err = json.NewEncoder(w).Encode(paymentResource)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
-		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
