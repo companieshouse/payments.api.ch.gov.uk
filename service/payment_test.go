@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"net/http/httptest"
 	"regexp"
 	"testing"
@@ -13,6 +12,7 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
 	"gopkg.in/jarcoal/httpmock.v1"
@@ -64,7 +64,8 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req, models.IncomingPaymentResourceRequest{})
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, http.StatusBadRequest)
+		spew.Dump(status)
+		So(status, ShouldEqual, InvalidData)
 		So(err.Error(), ShouldEqual, "invalid incoming payment: [Key: 'IncomingPaymentResourceRequest.RedirectURI' Error:Field validation for 'RedirectURI' failed on the 'required' tag\nKey: 'IncomingPaymentResourceRequest.Resource' Error:Field validation for 'Resource' failed on the 'required' tag\nKey: 'IncomingPaymentResourceRequest.State' Error:Field validation for 'State' failed on the 'required' tag]")
 	})
 
@@ -79,11 +80,12 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		}
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req, resource)
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, http.StatusBadRequest)
+		So(status, ShouldEqual, InvalidData)
 		So(err.Error(), ShouldEqual, "invalid AuthUserDetails in request context")
 	})
 
 	Convey("Error getting cost resource", t, func() {
+		fmt.Println("ENM start")
 		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
 		req := httptest.NewRequest("Get", "/test", nil)
 
@@ -105,7 +107,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, http.StatusInternalServerError)
+		So(status, ShouldEqual, Error)
 		So(err.Error(), ShouldEqual, "error getting payment resource: [error getting Cost Resource: [Get http://dummy-url: no responder found]]")
 	})
 
@@ -133,7 +135,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		}
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, http.StatusInternalServerError)
+		So(status, ShouldEqual, Error)
 		So(err.Error(), ShouldEqual, "error getting amount from costs: [amount [invalid_amount] format incorrect]")
 	})
 
@@ -161,7 +163,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		}
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, http.StatusInternalServerError)
+		So(status, ShouldEqual, Error)
 		So(err.Error(), ShouldEqual, "error writing to MongoDB: error")
 	})
 
@@ -191,7 +193,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
 
 		So(err, ShouldBeNil)
-		So(status, ShouldEqual, http.StatusCreated)
+		So(status, ShouldEqual, Success)
 
 		So(paymentResourceRest.Amount, ShouldEqual, "10.00")
 		So(paymentResourceRest.AvailablePaymentMethods, ShouldResemble, []string{"GovPay"})
@@ -220,6 +222,8 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 			ExternalPaymentStatusURI: "",
 		})
 
+		So(status, ShouldEqual, Success)
+		So(err, ShouldBeNil)
 	})
 
 	Convey("Valid request - multiple costs", t, func() {
@@ -244,7 +248,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
 
-		So(status, ShouldEqual, http.StatusCreated)
+		So(status, ShouldEqual, Success)
 		So(err, ShouldBeNil)
 
 		So(paymentResourceRest.Amount, ShouldEqual, "20.00")
@@ -274,6 +278,8 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 			ExternalPaymentStatusURI: "",
 		})
 
+		So(status, ShouldEqual, Success)
+		So(err, ShouldBeNil)
 	})
 }
 
@@ -322,7 +328,7 @@ func TestUnitGetPayment(t *testing.T) {
 
 		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "1234")
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, 500)
+		So(status, ShouldEqual, Error)
 		So(err.Error(), ShouldEqual, "error getting payment resource from db: [error]")
 	})
 
@@ -335,7 +341,7 @@ func TestUnitGetPayment(t *testing.T) {
 
 		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "invalid")
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, 404)
+		So(status, ShouldEqual, NotFound)
 		So(err, ShouldBeNil)
 	})
 
@@ -352,7 +358,7 @@ func TestUnitGetPayment(t *testing.T) {
 
 		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "1234")
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, 500)
+		So(status, ShouldEqual, Error)
 		So(err.Error(), ShouldEqual, "error getting payment resource: [error getting Cost Resource: [Get : no responder found]]")
 	})
 
@@ -374,7 +380,7 @@ func TestUnitGetPayment(t *testing.T) {
 
 		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "1234")
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, 500)
+		So(status, ShouldEqual, Error)
 		So(err.Error(), ShouldEqual, "error getting amount from costs: [amount [x] format incorrect]")
 	})
 
@@ -394,7 +400,7 @@ func TestUnitGetPayment(t *testing.T) {
 
 		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "1234")
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, 403)
+		So(status, ShouldEqual, Forbidden)
 		So(err.Error(), ShouldEqual, "amount in payment resource [99.00] different from db [100] for id [1234]")
 	})
 
@@ -433,7 +439,7 @@ func TestUnitGetPayment(t *testing.T) {
 				ID: "1234",
 			},
 		})
-		So(status, ShouldEqual, http.StatusFound)
+		So(status, ShouldEqual, Success)
 		So(err, ShouldBeNil)
 	})
 
@@ -482,7 +488,7 @@ func TestUnitGetPayment(t *testing.T) {
 				ID: "1234",
 			},
 		})
-		So(status, ShouldEqual, http.StatusFound)
+		So(status, ShouldEqual, Success)
 		So(err, ShouldBeNil)
 	})
 }
@@ -505,6 +511,9 @@ func TestUnitGetTotalAmount(t *testing.T) {
 }
 
 func TestUnitGetCosts(t *testing.T) {
+	cfg, _ := config.Get()
+	cfg.DomainWhitelist = "http://dummy-resource"
+	defer resetConfig()
 
 	Convey("Error getting Cost Resource", t, func() {
 		httpmock.Activate()
@@ -513,7 +522,7 @@ func TestUnitGetCosts(t *testing.T) {
 
 		costResourceRest, status, err := getCosts("http://dummy-resource")
 		So(costResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, 500)
+		So(status, ShouldEqual, Error)
 		So(err.Error(), ShouldEqual, "error getting Cost Resource: [Get http://dummy-resource: no responder found]")
 	})
 
@@ -525,7 +534,7 @@ func TestUnitGetCosts(t *testing.T) {
 
 		costResourceRest, status, err := getCosts("http://dummy-resource")
 		So(costResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, 400)
+		So(status, ShouldEqual, InvalidData)
 		So(err.Error(), ShouldEqual, "error getting Cost Resource")
 	})
 
@@ -539,7 +548,7 @@ func TestUnitGetCosts(t *testing.T) {
 
 		costResourceRest, status, err := getCosts("http://dummy-resource")
 		So(costResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, 400)
+		So(status, ShouldEqual, InvalidData)
 		So(err.Error(), ShouldEqual, "Key: 'CostResourceRest.Amount' Error:Field validation for 'Amount' failed on the 'required' tag")
 	})
 }

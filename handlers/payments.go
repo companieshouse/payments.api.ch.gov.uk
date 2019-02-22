@@ -8,6 +8,7 @@ import (
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/gorilla/mux"
 )
 
@@ -29,23 +30,31 @@ func HandleCreatePaymentSession(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// once we've read and decoded request body call the payment service handle internal business logic
-	paymentResource, status, err := paymentService.CreatePaymentSession(req, incomingPaymentResourceRequest)
+	paymentResource, responseType, err := paymentService.CreatePaymentSession(req, incomingPaymentResourceRequest)
 
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error creating payment resource: [%v]", err))
-		w.WriteHeader(status)
-		return
+		switch responseType {
+		case service.InvalidData:
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		case service.Error:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 
 	// response body contains fully decorated REST model
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Location", paymentResource.Links.Journey)
-	w.WriteHeader(status)
+	w.WriteHeader(http.StatusCreated)
 
 	err = json.NewEncoder(w).Encode(paymentResource)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
-		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -97,6 +106,12 @@ func HandlePatchPaymentSession(w http.ResponseWriter, req *http.Request) {
 	err := requestDecoder.Decode(&PaymentResourceUpdateData)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("request body invalid: [%v]", err))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if PaymentResourceUpdateData.PaymentMethod == "" && PaymentResourceUpdateData.Status == "" {
+		log.ErrorR(req, fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", id))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
