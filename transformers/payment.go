@@ -20,6 +20,7 @@ func (pt PaymentTransformer) TransformToDB(rest models.PaymentResourceRest) mode
 		CompletedAt:   rest.CompletedAt,
 		CreatedAt:     rest.CreatedAt,
 		Description:   rest.Description,
+		ExpiresAt:     rest.ExpiresAt,
 		PaymentMethod: rest.PaymentMethod,
 		Reference:     rest.Reference,
 		Status:        rest.Status,
@@ -44,6 +45,7 @@ func (pt PaymentTransformer) TransformToRest(dbResource models.PaymentResourceDB
 		CompletedAt:   dbResource.Data.CompletedAt,
 		CreatedAt:     dbResource.Data.CreatedAt,
 		CreatedBy:     models.CreatedByRest(dbResource.Data.CreatedBy),
+		ExpiresAt:     dbResource.Data.ExpiresAt,
 		Description:   dbResource.Data.Description,
 		PaymentMethod: dbResource.Data.PaymentMethod,
 		Reference:     dbResource.Data.Reference,
@@ -55,9 +57,9 @@ func (pt PaymentTransformer) TransformToRest(dbResource models.PaymentResourceDB
 
 	// One-way transformation of DB metadata: related to, but not part of the payment rest data json spec
 	paymentResource.MetaData = models.PaymentResourceMetaDataRest{
-		ID:                       dbResource.ID,
-		RedirectURI:              dbResource.RedirectURI,
-		State:                    dbResource.State,
+		ID:          dbResource.ID,
+		RedirectURI: dbResource.RedirectURI,
+		State:       dbResource.State,
 		ExternalPaymentStatusURI: dbResource.ExternalPaymentStatusURI,
 	}
 

@@ -98,6 +98,16 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 	// To match the format time is saved to mongo, e.g. "2018-11-22T08:39:16.782Z", truncate the time
 	paymentResourceRest.CreatedAt = time.Now().Truncate(time.Millisecond)
 
+	// Expiry time from config is a string, so convert to an int to allow addition to created time
+	expiryTime, err := strconv.Atoi(service.Config.ExpiryTimeInMinutes)
+	if err != nil {
+		err = fmt.Errorf("error converting ExpiryTimeInMinutes config value to int: [%v]", err)
+		log.ErrorR(req, err)
+		return nil, http.StatusInternalServerError, err
+	}
+	// Add the config value for expiry time to the created time
+	paymentResourceRest.ExpiresAt = time.Now().Add(time.Minute * time.Duration(expiryTime)).Truncate(time.Millisecond)
+
 	paymentMethods := make(map[string]bool)
 	for _, c := range *costs {
 		for _, cc := range c.AvailablePaymentMethods {

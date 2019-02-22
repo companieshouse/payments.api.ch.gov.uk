@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
@@ -56,36 +57,37 @@ func TestUnitHandleGetPaymentSession(t *testing.T) {
 	})
 	Convey("Valid PaymentResourceRest", t, func() {
 		req := httptest.NewRequest("GET", "/test", nil)
-		ctx := req.Context()
-		ctx = context.WithValue(ctx, helpers.ContextKeyPaymentSession, &models.PaymentResourceRest{})
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyPaymentSession, &models.PaymentResourceRest{CreatedAt: time.Now(), ExpiresAt: time.Now().Add(time.Minute * 60)})
 		w := httptest.NewRecorder()
 		HandleGetPaymentSession(w, req.WithContext(ctx))
 		So(w.Code, ShouldEqual, 200)
 	})
+	Convey("Payment session expired", t, func() {
+		req := httptest.NewRequest("GET", "/test", nil)
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyPaymentSession, &models.PaymentResourceRest{CreatedAt: time.Now(), ExpiresAt: time.Now().Add(time.Minute * time.Duration(-60))})
+		w := httptest.NewRecorder()
+		HandleGetPaymentSession(w, req.WithContext(ctx))
+		So(w.Code, ShouldEqual, 403)
+	})
 }
 
 func TestUnitHandlePatchPaymentSession(t *testing.T) {
-	Convey("Payment ID not supplied", t, func() {
-		req := httptest.NewRequest("GET", "/test", nil)
-		w := httptest.NewRecorder()
-		HandlePatchPaymentSession(w, req)
-		So(w.Code, ShouldEqual, 400)
-	})
-
 	Convey("Request Body empty", t, func() {
 		req := httptest.NewRequest("GET", "/test", nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyPaymentSession, &models.PaymentResourceRest{CreatedAt: time.Now(), ExpiresAt: time.Now().Add(time.Minute * 60)})
 		req.Body = nil
 		w := httptest.NewRecorder()
-		HandlePatchPaymentSession(w, req)
+		HandlePatchPaymentSession(w, req.WithContext(ctx))
 		So(w.Code, ShouldEqual, 400)
 	})
 
 	Convey("Request Body invalid", t, func() {
 		req := httptest.NewRequest("GET", "/test", nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyPaymentSession, &models.PaymentResourceRest{CreatedAt: time.Now(), ExpiresAt: time.Now().Add(time.Minute * 60)})
 		w := httptest.NewRecorder()
-		HandlePatchPaymentSession(w, req)
+		HandlePatchPaymentSession(w, req.WithContext(ctx))
 		So(w.Code, ShouldEqual, 400)
 	})
 
@@ -93,8 +95,19 @@ func TestUnitHandlePatchPaymentSession(t *testing.T) {
 		reqBody := []byte(`{"amount":"12"}`)
 		req := httptest.NewRequest("GET", "/test", ioutil.NopCloser(bytes.NewReader(reqBody)))
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyPaymentSession, &models.PaymentResourceRest{CreatedAt: time.Now(), ExpiresAt: time.Now().Add(time.Minute * 60)})
 		w := httptest.NewRecorder()
-		HandlePatchPaymentSession(w, req)
+		HandlePatchPaymentSession(w, req.WithContext(ctx))
 		So(w.Code, ShouldEqual, 400)
+	})
+
+	Convey("Payment session expired", t, func() {
+		reqBody := []byte(`{"amount":"12", "payment_method": "GovPay"}`)
+		req := httptest.NewRequest("GET", "/test", ioutil.NopCloser(bytes.NewReader(reqBody)))
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyPaymentSession, &models.PaymentResourceRest{CreatedAt: time.Now(), ExpiresAt: time.Now().Add(time.Minute * time.Duration(-60))})
+		w := httptest.NewRecorder()
+		HandlePatchPaymentSession(w, req.WithContext(ctx))
+		So(w.Code, ShouldEqual, 403)
 	})
 }
