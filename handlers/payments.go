@@ -9,7 +9,7 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
-	"github.com/gorilla/mux"
+
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -92,6 +92,13 @@ func HandleGetPaymentSession(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Check if the payment session is expired
+	if isExpired(*paymentSession) {
+		log.ErrorR(req, fmt.Errorf("payment session has expired"))
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 
 	err := json.NewEncoder(w).Encode(paymentSession)
@@ -106,11 +113,19 @@ func HandleGetPaymentSession(w http.ResponseWriter, req *http.Request) {
 
 // HandlePatchPaymentSession patches and updates the payment session
 func HandlePatchPaymentSession(w http.ResponseWriter, req *http.Request) {
-	vars := mux.Vars(req)
-	id := vars["payment_id"]
-	if id == "" {
-		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
-		w.WriteHeader(http.StatusBadRequest)
+	// get payment resource from context, put there by PaymentAuthenticationInterceptor
+	paymentSession, ok := req.Context().Value(helpers.ContextKeyPaymentSession).(*models.PaymentResourceRest)
+
+	if !ok {
+		log.ErrorR(req, fmt.Errorf("invalid PaymentResourceRest in request context"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Check if the payment session is expired
+	if isExpired(*paymentSession) {
+		log.ErrorR(req, fmt.Errorf("payment session has expired"))
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
@@ -130,23 +145,27 @@ func HandlePatchPaymentSession(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if PaymentResourceUpdateData.PaymentMethod == "" && PaymentResourceUpdateData.Status == "" {
-		log.ErrorR(req, fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", id))
+		log.ErrorR(req, fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", paymentSession.MetaData.ID))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if PaymentResourceUpdateData.PaymentMethod == "" {
-		log.ErrorR(req, fmt.Errorf("no valid fields for the patch request have been supplied for resource [%s]", id))
+		log.ErrorR(req, fmt.Errorf("no valid fields for the patch request have been supplied for resource [%s]", paymentSession.MetaData.ID))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	err = paymentService.PatchPaymentSession(id, PaymentResourceUpdateData)
+	err = paymentService.PatchPaymentSession(paymentSession.MetaData.ID, PaymentResourceUpdateData)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error patching payment session: [%v]", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	log.InfoR(req, "Successful PATCH request for payment resource", log.Data{"payment_id": id, "status": http.StatusOK})
+	log.InfoR(req, "Successful PATCH request for payment resource", log.Data{"payment_id": paymentSession.MetaData.ID, "status": http.StatusOK})
+}
+
+func isExpired(paymentSession models.PaymentResourceRest) bool {
+	return paymentSession.CreatedAt.After(paymentSession.ExpiresAt)
 }
