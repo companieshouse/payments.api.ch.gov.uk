@@ -61,28 +61,28 @@ func (paymentStatus PaymentStatus) String() string {
 }
 
 // CreatePaymentSession creates a payment session and returns a journey URL for the calling app to redirect to
-func (service *PaymentService) CreatePaymentSession(req *http.Request, createResource models.IncomingPaymentResourceRequest) (*models.PaymentResourceRest, models.ServiceResponseType, error) {
+func (service *PaymentService) CreatePaymentSession(req *http.Request, createResource models.IncomingPaymentResourceRequest) (*models.PaymentResourceRest, ResponseType, error) {
 
 	// Get user details from context, put there by UserAuthenticationInterceptor
 	userDetails, ok := req.Context().Value(helpers.ContextKeyUserDetails).(models.AuthUserDetails)
 	if !ok {
 		err := fmt.Errorf("invalid AuthUserDetails in request context")
 		log.ErrorR(req, err)
-		return nil, models.InvalidData, err
+		return nil, InvalidData, err
 	}
 
-	costs, status, err := getCosts(createResource.Resource, &service.Config)
+	costs, costsResponseType, err := getCosts(createResource.Resource, &service.Config)
 	if err != nil {
 		err = fmt.Errorf("error getting payment resource: [%v]", err)
 		log.ErrorR(req, err)
-		return nil, status, err
+		return nil, costsResponseType, err
 	}
 
 	totalAmount, err := getTotalAmount(costs)
 	if err != nil {
 		err = fmt.Errorf("error getting amount from costs: [%v]", err)
 		log.ErrorR(req, err)
-		return nil, models.Error, err
+		return nil, Error, err
 	}
 
 	//  Create payment session REST data from writable input fields and decorating with read only fields
@@ -134,10 +134,10 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 	if err != nil {
 		err = fmt.Errorf("error writing to MongoDB: %v", err)
 		log.ErrorR(req, err)
-		return nil, models.Error, err
+		return nil, Error, err
 	}
 
-	return &paymentResourceRest, models.Success, nil
+	return &paymentResourceRest, Success, nil
 }
 
 // PatchPaymentSession updates an existing payment session with the data provided from the Rest model
@@ -168,43 +168,43 @@ func (service *PaymentService) StoreExternalPaymentStatusURI(req *http.Request, 
 }
 
 // GetPaymentSession retrieves the payment session with the given ID from the database
-func (service *PaymentService) GetPaymentSession(req *http.Request, id string) (*models.PaymentResourceRest, models.ServiceResponseType, error) {
+func (service *PaymentService) GetPaymentSession(req *http.Request, id string) (*models.PaymentResourceRest, ResponseType, error) {
 	paymentResource, err := service.DAO.GetPaymentResource(id)
 	if err != nil {
 		err = fmt.Errorf("error getting payment resource from db: [%v]", err)
 		log.ErrorR(req, err)
-		return nil, models.Error, err
+		return nil, Error, err
 	}
 	if paymentResource == nil {
 		log.TraceR(req, "payment session not found", log.Data{"payment_id": id})
-		return nil, models.NotFound, nil
+		return nil, NotFound, nil
 	}
 
-	costs, status, err := getCosts(paymentResource.Data.Links.Resource, &service.Config)
+	costs, costsResponseType, err := getCosts(paymentResource.Data.Links.Resource, &service.Config)
 	if err != nil {
 		err = fmt.Errorf("error getting payment resource: [%v]", err)
 		log.ErrorR(req, err)
-		return nil, status, err
+		return nil, costsResponseType, err
 	}
 
 	totalAmount, err := getTotalAmount(costs)
 	if err != nil {
 		err = fmt.Errorf("error getting amount from costs: [%v]", err)
 		log.ErrorR(req, err)
-		return nil, models.Error, err
+		return nil, Error, err
 	}
 
 	if totalAmount != paymentResource.Data.Amount {
 		// TODO Expire payment session
 		err = fmt.Errorf("amount in payment resource [%s] different from db [%s] for id [%s]", totalAmount, paymentResource.Data.Amount, paymentResource.ID)
 		log.ErrorR(req, err)
-		return nil, models.Forbidden, err
+		return nil, Forbidden, err
 	}
 
 	paymentResourceRest := transformers.PaymentTransformer{}.TransformToRest(*paymentResource)
 	paymentResourceRest.Costs = *costs
 
-	return &paymentResourceRest, models.Success, nil
+	return &paymentResourceRest, Success, nil
 }
 
 func getTotalAmount(costs *[]models.CostResourceRest) (string, error) {
@@ -225,47 +225,47 @@ func getTotalAmount(costs *[]models.CostResourceRest) (string, error) {
 	return totalAmount.StringFixed(2), nil
 }
 
-func getCosts(resource string, cfg *config.Config) (*[]models.CostResourceRest, models.ServiceResponseType, error) {
+func getCosts(resource string, cfg *config.Config) (*[]models.CostResourceRest, ResponseType, error) {
 	err := validateResource(resource, cfg)
 	if err != nil {
-		return nil, models.InvalidData, err
+		return nil, InvalidData, err
 	}
 
 	resourceReq, err := http.NewRequest("GET", resource, nil)
 	if err != nil {
-		return nil, models.Error, fmt.Errorf("failed to create Resource Request: [%v]", err)
+		return nil, Error, fmt.Errorf("failed to create Resource Request: [%v]", err)
 	}
 
 	var client http.Client
 	resp, err := client.Do(resourceReq)
 	if err != nil {
-		return nil, models.Error, fmt.Errorf("error getting Cost Resource: [%v]", err)
+		return nil, Error, fmt.Errorf("error getting Cost Resource: [%v]", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		err = errors.New("error getting Cost Resource")
 		log.ErrorR(resourceReq, err)
-		return nil, models.InvalidData, err
+		return nil, InvalidData, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, models.Error, fmt.Errorf("error reading Cost Resource: [%v]", err)
+		return nil, Error, fmt.Errorf("error reading Cost Resource: [%v]", err)
 	}
 
 	costs := &[]models.CostResourceRest{}
 	err = json.Unmarshal(body, costs)
 	if err != nil {
-		return nil, models.InvalidData, fmt.Errorf("error reading Cost Resource: [%v]", err)
+		return nil, InvalidData, fmt.Errorf("error reading Cost Resource: [%v]", err)
 	}
 
 	if err = validateCosts(costs); err != nil {
 		log.ErrorR(resourceReq, fmt.Errorf("invalid Cost Resource: [%v]", err))
-		return nil, models.InvalidData, err
+		return nil, InvalidData, err
 	}
 
-	return costs, models.Success, nil
+	return costs, Success, nil
 }
 
 // Generates a string of 20 numbers made up of 7 random numbers, followed by 13 numbers derived from the current time
