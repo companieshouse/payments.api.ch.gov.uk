@@ -34,6 +34,21 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Check if the payment session is expired
+	if service.IsExpired(*paymentResource) {
+		// Set the status of the payment
+		paymentResource.Status = service.Expired.String()
+		err = paymentService.PatchPaymentSession(id, *paymentResource)
+		if err != nil {
+			log.ErrorR(req, fmt.Errorf("error setting payment status of expired payment session: [%v]", err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		log.ErrorR(req, fmt.Errorf("payment session has expired"))
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
 	// Ensure payment method matches endpoint
 	if paymentResource.PaymentMethod != "GovPay" {
 		log.ErrorR(req, fmt.Errorf("payment method, [%s], for resource [%s] not recognised", paymentResource.PaymentMethod, id))

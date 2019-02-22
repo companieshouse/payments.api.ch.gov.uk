@@ -62,13 +62,6 @@ func TestUnitHandleGetPaymentSession(t *testing.T) {
 		HandleGetPaymentSession(w, req.WithContext(ctx))
 		So(w.Code, ShouldEqual, 200)
 	})
-	Convey("Payment session expired", t, func() {
-		req := httptest.NewRequest("GET", "/test", nil)
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyPaymentSession, &models.PaymentResourceRest{CreatedAt: time.Now(), ExpiresAt: time.Now().Add(time.Minute * time.Duration(-60))})
-		w := httptest.NewRecorder()
-		HandleGetPaymentSession(w, req.WithContext(ctx))
-		So(w.Code, ShouldEqual, 403)
-	})
 }
 
 func TestUnitHandlePatchPaymentSession(t *testing.T) {

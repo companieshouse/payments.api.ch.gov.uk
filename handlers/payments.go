@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"net/http"
 
 	"github.com/companieshouse/chs.go/log"
@@ -83,10 +84,8 @@ func HandleGetPaymentSession(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Check if the payment session is expired
-	if isExpired(*paymentSession) {
-		log.ErrorR(req, fmt.Errorf("payment session has expired"))
-		w.WriteHeader(http.StatusForbidden)
-		return
+	if service.IsExpired(*paymentSession) {
+		paymentSession.Status = service.Expired.String()
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -113,7 +112,7 @@ func HandlePatchPaymentSession(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Check if the payment session is expired
-	if isExpired(*paymentSession) {
+	if service.IsExpired(*paymentSession) {
 		log.ErrorR(req, fmt.Errorf("payment session has expired"))
 		w.WriteHeader(http.StatusForbidden)
 		return
@@ -154,8 +153,4 @@ func HandlePatchPaymentSession(w http.ResponseWriter, req *http.Request) {
 	}
 
 	log.InfoR(req, "Successful PATCH request for payment resource", log.Data{"payment_id": paymentSession.MetaData.ID, "status": http.StatusOK})
-}
-
-func isExpired(paymentSession models.PaymentResourceRest) bool {
-	return paymentSession.CreatedAt.After(paymentSession.ExpiresAt)
 }

@@ -45,6 +45,7 @@ const (
 	Paid
 	NoFunds
 	Failed
+	Expired
 )
 
 // String representation of payment statuses
@@ -330,4 +331,8 @@ func validateCosts(costs *[]models.CostResourceRest) error {
 		}
 	}
 	return nil
+}
+
+func IsExpired(paymentSession models.PaymentResourceRest) bool {
+	return paymentSession.CreatedAt.After(paymentSession.ExpiresAt)
 }
