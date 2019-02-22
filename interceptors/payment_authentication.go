@@ -68,7 +68,7 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 		}
 
 		if httpStatus != models.Success {
-			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor error when retrieving payment session. Status: [%s]", httpStatus))
+			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor error when retrieving payment session. Status: [%d]", httpStatus))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

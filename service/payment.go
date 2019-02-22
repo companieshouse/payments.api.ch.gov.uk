@@ -61,7 +61,7 @@ func (paymentStatus PaymentStatus) String() string {
 }
 
 // CreatePaymentSession creates a payment session and returns a journey URL for the calling app to redirect to
-func (service *PaymentService) CreatePaymentSession(req *http.Request, createResource models.IncomingPaymentResourceRequest) (*models.PaymentResourceRest, string, error) {
+func (service *PaymentService) CreatePaymentSession(req *http.Request, createResource models.IncomingPaymentResourceRequest) (*models.PaymentResourceRest, models.ServiceResponseType, error) {
 
 	// Get user details from context, put there by UserAuthenticationInterceptor
 	userDetails, ok := req.Context().Value(helpers.ContextKeyUserDetails).(models.AuthUserDetails)
@@ -69,7 +69,6 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 		err := fmt.Errorf("invalid AuthUserDetails in request context")
 		log.ErrorR(req, err)
 		return nil, models.InvalidData, err
-		//return nil, http.StatusBadRequest, err
 	}
 
 	costs, status, err := getCosts(createResource.Resource, &service.Config)
@@ -169,7 +168,7 @@ func (service *PaymentService) StoreExternalPaymentStatusURI(req *http.Request, 
 }
 
 // GetPaymentSession retrieves the payment session with the given ID from the database
-func (service *PaymentService) GetPaymentSession(req *http.Request, id string) (*models.PaymentResourceRest, string, error) {
+func (service *PaymentService) GetPaymentSession(req *http.Request, id string) (*models.PaymentResourceRest, models.ServiceResponseType, error) {
 	paymentResource, err := service.DAO.GetPaymentResource(id)
 	if err != nil {
 		err = fmt.Errorf("error getting payment resource from db: [%v]", err)
@@ -226,7 +225,7 @@ func getTotalAmount(costs *[]models.CostResourceRest) (string, error) {
 	return totalAmount.StringFixed(2), nil
 }
 
-func getCosts(resource string, cfg *config.Config) (*[]models.CostResourceRest, string, error) {
+func getCosts(resource string, cfg *config.Config) (*[]models.CostResourceRest, models.ServiceResponseType, error) {
 	err := validateResource(resource, cfg)
 	if err != nil {
 		return nil, models.InvalidData, err
