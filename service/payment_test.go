@@ -23,7 +23,7 @@ var defaultCost = models.CostResourceRest{
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
-	Links:                   models.CostLinksRest{Self: "self"},
+	Links: models.CostLinksRest{Self: "self"},
 }
 
 var defaultCostArray = []models.CostResourceRest{
@@ -63,7 +63,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req, models.IncomingPaymentResourceRequest{})
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, models.InvalidData)
+		So(status, ShouldEqual, InvalidData)
 		So(err.Error(), ShouldEqual, "invalid AuthUserDetails in request context")
 	})
 
@@ -82,7 +82,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), models.IncomingPaymentResourceRequest{})
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, models.InvalidData)
+		So(status, ShouldEqual, InvalidData)
 		So(err.Error(), ShouldEqual, "error getting payment resource: [invalid resource domain: ://]")
 	})
 
@@ -108,7 +108,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		}
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, models.Error)
+		So(status, ShouldEqual, Error)
 		So(err.Error(), ShouldEqual, "error getting amount from costs: [amount [invalid_amount] format incorrect]")
 	})
 
@@ -134,7 +134,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		}
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, models.Error)
+		So(status, ShouldEqual, Error)
 		So(err.Error(), ShouldEqual, "error writing to MongoDB: error")
 	})
 
@@ -182,13 +182,13 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(paymentResourceRest.Status, ShouldEqual, "pending")
 		So(paymentResourceRest.Costs, ShouldResemble, defaultCostArray)
 		So(paymentResourceRest.MetaData, ShouldResemble, models.PaymentResourceMetaDataRest{
-			ID:                       "",
-			RedirectURI:              "",
-			State:                    "",
+			ID:          "",
+			RedirectURI: "",
+			State:       "",
 			ExternalPaymentStatusURI: "",
 		})
 
-		So(status, ShouldEqual, models.Success)
+		So(status, ShouldEqual, Success)
 		So(err, ShouldBeNil)
 	})
 
@@ -232,13 +232,13 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(paymentResourceRest.Status, ShouldEqual, "pending")
 		So(paymentResourceRest.Costs, ShouldResemble, []models.CostResourceRest{defaultCost, defaultCost})
 		So(paymentResourceRest.MetaData, ShouldResemble, models.PaymentResourceMetaDataRest{
-			ID:                       "",
-			RedirectURI:              "",
-			State:                    "",
+			ID:          "",
+			RedirectURI: "",
+			State:       "",
 			ExternalPaymentStatusURI: "",
 		})
 
-		So(status, ShouldEqual, models.Success)
+		So(status, ShouldEqual, Success)
 		So(err, ShouldBeNil)
 	})
 }
@@ -288,7 +288,7 @@ func TestUnitGetPayment(t *testing.T) {
 
 		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "1234")
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, models.Error)
+		So(status, ShouldEqual, Error)
 		So(err.Error(), ShouldEqual, "error getting payment resource from db: [error]")
 	})
 
@@ -301,7 +301,7 @@ func TestUnitGetPayment(t *testing.T) {
 
 		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "invalid")
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, models.NotFound)
+		So(status, ShouldEqual, NotFound)
 		So(err, ShouldBeNil)
 	})
 
@@ -314,7 +314,7 @@ func TestUnitGetPayment(t *testing.T) {
 
 		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "1234")
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, models.InvalidData)
+		So(status, ShouldEqual, InvalidData)
 		So(err.Error(), ShouldEqual, "error getting payment resource: [invalid resource domain: ://]")
 	})
 
@@ -336,7 +336,7 @@ func TestUnitGetPayment(t *testing.T) {
 
 		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "1234")
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, models.Error)
+		So(status, ShouldEqual, Error)
 		So(err.Error(), ShouldEqual, "error getting amount from costs: [amount [x] format incorrect]")
 	})
 
@@ -356,7 +356,7 @@ func TestUnitGetPayment(t *testing.T) {
 
 		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "1234")
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, models.Forbidden)
+		So(status, ShouldEqual, Forbidden)
 		So(err.Error(), ShouldEqual, "amount in payment resource [99.00] different from db [100] for id [1234]")
 	})
 
@@ -395,7 +395,7 @@ func TestUnitGetPayment(t *testing.T) {
 				ID: "1234",
 			},
 		})
-		So(status, ShouldEqual, models.Success)
+		So(status, ShouldEqual, Success)
 		So(err, ShouldBeNil)
 	})
 
@@ -444,7 +444,7 @@ func TestUnitGetPayment(t *testing.T) {
 				ID: "1234",
 			},
 		})
-		So(status, ShouldEqual, models.Success)
+		So(status, ShouldEqual, Success)
 		So(err, ShouldBeNil)
 	})
 }
@@ -474,7 +474,7 @@ func TestUnitGetCosts(t *testing.T) {
 	Convey("Invalid Resource", t, func() {
 		costResourceRest, status, err := getCosts("invalid", cfg)
 		So(costResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, models.InvalidData)
+		So(status, ShouldEqual, InvalidData)
 		So(err.Error(), ShouldEqual, "invalid resource domain: ://")
 	})
 
@@ -485,7 +485,7 @@ func TestUnitGetCosts(t *testing.T) {
 
 		costResourceRest, status, err := getCosts("http://dummy-resource", cfg)
 		So(costResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, models.Error)
+		So(status, ShouldEqual, Error)
 		So(err.Error(), ShouldEqual, "error getting Cost Resource: [Get http://dummy-resource: no responder found]")
 	})
 
@@ -497,7 +497,7 @@ func TestUnitGetCosts(t *testing.T) {
 
 		costResourceRest, status, err := getCosts("http://dummy-resource", cfg)
 		So(costResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, models.InvalidData)
+		So(status, ShouldEqual, InvalidData)
 		So(err.Error(), ShouldEqual, "error getting Cost Resource")
 	})
 
@@ -511,7 +511,7 @@ func TestUnitGetCosts(t *testing.T) {
 
 		costResourceRest, status, err := getCosts("http://dummy-resource", cfg)
 		So(costResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, models.InvalidData)
+		So(status, ShouldEqual, InvalidData)
 		So(err.Error(), ShouldEqual, "Key: 'CostResourceRest.Amount' Error:Field validation for 'Amount' failed on the 'required' tag")
 	})
 }
@@ -548,7 +548,7 @@ func TestUnitValidateCosts(t *testing.T) {
 			ClassOfPayment:          []string{"class"},
 			Description:             "",
 			DescriptionIdentifier:   "identifier",
-			Links:                   models.CostLinksRest{Self: "self"},
+			Links: models.CostLinksRest{Self: "self"},
 		}}
 		So(validateCosts(&cost), ShouldNotBeNil)
 	})
@@ -559,7 +559,7 @@ func TestUnitValidateCosts(t *testing.T) {
 			ClassOfPayment:          []string{"class"},
 			Description:             "desc",
 			DescriptionIdentifier:   "identifier",
-			Links:                   models.CostLinksRest{Self: "self"},
+			Links: models.CostLinksRest{Self: "self"},
 		}}
 		So(validateCosts(&cost), ShouldBeNil)
 	})
@@ -571,7 +571,7 @@ func TestUnitValidateCosts(t *testing.T) {
 				ClassOfPayment:          []string{"class"},
 				Description:             "desc",
 				DescriptionIdentifier:   "identifier",
-				Links:                   models.CostLinksRest{Self: "self"},
+				Links: models.CostLinksRest{Self: "self"},
 			},
 			{
 				Amount:                  "20",
@@ -579,7 +579,7 @@ func TestUnitValidateCosts(t *testing.T) {
 				ClassOfPayment:          []string{"class"},
 				Description:             "",
 				DescriptionIdentifier:   "identifier",
-				Links:                   models.CostLinksRest{Self: "self"},
+				Links: models.CostLinksRest{Self: "self"},
 			},
 		}
 		So(validateCosts(&cost), ShouldNotBeNil)

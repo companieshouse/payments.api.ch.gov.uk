@@ -8,6 +8,7 @@ import (
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/gorilla/mux"
 	"gopkg.in/go-playground/validator.v9"
 )
@@ -37,15 +38,15 @@ func HandleCreatePaymentSession(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// once we've read and decoded request body call the payment service handle internal business logic
-	paymentResource, status, err := paymentService.CreatePaymentSession(req, incomingPaymentResourceRequest)
+	paymentResource, responseType, err := paymentService.CreatePaymentSession(req, incomingPaymentResourceRequest)
 
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error creating payment resource: [%v]", err))
-		switch status {
-		case models.InvalidData:
+		switch responseType {
+		case service.InvalidData:
 			w.WriteHeader(http.StatusBadRequest)
 			return
-		case models.Error:
+		case service.Error:
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		default:

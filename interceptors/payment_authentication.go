@@ -46,14 +46,14 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 		}
 
 		// Get the payment session from the ID in request
-		paymentSession, httpStatus, err := paymentAuthenticationInterceptor.Service.GetPaymentSession(r, id)
+		paymentSession, responseType, err := paymentAuthenticationInterceptor.Service.GetPaymentSession(r, id)
 		if err != nil {
 			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor error when retrieving payment session: [%v]", err))
-			switch httpStatus {
-			case models.Forbidden:
+			switch responseType {
+			case service.Forbidden:
 				w.WriteHeader(http.StatusForbidden)
 				return
-			case models.Error:
+			case service.Error:
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			default:
@@ -62,13 +62,13 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 			}
 		}
 
-		if httpStatus == models.NotFound {
+		if responseType == service.NotFound {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		if httpStatus != models.Success {
-			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor error when retrieving payment session. Status: [%d]", httpStatus))
+		if responseType != service.Success {
+			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor error when retrieving payment session. Status: [%s]", responseType.String()))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
