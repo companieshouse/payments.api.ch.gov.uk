@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"net/http"
 
 	"github.com/companieshouse/chs.go/log"
