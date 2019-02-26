@@ -141,11 +141,18 @@ func HandlePatchPaymentSession(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = paymentService.PatchPaymentSession(id, PaymentResourceUpdateData)
+	responseType, err := paymentService.PatchPaymentSession(id, PaymentResourceUpdateData)
+
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error patching payment session: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		log.ErrorR(req, fmt.Errorf("error patching payment resource: [%v]", err))
+		switch responseType {
+		case service.Error:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 
 	log.InfoR(req, "Successful PATCH request for payment resource", log.Data{"payment_id": id, "status": http.StatusOK})

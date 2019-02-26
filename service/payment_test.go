@@ -23,7 +23,7 @@ var defaultCost = models.CostResourceRest{
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
-	Links:                   models.CostLinksRest{Self: "self"},
+	Links: models.CostLinksRest{Self: "self"},
 }
 
 var defaultCostArray = []models.CostResourceRest{
@@ -182,9 +182,9 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(paymentResourceRest.Status, ShouldEqual, "pending")
 		So(paymentResourceRest.Costs, ShouldResemble, defaultCostArray)
 		So(paymentResourceRest.MetaData, ShouldResemble, models.PaymentResourceMetaDataRest{
-			ID:                       "",
-			RedirectURI:              "",
-			State:                    "",
+			ID:          "",
+			RedirectURI: "",
+			State:       "",
 			ExternalPaymentStatusURI: "",
 		})
 
@@ -232,9 +232,9 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(paymentResourceRest.Status, ShouldEqual, "pending")
 		So(paymentResourceRest.Costs, ShouldResemble, []models.CostResourceRest{defaultCost, defaultCost})
 		So(paymentResourceRest.MetaData, ShouldResemble, models.PaymentResourceMetaDataRest{
-			ID:                       "",
-			RedirectURI:              "",
-			State:                    "",
+			ID:          "",
+			RedirectURI: "",
+			State:       "",
 			ExternalPaymentStatusURI: "",
 		})
 
@@ -254,7 +254,8 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
 
 		resource := models.PaymentResourceRest{}
-		err := mockPaymentService.PatchPaymentSession("1234", resource)
+		responseType, err := mockPaymentService.PatchPaymentSession("1234", resource)
+		So(responseType, ShouldEqual, Error)
 		So(err.Error(), ShouldEqual, "error patching payment session on database: [error]")
 	})
 
@@ -268,7 +269,8 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 			Status:        "status",
 		}
 
-		err := mockPaymentService.PatchPaymentSession("1234", resource)
+		responseType, err := mockPaymentService.PatchPaymentSession("1234", resource)
+		So(responseType, ShouldEqual, Success)
 		So(err, ShouldBeNil)
 
 	})
@@ -548,7 +550,7 @@ func TestUnitValidateCosts(t *testing.T) {
 			ClassOfPayment:          []string{"class"},
 			Description:             "",
 			DescriptionIdentifier:   "identifier",
-			Links:                   models.CostLinksRest{Self: "self"},
+			Links: models.CostLinksRest{Self: "self"},
 		}}
 		So(validateCosts(&cost), ShouldNotBeNil)
 	})
@@ -559,7 +561,7 @@ func TestUnitValidateCosts(t *testing.T) {
 			ClassOfPayment:          []string{"class"},
 			Description:             "desc",
 			DescriptionIdentifier:   "identifier",
-			Links:                   models.CostLinksRest{Self: "self"},
+			Links: models.CostLinksRest{Self: "self"},
 		}}
 		So(validateCosts(&cost), ShouldBeNil)
 	})
@@ -571,7 +573,7 @@ func TestUnitValidateCosts(t *testing.T) {
 				ClassOfPayment:          []string{"class"},
 				Description:             "desc",
 				DescriptionIdentifier:   "identifier",
-				Links:                   models.CostLinksRest{Self: "self"},
+				Links: models.CostLinksRest{Self: "self"},
 			},
 			{
 				Amount:                  "20",
@@ -579,7 +581,7 @@ func TestUnitValidateCosts(t *testing.T) {
 				ClassOfPayment:          []string{"class"},
 				Description:             "",
 				DescriptionIdentifier:   "identifier",
-				Links:                   models.CostLinksRest{Self: "self"},
+				Links: models.CostLinksRest{Self: "self"},
 			},
 		}
 		So(validateCosts(&cost), ShouldNotBeNil)

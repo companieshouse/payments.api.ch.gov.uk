@@ -19,31 +19,31 @@ type GovPayService struct {
 }
 
 // CheckProvider checks the status of the payment with GovPay provider
-func (gp GovPayService) CheckProvider(paymentResource *models.PaymentResourceRest) (*models.StatusResponse, error) {
+func (gp GovPayService) CheckProvider(paymentResource *models.PaymentResourceRest) (ResponseType, *models.StatusResponse, error) {
 	// Call the getGovPayPaymentState method down below to get state
 	cfg, err := config.Get()
 	if err != nil {
-		return nil, fmt.Errorf("error getting config: [%s]", err)
+		return Error, nil, fmt.Errorf("error getting config: [%s]", err)
 	}
 
-	state, err := gp.getGovPayPaymentState(paymentResource, cfg)
+	responseType, state, err := gp.getGovPayPaymentState(paymentResource, cfg)
 	if err != nil {
-		return nil, fmt.Errorf("error getting state of GovPay payment: [%s]", err)
+		return responseType, nil, fmt.Errorf("error getting state of GovPay payment: [%s]", err)
 	}
 	// Return state
 	if state.Finished && state.Status == "success" {
-		return &models.StatusResponse{Status: "paid"}, nil
+		return Success, &models.StatusResponse{Status: "paid"}, nil
 	}
-	return &models.StatusResponse{Status: "failed"}, nil
+	return Error, &models.StatusResponse{Status: "failed"}, nil
 }
 
 // GenerateNextURLGovPay creates a gov pay session linked to the given payment session and stores the required details on the payment session
-func (gp *GovPayService) GenerateNextURLGovPay(req *http.Request, paymentResource *models.PaymentResourceRest) (string, error) {
+func (gp *GovPayService) GenerateNextURLGovPay(req *http.Request, paymentResource *models.PaymentResourceRest) (ResponseType, string, error) {
 	var govPayRequest models.OutgoingGovPayRequest
 
 	amountToPay, err := convertToPenceFromDecimal(paymentResource.Amount)
 	if err != nil {
-		return "", fmt.Errorf("error converting amount to pay to pence: [%s]", err)
+		return Error, "", fmt.Errorf("error converting amount to pay to pence: [%s]", err)
 	}
 
 	govPayRequest.Amount = amountToPay
@@ -53,12 +53,12 @@ func (gp *GovPayService) GenerateNextURLGovPay(req *http.Request, paymentResourc
 
 	requestBody, err := json.Marshal(govPayRequest)
 	if err != nil {
-		return "", fmt.Errorf("error reading GovPayRequest: [%s]", err)
+		return Error, "", fmt.Errorf("error reading GovPayRequest: [%s]", err)
 	}
 
 	request, err := http.NewRequest("POST", gp.PaymentService.Config.GovPayURL, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return "", fmt.Errorf("error generating request for GovPay: [%s]", err)
+		return Error, "", fmt.Errorf("error generating request for GovPay: [%s]", err)
 	}
 
 	request.Header.Add("accept", "application/json")
@@ -67,37 +67,37 @@ func (gp *GovPayService) GenerateNextURLGovPay(req *http.Request, paymentResourc
 
 	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
-		return "", fmt.Errorf("error sending request to GovPay to start payment session: [%s]", err)
+		return Error, "", fmt.Errorf("error sending request to GovPay to start payment session: [%s]", err)
 	}
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("error reading response from GovPay: [%s]", err)
+		return Error, "", fmt.Errorf("error reading response from GovPay: [%s]", err)
 	}
 
 	govPayResponse := &models.IncomingGovPayResponse{}
 	err = json.Unmarshal(body, govPayResponse)
 	if err != nil {
-		return "", fmt.Errorf("error reading response from GovPay: [%s]", err)
+		return Error, "", fmt.Errorf("error reading response from GovPay: [%s]", err)
 	}
 	if resp.StatusCode != http.StatusCreated {
-		return "", fmt.Errorf("error status [%v] back from GovPay: [%s]", resp.StatusCode, govPayResponse.Description)
+		return Error, "", fmt.Errorf("error status [%v] back from GovPay: [%s]", resp.StatusCode, govPayResponse.Description)
 	}
 
 	err = gp.PaymentService.StoreExternalPaymentStatusURI(req, paymentResource.MetaData.ID, govPayResponse.GovPayLinks.Self.HREF)
 	if err != nil {
-		return "", fmt.Errorf("error storing ExternalPaymentStatusURI for payment session: [%s]", err)
+		return Error, "", fmt.Errorf("error storing ExternalPaymentStatusURI for payment session: [%s]", err)
 	}
 
-	return govPayResponse.GovPayLinks.NextURL.HREF, nil
+	return Success, govPayResponse.GovPayLinks.NextURL.HREF, nil
 }
 
 // To get the status of a GovPay payment, GET the payment resource from GovPay and return the State block
-func (gp *GovPayService) getGovPayPaymentState(paymentResource *models.PaymentResourceRest, cfg *config.Config) (*models.State, error) {
+func (gp *GovPayService) getGovPayPaymentState(paymentResource *models.PaymentResourceRest, cfg *config.Config) (ResponseType, *models.State, error) {
 	request, err := http.NewRequest("GET", paymentResource.MetaData.ExternalPaymentStatusURI, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error generating request for GovPay: [%s]", err)
+		return Error, nil, fmt.Errorf("error generating request for GovPay: [%s]", err)
 	}
 
 	request.Header.Add("accept", "application/json")
@@ -107,23 +107,23 @@ func (gp *GovPayService) getGovPayPaymentState(paymentResource *models.PaymentRe
 	// Make call to GovPay to check state of payment
 	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
-		return nil, fmt.Errorf("error sending request to GovPay to check payment status: [%s]", err)
+		return Error, nil, fmt.Errorf("error sending request to GovPay to check payment status: [%s]", err)
 	}
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error reading response from GovPay when checking payment status: [%s]", err)
+		return Error, nil, fmt.Errorf("error reading response from GovPay when checking payment status: [%s]", err)
 	}
 
 	govPayResponse := &models.IncomingGovPayResponse{}
 	err = json.Unmarshal(body, govPayResponse)
 	if err != nil {
-		return nil, fmt.Errorf("error reading response from GovPay when checking payment status: [%s]", err)
+		return Error, nil, fmt.Errorf("error reading response from GovPay when checking payment status: [%s]", err)
 	}
 
 	// Return the status of the payment
-	return &govPayResponse.State, nil
+	return Success, &govPayResponse.State, nil
 }
 
 // decimalPayment will always be in the form XX.XX (e.g: 12.00) due to getTotalAmount converting to decimal with 2 fixed places right of decimal point.

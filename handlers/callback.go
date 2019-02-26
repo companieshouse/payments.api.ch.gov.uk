@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/gorilla/mux"
 	"net/http"
 
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
-	"github.com/gorilla/mux"
 )
 
 // HandleGovPayCallback handles the callback from Govpay and redirects the user
@@ -21,22 +21,22 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// The PaymentResource must be retrieved directly to enable access to metadata outside the data block
-	paymentResource, _, err := paymentService.GetPaymentSession(req, id)
+	// The payment session must be retrieved directly to enable access to metadata outside the data block
+	paymentSession, _, err := paymentService.GetPaymentSession(req, id)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error getting payment session: [%v]", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if paymentResource == nil {
+	if paymentSession == nil {
 		log.ErrorR(req, fmt.Errorf("payment session not found. id: %s", id))
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
 	// Ensure payment method matches endpoint
-	if paymentResource.PaymentMethod != "GovPay" {
-		log.ErrorR(req, fmt.Errorf("payment method, [%s], for resource [%s] not recognised", paymentResource.PaymentMethod, id))
+	if paymentSession.PaymentMethod != "GovPay" {
+		log.ErrorR(req, fmt.Errorf("payment method, [%s], for resource [%s] not recognised", paymentSession.PaymentMethod, id))
 		w.WriteHeader(http.StatusPreconditionFailed)
 		return
 	}
@@ -45,31 +45,43 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 	gp := &service.GovPayService{
 		PaymentService: *paymentService,
 	}
-	statusResponse, err := gp.CheckProvider(paymentResource)
+	responseType, statusResponse, err := gp.CheckProvider(paymentSession)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error getting payment status from govpay: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		switch responseType {
+		case service.Error:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 
 	// Set the status of the payment
-	paymentResource.Status = statusResponse.Status
-	err = paymentService.PatchPaymentSession(id, *paymentResource)
+	paymentSession.Status = statusResponse.Status
+	responseType, err = paymentService.PatchPaymentSession(id, *paymentSession)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error setting payment status: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		switch responseType {
+		case service.Error:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 
 	// Prepare parameters needed for redirecting
 	params := models.RedirectParams{
-		State:  paymentResource.MetaData.State,
-		Ref:    paymentResource.Reference,
-		Status: paymentResource.Status,
+		State:  paymentSession.MetaData.State,
+		Ref:    paymentSession.Reference,
+		Status: paymentSession.Status,
 	}
 
 	log.InfoR(req, "Successfully Closed payment session", log.Data{"payment_id": id, "status": *statusResponse})
 
 	produceKafkaMessage()
-	redirectUser(w, req, paymentResource.MetaData.RedirectURI, params)
+	redirectUser(w, req, paymentSession.MetaData.RedirectURI, params)
 }
