@@ -230,13 +230,22 @@ func (service *PaymentService) PatchPaymentSession(w http.ResponseWriter, req *h
 		return
 	}
 
-	PaymentResourceUpdateData.Status = InProgress.String()
+	//If the payment session is 'pending' set to 'in-progress', else do not change status.
+	paymentSession, httpStatus, err := service.GetPaymentSession(id)
+	if err != nil {
+		w.WriteHeader(httpStatus)
+		log.ErrorR(req, err)
+		return
+	}
+	if paymentSession.Status == Pending.String() {
+		PaymentResourceUpdateData.Status = InProgress.String()
+	}
 
 	var PaymentResourceUpdate models.PaymentResourceDB
 	PaymentResourceUpdate = transformers.PaymentTransformer{}.TransformToDB(PaymentResourceUpdateData)
 	PaymentResourceUpdate.Data.Etag = generateEtag()
 
-	httpStatus, err := service.patchPaymentSession(id, PaymentResourceUpdate)
+	httpStatus, err = service.patchPaymentSession(id, PaymentResourceUpdate)
 	if err != nil {
 		w.WriteHeader(httpStatus)
 		log.ErrorR(req, err)

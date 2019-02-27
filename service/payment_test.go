@@ -395,6 +395,7 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
+	defer resetConfig()
 	reqBodyPatchInvalid := []byte("{\"amount\": \"130.00\"}")
 	reqBodyPatch := []byte("{\"payment_method\": \"dummy-payment-method\",\"status\": \"dummy-status\"}")
 
@@ -431,10 +432,32 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 		So(w.Code, ShouldEqual, 400)
 	})
 
+	Convey("Error getting session from GET request", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{}, fmt.Errorf("error"))
+
+		path := fmt.Sprintf("/payments/%s", "1234")
+		req, err := http.NewRequest("Get", path, nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
+		So(err, ShouldBeNil)
+
+		req.Body = ioutil.NopCloser(bytes.NewReader(reqBodyPatch))
+		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
+		w := httptest.NewRecorder()
+
+		mockPaymentService.PatchPaymentSession(w, req)
+		So(w.Code, ShouldEqual, 500)
+	})
+
+	cfg.DomainWhitelist = "http://dummy-resource"
+
 	Convey("Error getting session from DB", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceDataDB{Amount: "20.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
 		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(fmt.Errorf("error"))
 
 		path := fmt.Sprintf("/payments/%s", "1234")
@@ -445,6 +468,12 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBodyPatch))
 		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
 		w := httptest.NewRecorder()
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		costArray := []models.CostResourceRest{defaultCost, defaultCost}
+		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
 		mockPaymentService.PatchPaymentSession(w, req)
 		So(w.Code, ShouldEqual, 500)
@@ -471,6 +500,7 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceDataDB{Amount: "20.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
 		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(fmt.Errorf("not found"))
 
 		path := fmt.Sprintf("/payments/%s", "1234")
@@ -482,6 +512,12 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
 		w := httptest.NewRecorder()
 
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		costArray := []models.CostResourceRest{defaultCost, defaultCost}
+		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+
 		mockPaymentService.PatchPaymentSession(w, req)
 		So(w.Code, ShouldEqual, 403)
 	})
@@ -490,6 +526,7 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceDataDB{Amount: "20.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
 		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(nil)
 
 		path := fmt.Sprintf("/payments/%s", "1234")
@@ -500,6 +537,12 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBodyPatch))
 		req.Header.Set("Eric-Authorised-User", "test@companieshouse.gov.uk; forename=f; surname=s")
 		w := httptest.NewRecorder()
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		costArray := []models.CostResourceRest{defaultCost, defaultCost}
+		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
 		mockPaymentService.PatchPaymentSession(w, req)
 		So(w.Code, ShouldEqual, 200)
