@@ -3,34 +3,35 @@ package interceptors
 import (
 	"context"
 	"fmt"
-	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
-	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"net/http"
 	"strings"
 
 	"github.com/companieshouse/chs.go/log"
+	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
+	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 )
 
+// UserAuthenticationInterceptor checks that the user is authenticated
 func UserAuthenticationInterceptor(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		//Check headers for identity type and identity
 		identityType := helpers.GetAuthorisedIdentityType(r)
 		if identityType != helpers.Oauth2IdentityType {
-			log.Error(fmt.Errorf("Authentication interceptor unauthorised: not oauth2 identity type"))
+			log.Error(fmt.Errorf("authentication interceptor unauthorised: not oauth2 identity type"))
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
 		identity := helpers.GetAuthorisedIdentity(r)
 		if identity == "" {
-			log.Error(fmt.Errorf("Authentication interceptor unauthorised: no authorised identity"))
+			log.Error(fmt.Errorf("authentication interceptor unauthorised: no authorised identity"))
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
 		authorisedUser := helpers.GetAuthorisedUser(r)
 		if authorisedUser == "" {
-			log.Error(fmt.Errorf("Authentication interceptor unauthorised: no authorised user"))
+			log.Error(fmt.Errorf("authentication interceptor unauthorised: no authorised user"))
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -51,7 +52,7 @@ func UserAuthenticationInterceptor(next http.Handler) http.Handler {
 			authUserDetails.Surname = userDetails[2]
 		}
 
-		ctx := context.WithValue(r.Context(), helpers.UserDetailsKey, authUserDetails)
+		ctx := context.WithValue(r.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 
 		// Call the next handler
 		next.ServeHTTP(w, r.WithContext(ctx))

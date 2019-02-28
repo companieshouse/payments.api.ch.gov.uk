@@ -16,16 +16,15 @@ type PaymentTransformer struct{}
 // TransformToDB transforms payment resource rest model into payment resource database model
 func (pt PaymentTransformer) TransformToDB(rest models.PaymentResourceRest) models.PaymentResourceDB {
 	paymentResourceData := models.PaymentResourceDataDB{
-		Amount:                  rest.Amount,
-		AvailablePaymentMethods: rest.AvailablePaymentMethods,
-		CompletedAt:             rest.CompletedAt,
-		CreatedAt:               rest.CreatedAt,
-		Description:             rest.Description,
-		PaymentMethod:           rest.PaymentMethod,
-		Reference:               rest.Reference,
-		Status:                  rest.Status,
-		Etag:                    rest.Etag,
-		Kind:                    rest.Kind,
+		Amount:        rest.Amount,
+		CompletedAt:   rest.CompletedAt,
+		CreatedAt:     rest.CreatedAt,
+		Description:   rest.Description,
+		PaymentMethod: rest.PaymentMethod,
+		Reference:     rest.Reference,
+		Status:        rest.Status,
+		Etag:          rest.Etag,
+		Kind:          rest.Kind,
 	}
 
 	paymentResourceData.CreatedBy = models.CreatedByDB(rest.CreatedBy)
@@ -39,20 +38,28 @@ func (pt PaymentTransformer) TransformToDB(rest models.PaymentResourceRest) mode
 }
 
 // TransformToRest transforms payment resource database model into payment resource rest model
-func (pt PaymentTransformer) TransformToRest(dbResourceData models.PaymentResourceDataDB) models.PaymentResourceRest {
+func (pt PaymentTransformer) TransformToRest(dbResource models.PaymentResourceDB) models.PaymentResourceRest {
 	paymentResource := models.PaymentResourceRest{
-		Amount:                  dbResourceData.Amount,
-		AvailablePaymentMethods: dbResourceData.AvailablePaymentMethods,
-		CompletedAt:             dbResourceData.CompletedAt,
-		CreatedAt:               dbResourceData.CreatedAt,
-		CreatedBy:               models.CreatedByRest(dbResourceData.CreatedBy),
-		Description:             dbResourceData.Description,
-		PaymentMethod:           dbResourceData.PaymentMethod,
-		Reference:               dbResourceData.Reference,
-		Status:                  dbResourceData.Status,
-		Links:                   models.PaymentLinksRest(dbResourceData.Links),
-		Etag:                    dbResourceData.Etag,
-		Kind:                    dbResourceData.Kind,
+		Amount:        dbResource.Data.Amount,
+		CompletedAt:   dbResource.Data.CompletedAt,
+		CreatedAt:     dbResource.Data.CreatedAt,
+		CreatedBy:     models.CreatedByRest(dbResource.Data.CreatedBy),
+		Description:   dbResource.Data.Description,
+		PaymentMethod: dbResource.Data.PaymentMethod,
+		Reference:     dbResource.Data.Reference,
+		Status:        dbResource.Data.Status,
+		Links:         models.PaymentLinksRest(dbResource.Data.Links),
+		Etag:          dbResource.Data.Etag,
+		Kind:          dbResource.Data.Kind,
 	}
+
+	// One-way transformation of DB metadata: related to, but not part of the payment rest data json spec
+	paymentResource.MetaData = models.PaymentResourceMetaDataRest{
+		ID:          dbResource.ID,
+		RedirectURI: dbResource.RedirectURI,
+		State:       dbResource.State,
+		ExternalPaymentStatusURI: dbResource.ExternalPaymentStatusURI,
+	}
+
 	return paymentResource
 }
