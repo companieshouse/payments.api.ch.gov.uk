@@ -34,10 +34,10 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		costArray := []models.CostResourceRest{defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		responseType, externalPaymentJourney, err := mockPaymentService.CreateExternalPaymentJourney(req, &models.PaymentResourceRest{})
 
-		externalPaymentJourney, status, err := mockPaymentService.CreateExternalPaymentJourney(req, &models.PaymentResourceRest{})
 		So(externalPaymentJourney, ShouldBeNil)
-		So(status, ShouldEqual, http.StatusBadRequest)
+		So(responseType.String(), ShouldEqual, InvalidData.String())
 		So(err.Error(), ShouldEqual, "payment session is not in progress")
 	})
 
@@ -55,9 +55,9 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 			Status:        InProgress.String(),
 		}
 
-		externalPaymentJourney, status, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
+		responseType, externalPaymentJourney, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
 		So(externalPaymentJourney, ShouldBeNil)
-		So(status, ShouldEqual, http.StatusInternalServerError)
+		So(responseType.String(), ShouldEqual, Error.String())
 		So(err.Error(), ShouldEqual, `error communicating with GovPay: [error converting amount to pay to pence: [strconv.Atoi: parsing "": invalid syntax]]`)
 	})
 
@@ -79,9 +79,9 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 			Status:        InProgress.String(),
 		}
 
-		externalPaymentJourney, status, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
+		responseType, externalPaymentJourney, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
 		So(externalPaymentJourney, ShouldBeNil)
-		So(status, ShouldEqual, http.StatusInternalServerError)
+		So(responseType.String(), ShouldEqual, Error.String())
 		So(err.Error(), ShouldEqual, "no NextURL returned from GovPay")
 	})
 
@@ -109,9 +109,9 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 			Status:        InProgress.String(),
 		}
 
-		externalPaymentJourney, status, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
+		responseType, externalPaymentJourney, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
 		So(err, ShouldBeNil)
-		So(status, ShouldEqual, http.StatusCreated)
+		So(responseType.String(), ShouldEqual, Success.String())
 		So(externalPaymentJourney.NextURL, ShouldEqual, "response_url")
 	})
 
@@ -123,9 +123,9 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 			Status:        InProgress.String(),
 		}
 
-		externalPaymentJourney, status, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
+		responseType, externalPaymentJourney, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
 		So(externalPaymentJourney, ShouldBeNil)
-		So(status, ShouldEqual, http.StatusInternalServerError)
+		So(responseType.String(), ShouldEqual, Error.String())
 		So(err.Error(), ShouldEqual, "payment method [invalid] for resource [] not recognised")
 	})
 

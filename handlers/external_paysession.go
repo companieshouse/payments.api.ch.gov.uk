@@ -8,6 +8,7 @@ import (
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 )
 
 // HandleCreateExternalPaymentJourney creates an external payment session with a Payment Provider that is given, e.g. GOV.UK Pay
@@ -20,11 +21,20 @@ func HandleCreateExternalPaymentJourney(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	externalPaymentJourney, status, err := paymentService.CreateExternalPaymentJourney(req, paymentSession)
+	responseType, externalPaymentJourney, err := paymentService.CreateExternalPaymentJourney(req, paymentSession)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error creating external payment journey: %s", err))
-		w.WriteHeader(status)
-		return
+		log.ErrorR(req, fmt.Errorf("error creating external payment journey: [%v]", err))
+		switch responseType {
+		case service.Error:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		case service.InvalidData:
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")

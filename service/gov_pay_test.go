@@ -42,7 +42,8 @@ func TestUnitCheckProvider(t *testing.T) {
 			},
 		}
 
-		statusResponse, err := mockGovPayService.CheckProvider(&paymentResourceRest)
+		responseType, statusResponse, err := mockGovPayService.CheckProvider(&paymentResourceRest)
+		So(responseType.String(), ShouldEqual, Error.String())
 		So(statusResponse, ShouldBeNil)
 		So(err.Error(), ShouldEqual, "error getting state of GovPay payment: [error sending request to GovPay to check payment status: [Get external_uri: error]]")
 	})
@@ -65,7 +66,8 @@ func TestUnitCheckProvider(t *testing.T) {
 			},
 		}
 
-		statusResponse, err := mockGovPayService.CheckProvider(&paymentResourceRest)
+		responseType, statusResponse, err := mockGovPayService.CheckProvider(&paymentResourceRest)
+		So(responseType.String(), ShouldEqual, Success.String())
 		So(statusResponse.Status, ShouldEqual, "paid")
 		So(err, ShouldBeNil)
 	})
@@ -88,7 +90,8 @@ func TestUnitCheckProvider(t *testing.T) {
 			},
 		}
 
-		statusResponse, err := mockGovPayService.CheckProvider(&paymentResourceRest)
+		responseType, statusResponse, err := mockGovPayService.CheckProvider(&paymentResourceRest)
+		So(responseType.String(), ShouldEqual, Error.String())
 		So(statusResponse.Status, ShouldEqual, "failed")
 		So(err, ShouldBeNil)
 	})
@@ -111,8 +114,9 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 
 		paymentResource := models.PaymentResourceRest{Amount: "250.567"}
 		req := httptest.NewRequest("", "/test", nil)
-		govPayResponse, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
+		responseType, govPayResponse, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
 
+		So(responseType.String(), ShouldEqual, Error.String())
 		So(govPayResponse, ShouldEqual, "")
 		So(err, ShouldNotBeNil)
 	})
@@ -128,8 +132,9 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 
 		paymentResource := models.PaymentResourceRest{Amount: "250"}
 		req := httptest.NewRequest("", "/test", nil)
-		govPayResponse, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
+		responseType, govPayResponse, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
 
+		So(responseType.String(), ShouldEqual, Error.String())
 		So(govPayResponse, ShouldEqual, "")
 		So(err, ShouldNotBeNil)
 	})
@@ -147,8 +152,9 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 
 		paymentResource := models.PaymentResourceRest{Amount: "250"}
 		req := httptest.NewRequest("", "/test", nil)
-		govPayResponse, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
+		responseType, govPayResponse, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
 
+		So(responseType.String(), ShouldEqual, Error.String())
 		So(govPayResponse, ShouldEqual, "")
 		So(err, ShouldNotBeNil)
 	})
@@ -167,8 +173,9 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 
 		paymentResource := models.PaymentResourceRest{Amount: "250"}
 		req := httptest.NewRequest("", "/test", nil)
-		govPayResponse, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
+		responseType, govPayResponse, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
 
+		So(responseType.String(), ShouldEqual, Error.String())
 		So(govPayResponse, ShouldEqual, "")
 		So(err, ShouldNotBeNil)
 	})
@@ -194,7 +201,7 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 
 		paymentResource := models.PaymentResourceRest{Amount: "250"}
 		req := httptest.NewRequest("", "/test", nil)
-		_, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
+		_, _, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
 
 		So(err.Error(), ShouldEqual, "error storing ExternalPaymentStatusURI for payment session: [error storing ExternalPaymentStatusURI on payment session: [error]]")
 	})
@@ -220,8 +227,9 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 
 		paymentResource := models.PaymentResourceRest{Amount: "250"}
 		req := httptest.NewRequest("", "/test", nil)
-		govPayResponse, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
+		responseType, govPayResponse, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
 
+		So(responseType.String(), ShouldEqual, Success.String())
 		So(govPayResponse, ShouldEqual, journeyURL)
 		So(err, ShouldBeNil)
 	})
@@ -249,7 +257,8 @@ func TestUnitGetGovPayPaymentState(t *testing.T) {
 				ExternalPaymentStatusURI: "external_uri",
 			},
 		}
-		govPayResponse, err := mockGovPayService.getGovPayPaymentState(&paymentResourceRest, cfg)
+		responseType, govPayResponse, err := mockGovPayService.getGovPayPaymentState(&paymentResourceRest, cfg)
+		So(responseType.String(), ShouldEqual, Error.String())
 		So(govPayResponse, ShouldBeNil)
 		So(err.Error(), ShouldEqual, "error sending request to GovPay to check payment status: [Get external_uri: error]")
 	})
@@ -272,8 +281,9 @@ func TestUnitGetGovPayPaymentState(t *testing.T) {
 				ExternalPaymentStatusURI: "external_uri",
 			},
 		}
-		govPayResponse, err := mockGovPayService.getGovPayPaymentState(&paymentResource, cfg)
+		responseType, govPayResponse, err := mockGovPayService.getGovPayPaymentState(&paymentResource, cfg)
 
+		So(responseType.String(), ShouldEqual, Success.String())
 		So(govPayResponse, ShouldResemble, &GovPayState)
 		So(err, ShouldBeNil)
 	})

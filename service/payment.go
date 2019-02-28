@@ -152,16 +152,17 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 }
 
 // PatchPaymentSession updates an existing payment session with the data provided from the Rest model
-func (service *PaymentService) PatchPaymentSession(id string, PaymentResourceUpdateRest models.PaymentResourceRest) error {
+func (service *PaymentService) PatchPaymentSession(id string, PaymentResourceUpdateRest models.PaymentResourceRest) (ResponseType, error) {
 	PaymentResourceUpdate := transformers.PaymentTransformer{}.TransformToDB(PaymentResourceUpdateRest)
 	PaymentResourceUpdate.Data.Etag = generateEtag()
 	PaymentResourceUpdate.Data.Status = InProgress.String()
 	err := service.DAO.PatchPaymentResource(id, &PaymentResourceUpdate)
 	if err != nil {
 		err = fmt.Errorf("error patching payment session on database: [%v]", err)
-		return err
+		log.Error(err)
+		return Error, err
 	}
-	return nil
+	return Success, nil
 }
 
 // StoreExternalPaymentStatusURI stores a new value in the payment resource metadata for the ExternalPaymentStatusURI

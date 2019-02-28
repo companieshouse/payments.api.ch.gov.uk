@@ -255,7 +255,8 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
 
 		resource := models.PaymentResourceRest{}
-		err := mockPaymentService.PatchPaymentSession("1234", resource)
+		responseType, err := mockPaymentService.PatchPaymentSession("1234", resource)
+		So(responseType, ShouldEqual, Error)
 		So(err.Error(), ShouldEqual, "error patching payment session on database: [error]")
 	})
 
@@ -269,7 +270,8 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 			Status:        "status",
 		}
 
-		err := mockPaymentService.PatchPaymentSession("1234", resource)
+		responseType, err := mockPaymentService.PatchPaymentSession("1234", resource)
+		So(responseType, ShouldEqual, Success)
 		So(err, ShouldBeNil)
 
 	})
