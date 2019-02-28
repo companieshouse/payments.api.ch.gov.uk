@@ -25,13 +25,13 @@ var defaultCostRest = models.CostResourceRest{
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
-	Links: models.CostLinksRest{Self: "self"},
+	Links:                   models.CostLinksRest{Self: "self"},
 }
 
-func createMockPaymentService(dao *dao.MockDAO, config *config.Config) service.PaymentService {
+func createMockPaymentService(mockDAO *dao.MockDAO, cfg *config.Config) service.PaymentService {
 	return service.PaymentService{
-		DAO:    dao,
-		Config: *config,
+		DAO:    mockDAO,
+		Config: *cfg,
 	}
 }
 
@@ -45,9 +45,9 @@ func createPaymentAuthenticationInterceptorWithMockDAOAndService(controller *gom
 }
 
 // Function to create a PaymentAuthenticationInterceptor with the supplied payment service
-func createPaymentAuthenticationInterceptorWithMockService(service *service.PaymentService) PaymentAuthenticationInterceptor {
+func createPaymentAuthenticationInterceptorWithMockService(paymentService *service.PaymentService) PaymentAuthenticationInterceptor {
 	return PaymentAuthenticationInterceptor{
-		Service: *service,
+		Service: *paymentService,
 	}
 }
 
@@ -128,7 +128,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "/admin/payment-lookup")
 		authUserDetails := models.AuthUserDetails{
-			Id: "identity",
+			ID: "identity",
 		}
 		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 
@@ -160,7 +160,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "/admin/payment-lookup")
 		authUserDetails := models.AuthUserDetails{
-			Id: "identity",
+			ID: "identity",
 		}
 		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 
@@ -192,7 +192,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "/admin/payment-lookup")
 		authUserDetails := models.AuthUserDetails{
-			Id: "identity",
+			ID: "identity",
 		}
 		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 
@@ -224,7 +224,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "noroles")
 		authUserDetails := models.AuthUserDetails{
-			Id: "identity",
+			ID: "identity",
 		}
 		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 
@@ -256,7 +256,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "/admin/payment-lookup")
 		authUserDetails := models.AuthUserDetails{
-			Id: "identity",
+			ID: "identity",
 		}
 		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 
@@ -288,7 +288,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "/admin/payment-lookup")
 		authUserDetails := models.AuthUserDetails{
-			Id: "identity",
+			ID: "identity",
 		}
 		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 

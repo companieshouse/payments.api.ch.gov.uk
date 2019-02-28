@@ -49,7 +49,7 @@ func (gp *GovPayService) GenerateNextURLGovPay(req *http.Request, paymentResourc
 	govPayRequest.Amount = amountToPay
 	govPayRequest.Description = "Companies House Payment" // TODO - Make description mandatory when creating payment-session so this doesn't have to be hardcoded
 	govPayRequest.Reference = paymentResource.Reference
-	govPayRequest.ReturnURL = fmt.Sprintf("%s/callback/payments/govpay/%s", gp.PaymentService.Config.PaymentsApiURL, paymentResource.MetaData.ID)
+	govPayRequest.ReturnURL = fmt.Sprintf("%s/callback/payments/govpay/%s", gp.PaymentService.Config.PaymentsAPIURL, paymentResource.MetaData.ID)
 
 	requestBody, err := json.Marshal(govPayRequest)
 	if err != nil {

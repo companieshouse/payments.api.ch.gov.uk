@@ -14,7 +14,7 @@ import (
 // UserAuthenticationInterceptor checks that the user is authenticated
 func UserAuthenticationInterceptor(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//Check headers for identity type and identity
+		// Check headers for identity type and identity
 		identityType := helpers.GetAuthorisedIdentityType(r)
 		if identityType != helpers.Oauth2IdentityType {
 			log.Error(fmt.Errorf("authentication interceptor unauthorised: not oauth2 identity type"))
@@ -38,7 +38,7 @@ func UserAuthenticationInterceptor(next http.Handler) http.Handler {
 
 		// Extract user details and add to context
 		userDetails := strings.Split(authorisedUser, ";")
-		authUserDetails := models.AuthUserDetails{Id: identity}
+		authUserDetails := models.AuthUserDetails{ID: identity}
 
 		switch len(userDetails) {
 		case 1:

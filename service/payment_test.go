@@ -23,7 +23,7 @@ var defaultCost = models.CostResourceRest{
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
-	Links: models.CostLinksRest{Self: "self"},
+	Links:                   models.CostLinksRest{Self: "self"},
 }
 
 var defaultCostArray = []models.CostResourceRest{
@@ -33,14 +33,14 @@ var defaultCostArray = []models.CostResourceRest{
 var defaultUserDetails = models.AuthUserDetails{
 	Email:    "email@companieshouse.gov.uk",
 	Forename: "forename",
-	Id:       "id",
+	ID:       "id",
 	Surname:  "surname",
 }
 
-func createMockPaymentService(dao *dao.MockDAO, config *config.Config) PaymentService {
+func createMockPaymentService(mockDAO *dao.MockDAO, cfg *config.Config) PaymentService {
 	return PaymentService{
-		DAO:    dao,
-		Config: *config,
+		DAO:    mockDAO,
+		Config: *cfg,
 	}
 }
 
@@ -76,7 +76,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		httpmock.RegisterResponder("GET", "http://dummy-resource", nil)
 
 		authUserDetails := models.AuthUserDetails{
-			Id: "identity",
+			ID: "identity",
 		}
 		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 
@@ -99,7 +99,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
 
 		authUserDetails := models.AuthUserDetails{
-			Id: "identity",
+			ID: "identity",
 		}
 		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 
@@ -125,7 +125,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
 
 		authUserDetails := models.AuthUserDetails{
-			Id: "identity",
+			ID: "identity",
 		}
 		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 
@@ -182,9 +182,9 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(paymentResourceRest.Status, ShouldEqual, "pending")
 		So(paymentResourceRest.Costs, ShouldResemble, defaultCostArray)
 		So(paymentResourceRest.MetaData, ShouldResemble, models.PaymentResourceMetaDataRest{
-			ID:          "",
-			RedirectURI: "",
-			State:       "",
+			ID:                       "",
+			RedirectURI:              "",
+			State:                    "",
 			ExternalPaymentStatusURI: "",
 		})
 
@@ -232,9 +232,9 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(paymentResourceRest.Status, ShouldEqual, "pending")
 		So(paymentResourceRest.Costs, ShouldResemble, []models.CostResourceRest{defaultCost, defaultCost})
 		So(paymentResourceRest.MetaData, ShouldResemble, models.PaymentResourceMetaDataRest{
-			ID:          "",
-			RedirectURI: "",
-			State:       "",
+			ID:                       "",
+			RedirectURI:              "",
+			State:                    "",
 			ExternalPaymentStatusURI: "",
 		})
 
@@ -550,7 +550,7 @@ func TestUnitValidateCosts(t *testing.T) {
 			ClassOfPayment:          []string{"class"},
 			Description:             "",
 			DescriptionIdentifier:   "identifier",
-			Links: models.CostLinksRest{Self: "self"},
+			Links:                   models.CostLinksRest{Self: "self"},
 		}}
 		So(validateCosts(&cost), ShouldNotBeNil)
 	})
@@ -561,7 +561,7 @@ func TestUnitValidateCosts(t *testing.T) {
 			ClassOfPayment:          []string{"class"},
 			Description:             "desc",
 			DescriptionIdentifier:   "identifier",
-			Links: models.CostLinksRest{Self: "self"},
+			Links:                   models.CostLinksRest{Self: "self"},
 		}}
 		So(validateCosts(&cost), ShouldBeNil)
 	})
@@ -573,7 +573,7 @@ func TestUnitValidateCosts(t *testing.T) {
 				ClassOfPayment:          []string{"class"},
 				Description:             "desc",
 				DescriptionIdentifier:   "identifier",
-				Links: models.CostLinksRest{Self: "self"},
+				Links:                   models.CostLinksRest{Self: "self"},
 			},
 			{
 				Amount:                  "20",
@@ -581,7 +581,7 @@ func TestUnitValidateCosts(t *testing.T) {
 				ClassOfPayment:          []string{"class"},
 				Description:             "",
 				DescriptionIdentifier:   "identifier",
-				Links: models.CostLinksRest{Self: "self"},
+				Links:                   models.CostLinksRest{Self: "self"},
 			},
 		}
 		So(validateCosts(&cost), ShouldNotBeNil)
