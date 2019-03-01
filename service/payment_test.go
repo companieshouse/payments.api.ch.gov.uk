@@ -247,14 +247,43 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
+	defer resetConfig()
+
+	Convey("Error Finding Payment Resource From GET Request", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceDataDB{Amount: "10.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
+		req := httptest.NewRequest("Get", "/test", nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		costArray := []models.CostResourceRest{defaultCost}
+		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+
+		resource := models.PaymentResourceRest{}
+		responseType, err := mockPaymentService.PatchPaymentSession(req, "1234", resource)
+		So(responseType, ShouldEqual, InvalidData)
+		So(err.Error(), ShouldStartWith, "error getting payment resource to patch:")
+	})
+
+	cfg.DomainWhitelist = "http://dummy-resource"
 
 	Convey("Error Patching Payment Resource", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceDataDB{Amount: "10.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
+		req := httptest.NewRequest("Get", "/test", nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		costArray := []models.CostResourceRest{defaultCost}
+		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
 		resource := models.PaymentResourceRest{}
-		responseType, err := mockPaymentService.PatchPaymentSession("1234", resource)
+		responseType, err := mockPaymentService.PatchPaymentSession(req, "1234", resource)
 		So(responseType, ShouldEqual, Error)
 		So(err.Error(), ShouldEqual, "error patching payment session on database: [error]")
 	})
@@ -263,13 +292,20 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", Data: models.PaymentResourceDataDB{Amount: "10.00", Status: Pending.String(), Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
+		req := httptest.NewRequest("Get", "/test", nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		costArray := []models.CostResourceRest{defaultCost}
+		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
 		resource := models.PaymentResourceRest{
 			PaymentMethod: "GovPay",
-			Status:        "status",
 		}
 
-		responseType, err := mockPaymentService.PatchPaymentSession("1234", resource)
+		responseType, err := mockPaymentService.PatchPaymentSession(req, "1234", resource)
 		So(responseType, ShouldEqual, Success)
 		So(err, ShouldBeNil)
 

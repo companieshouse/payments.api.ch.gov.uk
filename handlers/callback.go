@@ -2,8 +2,9 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/gorilla/mux"
 	"net/http"
+
+	"github.com/gorilla/mux"
 
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
@@ -60,7 +61,7 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 
 	// Set the status of the payment
 	paymentSession.Status = statusResponse.Status
-	responseType, err = paymentService.PatchPaymentSession(id, *paymentSession)
+	responseType, err = paymentService.PatchPaymentSession(req, id, *paymentSession)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error setting payment status: [%v]", err))
 		switch responseType {
