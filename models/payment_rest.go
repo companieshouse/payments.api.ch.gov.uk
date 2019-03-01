@@ -56,7 +56,7 @@ type CostsRest struct {
 	Description      string             `json:"description"`
 	Etag             string             `json:"etag"`
 	Costs            []CostResourceRest `json:"items"`
-	Kind             string             `json:kind"`
+	Kind             string             `json:"kind"`
 	Links            PaymentLinksRest   `json:"links"`
 	PaidAt           time.Time          `json:"paid_at"`
 	PaymentReference string             `json:"payment_reference"`
