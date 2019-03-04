@@ -45,7 +45,7 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 	gp := &service.GovPayService{
 		PaymentService: *paymentService,
 	}
-	responseType, statusResponse, err := gp.CheckProvider(paymentSession)
+	statusResponse, responseType, err := gp.CheckProvider(paymentSession)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error getting payment status from govpay: [%v]", err))
 		switch responseType {
