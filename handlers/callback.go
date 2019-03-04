@@ -35,7 +35,14 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Check if the payment session is expired
-	if service.IsExpired(*paymentSession) {
+	isExpired, err := service.IsExpired(*paymentSession, &paymentService.Config)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error checking payment session expiry status: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if isExpired {
 		// Set the status of the payment
 		paymentSession.Status = service.Expired.String()
 		responseType, err := paymentService.PatchPaymentSession(id, *paymentSession)

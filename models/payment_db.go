@@ -18,7 +18,6 @@ type PaymentResourceDataDB struct {
 	CompletedAt             time.Time      `bson:"completed_at,omitempty"`
 	CreatedAt               time.Time      `bson:"created_at,omitempty"`
 	CreatedBy               CreatedByDB    `bson:"created_by"`
-	ExpiresAt               time.Time      `bson:"expires_at"`
 	Description             string         `bson:"description"`
 	Links                   PaymentLinksDB `bson:"links"`
 	PaymentMethod           string         `bson:"payment_method"`

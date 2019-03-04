@@ -589,6 +589,26 @@ func TestUnitValidateCosts(t *testing.T) {
 	})
 }
 
+func TestUnitIsExpired(t *testing.T) {
+	cfg, _ := config.Get()
+	cfg.ExpiryTimeInMinutes = "90"
+	defer resetConfig()
+
+	Convey("Expired Session", t, func() {
+		paymentResourceRest := models.PaymentResourceRest{CreatedAt: time.Now().Add(time.Hour * -2)}
+		expired, err := IsExpired(paymentResourceRest, cfg)
+		So(expired, ShouldEqual, true)
+		So(err, ShouldEqual, nil)
+	})
+
+	Convey("Unexpired Session", t, func() {
+		paymentResourceRest := models.PaymentResourceRest{CreatedAt: time.Now()}
+		expired, err := IsExpired(paymentResourceRest, cfg)
+		So(expired, ShouldEqual, false)
+		So(err, ShouldEqual, nil)
+	})
+}
+
 func resetConfig() {
 	cfg, _ := config.Get()
 	cfg.DomainWhitelist = ""

@@ -93,13 +93,20 @@ func HandleGetPaymentSession(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Check if the payment session is expired
-	if service.IsExpired(*paymentSession) {
+	isExpired, err := service.IsExpired(*paymentSession, &paymentService.Config)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error checking payment session expiry status: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if isExpired && paymentSession.Status != service.Paid.String() {
 		paymentSession.Status = service.Expired.String()
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 
-	err := json.NewEncoder(w).Encode(paymentSession)
+	err = json.NewEncoder(w).Encode(paymentSession)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -113,7 +120,6 @@ func HandleGetPaymentSession(w http.ResponseWriter, req *http.Request) {
 func HandlePatchPaymentSession(w http.ResponseWriter, req *http.Request) {
 	// get payment resource from context, put there by PaymentAuthenticationInterceptor
 	paymentSession, ok := req.Context().Value(helpers.ContextKeyPaymentSession).(*models.PaymentResourceRest)
-
 	if !ok {
 		log.ErrorR(req, fmt.Errorf("invalid PaymentResourceRest in request context"))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -121,7 +127,14 @@ func HandlePatchPaymentSession(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Check if the payment session is expired
-	if service.IsExpired(*paymentSession) {
+	isExpired, err := service.IsExpired(*paymentSession, &paymentService.Config)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error checking payment session expiry status: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if isExpired {
 		log.ErrorR(req, fmt.Errorf("payment session has expired"))
 		w.WriteHeader(http.StatusForbidden)
 		return
@@ -135,7 +148,7 @@ func HandlePatchPaymentSession(w http.ResponseWriter, req *http.Request) {
 
 	requestDecoder := json.NewDecoder(req.Body)
 	var PaymentResourceUpdateData models.PaymentResourceRest
-	err := requestDecoder.Decode(&PaymentResourceUpdateData)
+	err = requestDecoder.Decode(&PaymentResourceUpdateData)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("request body invalid: [%v]", err))
 		w.WriteHeader(http.StatusBadRequest)

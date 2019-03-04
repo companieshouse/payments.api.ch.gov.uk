@@ -30,8 +30,9 @@ type Config struct {
 // with default values.
 func DefaultConfig() *Config {
 	return &Config{
-		Database:   "payments",
-		Collection: "payments",
+		Database:            "payments",
+		Collection:          "payments",
+		ExpiryTimeInMinutes: "90",
 	}
 }
 
