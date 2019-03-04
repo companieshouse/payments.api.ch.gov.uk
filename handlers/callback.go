@@ -47,7 +47,7 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 	}
 	statusResponse, responseType, err := gp.CheckProvider(paymentSession)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error getting payment status from govpay: [%v]", err))
+		log.ErrorR(req, fmt.Errorf("error getting payment status from govpay: [%v]", err), log.Data{"service_response_type": responseType.String()})
 		switch responseType {
 		case service.Error:
 			w.WriteHeader(http.StatusInternalServerError)
@@ -62,7 +62,7 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 	paymentSession.Status = statusResponse.Status
 	responseType, err = paymentService.PatchPaymentSession(req, id, *paymentSession)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error setting payment status: [%v]", err))
+		log.ErrorR(req, fmt.Errorf("error setting payment status: [%v]", err), log.Data{"service_response_type": responseType.String()})
 		switch responseType {
 		case service.Error:
 			w.WriteHeader(http.StatusInternalServerError)
