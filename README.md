@@ -18,17 +18,18 @@ In order to run this API locally you will need to install the following:
 
 ## Configuration
 
-Variable               | Default   | Description
-:----------------------|:----------|:------------
-`BIND_ADDR`            |           | Payments API Port
-`MONGODB_URL`          |           | MongoDB URL
-`MONGODB_DATABASE`     | `payments`| MongoDB database name
-`MONGODB_COLLECTION`   | `payments`| MongoDB collection name
-`DOMAIN_WHITELIST`     |           | List of valid domains for the Resource URL
-`PAYMENTS_WEB_URL`     |           | URL for the [Payments Web](https://github.com/companieshouse/payments.web.ch.gov.uk) service
-`PAYMENTS_API_URL`     |           | URL for the Payments API
-`GOV_PAY_URL`          |           | URL for [GOV.UK Pay](https://www.payments.service.gov.uk)
-`GOV_PAY_BEARER_TOKEN` |           | Bearer Token for [GOV.UK Pay](https://www.payments.service.gov.uk)
+Variable                | Default   | Description
+:-----------------------|:----------|:------------
+`BIND_ADDR`             |           | Payments API Port
+`MONGODB_URL`           |           | MongoDB URL
+`MONGODB_DATABASE`      | `payments`| MongoDB database name
+`MONGODB_COLLECTION`    | `payments`| MongoDB collection name
+`DOMAIN_WHITELIST`      |           | List of valid domains for the Resource URL
+`PAYMENTS_WEB_URL`      |           | URL for the [Payments Web](https://github.com/companieshouse/payments.web.ch.gov.uk) service
+`PAYMENTS_API_URL`      |           | URL for the Payments API
+`GOV_PAY_URL`           |           | URL for [GOV.UK Pay](https://www.payments.service.gov.uk)
+`GOV_PAY_BEARER_TOKEN`  |           | Bearer Token for [GOV.UK Pay](https://www.payments.service.gov.uk)
+`EXPIRY_TIME_IN_MINUTES`|           | Number of minutes before a payment session expires
 
 ## Endpoints
 
