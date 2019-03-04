@@ -78,7 +78,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		}
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req, resource)
 		So(paymentResourceRest, ShouldBeNil)
-		So(status, ShouldEqual, InvalidData)
+		So(status, ShouldEqual, Error)
 		So(err.Error(), ShouldEqual, "invalid AuthUserDetails in request context")
 	})
 
