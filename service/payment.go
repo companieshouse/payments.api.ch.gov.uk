@@ -75,7 +75,7 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 	if !ok {
 		err = fmt.Errorf("invalid AuthUserDetails in request context")
 		log.ErrorR(req, err)
-		return nil, InvalidData, err
+		return nil, Error, err
 	}
 
 	costs, costsResponseType, err := getCosts(createResource.Resource)
