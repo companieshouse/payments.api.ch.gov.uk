@@ -10,7 +10,6 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/gorilla/mux"
-	"gopkg.in/go-playground/validator.v9"
 )
 
 // HandleCreatePaymentSession creates a payment session and returns a journey URL for the calling app to redirect to
@@ -26,13 +25,6 @@ func HandleCreatePaymentSession(w http.ResponseWriter, req *http.Request) {
 	err := requestDecoder.Decode(&incomingPaymentResourceRequest)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("request body invalid: [%v]", err))
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	// Ideally all validation would be done in the service layer but due to different response status code here this is handled outside of service for now
-	if err = validatePaymentCreate(incomingPaymentResourceRequest); err != nil {
-		log.ErrorR(req, fmt.Errorf("invalid POST request to create payment session: [%v]", err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -67,17 +59,6 @@ func HandleCreatePaymentSession(w http.ResponseWriter, req *http.Request) {
 	}
 
 	log.InfoR(req, "Successful POST request for new payment resource", log.Data{"payment_id": paymentResource.MetaData.ID, "status": http.StatusCreated})
-}
-
-func validatePaymentCreate(incomingPaymentResourceRequest models.IncomingPaymentResourceRequest) error {
-	validate := validator.New()
-	err := validate.Struct(incomingPaymentResourceRequest)
-	if err != nil {
-		return err
-	}
-
-	// TODO ??? Feels like this func should be the place where we validate that the resource to be paid for lives on a whitelisted domain
-	return nil
 }
 
 // HandleGetPaymentSession retrieves the payment session from request context
