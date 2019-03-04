@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/gorilla/mux"
 	"net/http"
 
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
+	"github.com/gorilla/mux"
 )
 
 // HandleGovPayCallback handles the callback from Govpay and redirects the user
@@ -45,7 +45,7 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 	if isExpired {
 		// Set the status of the payment
 		paymentSession.Status = service.Expired.String()
-		responseType, err := paymentService.PatchPaymentSession(id, *paymentSession)
+		responseType, err := paymentService.PatchPaymentSession(req, id, *paymentSession)
 		if err != nil {
 			log.ErrorR(req, fmt.Errorf("error setting payment status of expired payment session: [%v]", err))
 			switch responseType {
@@ -88,7 +88,7 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 
 	// Set the status of the payment
 	paymentSession.Status = statusResponse.Status
-	responseType, err = paymentService.PatchPaymentSession(id, *paymentSession)
+	responseType, err = paymentService.PatchPaymentSession(req, id, *paymentSession)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error setting payment status: [%v]", err))
 		switch responseType {
