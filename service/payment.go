@@ -198,7 +198,6 @@ func (service *PaymentService) GetPaymentSession(req *http.Request, id string) (
 	}
 
 	if totalAmount != paymentResource.Data.Amount {
-		// TODO Expire payment session
 		err = fmt.Errorf("amount in payment resource [%s] different from db [%s] for id [%s]", totalAmount, paymentResource.Data.Amount, paymentResource.ID)
 		log.ErrorR(req, err)
 		return nil, Forbidden, err
