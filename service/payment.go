@@ -1,7 +1,7 @@
 package service
 
 import (
-	"crypto/sha1"
+	"crypto/sha512"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -297,8 +297,8 @@ func generateEtag() string {
 	randomNumber := fmt.Sprintf("%07d", rand.Intn(9999999))
 	timeInMillis := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
 	timeInSeconds := strconv.FormatInt(time.Now().UnixNano()/int64(time.Second), 10)
-	// Calculate a SHA-1 digest
-	shaDigest := sha1.New()
+	// Calculate a SHA-512 truncated digest
+	shaDigest := sha512.New512_224()
 	shaDigest.Write([]byte(randomNumber + timeInMillis + timeInSeconds))
 	sha1_hash := hex.EncodeToString(shaDigest.Sum(nil))
 	return sha1_hash
