@@ -1,7 +1,7 @@
 package service
 
 import (
-	"crypto/sha1"
+	"crypto/sha512"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -45,6 +45,7 @@ const (
 	Paid
 	NoFunds
 	Failed
+	Expired
 )
 
 // String representation of payment statuses
@@ -54,6 +55,7 @@ var paymentStatuses = [...]string{
 	"paid",
 	"no-funds ",
 	"failed",
+	"expired",
 }
 
 func (paymentStatus PaymentStatus) String() string {
@@ -63,15 +65,22 @@ func (paymentStatus PaymentStatus) String() string {
 // CreatePaymentSession creates a payment session and returns a journey URL for the calling app to redirect to
 func (service *PaymentService) CreatePaymentSession(req *http.Request, createResource models.IncomingPaymentResourceRequest) (*models.PaymentResourceRest, ResponseType, error) {
 
-	// Get user details from context, put there by UserAuthenticationInterceptor
-	userDetails, ok := req.Context().Value(helpers.ContextKeyUserDetails).(models.AuthUserDetails)
-	if !ok {
-		err := fmt.Errorf("invalid AuthUserDetails in request context")
+	err := validateIncomingPayment(createResource, &service.Config)
+	if err != nil {
+		err = fmt.Errorf("invalid incoming payment: [%v]", err)
 		log.ErrorR(req, err)
 		return nil, InvalidData, err
 	}
 
-	costs, costsResponseType, err := getCosts(createResource.Resource, &service.Config)
+	// Get user details from context, put there by UserAuthenticationInterceptor
+	userDetails, ok := req.Context().Value(helpers.ContextKeyUserDetails).(models.AuthUserDetails)
+	if !ok {
+		err = fmt.Errorf("invalid AuthUserDetails in request context")
+		log.ErrorR(req, err)
+		return nil, Error, err
+	}
+
+	costs, costsResponseType, err := getCosts(createResource.Resource)
 	if err != nil {
 		err = fmt.Errorf("error getting payment resource: [%v]", err)
 		log.ErrorR(req, err)
@@ -141,11 +150,21 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 }
 
 // PatchPaymentSession updates an existing payment session with the data provided from the Rest model
-func (service *PaymentService) PatchPaymentSession(id string, paymentResourceUpdateRest models.PaymentResourceRest) (ResponseType, error) {
+func (service *PaymentService) PatchPaymentSession(req *http.Request, id string, paymentResourceUpdateRest models.PaymentResourceRest) (ResponseType, error) {
 	PaymentResourceUpdate := transformers.PaymentTransformer{}.TransformToDB(paymentResourceUpdateRest)
 	PaymentResourceUpdate.Data.Etag = generateEtag()
-	PaymentResourceUpdate.Data.Status = InProgress.String()
-	err := service.DAO.PatchPaymentResource(id, &PaymentResourceUpdate)
+
+	paymentSession, response, err := service.GetPaymentSession(req, id)
+	if err != nil {
+		err = fmt.Errorf("error getting payment resource to patch: [%v]", err)
+		log.ErrorR(req, err)
+		return response, err
+	}
+	if paymentSession.Status == Pending.String() {
+		PaymentResourceUpdate.Data.Status = InProgress.String()
+	}
+
+	err = service.DAO.PatchPaymentResource(id, &PaymentResourceUpdate)
 	if err != nil {
 		err = fmt.Errorf("error patching payment session on database: [%v]", err)
 		log.Error(err)
@@ -181,7 +200,7 @@ func (service *PaymentService) GetPaymentSession(req *http.Request, id string) (
 		return nil, NotFound, nil
 	}
 
-	costs, costsResponseType, err := getCosts(paymentResource.Data.Links.Resource, &service.Config)
+	costs, costsResponseType, err := getCosts(paymentResource.Data.Links.Resource)
 	if err != nil {
 		err = fmt.Errorf("error getting payment resource: [%v]", err)
 		log.ErrorR(req, err)
@@ -196,7 +215,6 @@ func (service *PaymentService) GetPaymentSession(req *http.Request, id string) (
 	}
 
 	if totalAmount != paymentResource.Data.Amount {
-		// TODO Expire payment session
 		err = fmt.Errorf("amount in payment resource [%s] different from db [%s] for id [%s]", totalAmount, paymentResource.Data.Amount, paymentResource.ID)
 		log.ErrorR(req, err)
 		return nil, Forbidden, err
@@ -223,11 +241,7 @@ func getTotalAmount(costs *[]models.CostResourceRest) (string, error) {
 	return totalAmount.StringFixed(2), nil
 }
 
-func getCosts(resource string, cfg *config.Config) (*[]models.CostResourceRest, ResponseType, error) {
-	err := validateResource(resource, cfg)
-	if err != nil {
-		return nil, InvalidData, err
-	}
+func getCosts(resource string) (*[]models.CostResourceRest, ResponseType, error) {
 
 	resourceReq, err := http.NewRequest("GET", resource, nil)
 	if err != nil {
@@ -281,15 +295,21 @@ func generateEtag() string {
 	randomNumber := fmt.Sprintf("%07d", rand.Intn(9999999))
 	timeInMillis := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
 	timeInSeconds := strconv.FormatInt(time.Now().UnixNano()/int64(time.Second), 10)
-	// Calculate a SHA-1 digest
-	shaDigest := sha1.New()
+	// Calculate a SHA-512 truncated digest
+	shaDigest := sha512.New512_224()
 	shaDigest.Write([]byte(randomNumber + timeInMillis + timeInSeconds))
 	sha1_hash := hex.EncodeToString(shaDigest.Sum(nil))
 	return sha1_hash
 }
 
-func validateResource(resource string, cfg *config.Config) error {
-	parsedURL, err := url.Parse(resource)
+func validateIncomingPayment(incomingPaymentResourceRequest models.IncomingPaymentResourceRequest, cfg *config.Config) error {
+	validate := validator.New()
+	err := validate.Struct(incomingPaymentResourceRequest)
+	if err != nil {
+		return err
+	}
+
+	parsedURL, err := url.Parse(incomingPaymentResourceRequest.Resource)
 	if err != nil {
 		return err
 	}
@@ -318,4 +338,12 @@ func validateCosts(costs *[]models.CostResourceRest) error {
 		}
 	}
 	return nil
+}
+
+func IsExpired(paymentSession models.PaymentResourceRest, cfg *config.Config) (bool, error) {
+	expiryTimeInMinutes, err := strconv.Atoi(cfg.ExpiryTimeInMinutes)
+	if err != nil {
+		return false, err
+	}
+	return paymentSession.CreatedAt.Add(time.Minute * time.Duration(expiryTimeInMinutes)).Before(time.Now()), nil
 }

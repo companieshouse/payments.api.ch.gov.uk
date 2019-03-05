@@ -21,7 +21,7 @@ func HandleCreateExternalPaymentJourney(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	responseType, externalPaymentJourney, err := paymentService.CreateExternalPaymentJourney(req, paymentSession)
+	externalPaymentJourney, responseType, err := paymentService.CreateExternalPaymentJourney(req, paymentSession)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error creating external payment journey: [%v]", err))
 		switch responseType {
