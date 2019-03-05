@@ -62,7 +62,7 @@ func (gp *GovPayService) GenerateNextURLGovPay(req *http.Request, paymentResourc
 	}
 
 	request.Header.Add("accept", "application/json")
-	request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerToken)
+	request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenTreasury) //TODO: Determine which token to use
 	request.Header.Add("content-type", "application/json")
 
 	resp, err := http.DefaultClient.Do(request)
@@ -101,7 +101,7 @@ func (gp *GovPayService) getGovPayPaymentState(paymentResource *models.PaymentRe
 	}
 
 	request.Header.Add("accept", "application/json")
-	request.Header.Add("authorization", "Bearer "+cfg.GovPayBearerToken)
+	request.Header.Add("authorization", "Bearer "+cfg.GovPayBearerTokenTreasury) //TODO: Determine which token to use
 	request.Header.Add("content-type", "application/json")
 
 	// Make call to GovPay to check state of payment
