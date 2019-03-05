@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
@@ -25,8 +26,9 @@ var defaultCost = models.CostResourceRest{
 	Links:                   models.CostLinksRest{Self: "self"},
 }
 
-var defaultCostArray = []models.CostResourceRest{
-	defaultCost,
+var defaultCosts = models.CostsRest{
+	Description: "costs_desc",
+	Costs:       []models.CostResourceRest{defaultCost},
 }
 
 func createMockPaymentService(mockDAO *dao.MockDAO, cfg *config.Config) *service.PaymentService {
@@ -82,13 +84,14 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 				Links: models.PaymentLinksDB{
 					Resource: "http://dummy-url",
 				},
+				CreatedAt: time.Now(),
 			},
 		}
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCostArray)
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
 		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
 
 		req := httptest.NewRequest("GET", "/test", nil)
@@ -108,13 +111,14 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 				Links: models.PaymentLinksDB{
 					Resource: "http://dummy-url",
 				},
+				CreatedAt: time.Now(),
 			},
 		}
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCostArray)
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
 		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
 
 		req := httptest.NewRequest("GET", "/test", nil)
@@ -134,6 +138,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 				Links: models.PaymentLinksDB{
 					Resource: "http://dummy-url",
 				},
+				CreatedAt: time.Now(),
 			},
 		}
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
@@ -141,7 +146,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCostArray)
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
 		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
 
 		govPayResponse := models.IncomingGovPayResponse{}
@@ -165,6 +170,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 				Links: models.PaymentLinksDB{
 					Resource: "http://dummy-url",
 				},
+				CreatedAt: time.Now(),
 			},
 		}
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
@@ -172,7 +178,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jSONResponse, _ := httpmock.NewJsonResponder(200, defaultCostArray)
+		jSONResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
 		httpmock.RegisterResponder("GET", "http://dummy-url", jSONResponse)
 
 		govPayResponse := models.IncomingGovPayResponse{}
