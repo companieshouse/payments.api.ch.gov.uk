@@ -85,7 +85,6 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 	})
 
 	Convey("Error getting cost resource", t, func() {
-		fmt.Println("ENM start")
 		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
 		req := httptest.NewRequest("Get", "/test", nil)
 
