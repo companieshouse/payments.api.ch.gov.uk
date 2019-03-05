@@ -45,6 +45,7 @@ const (
 	Paid
 	NoFunds
 	Failed
+	Expired
 )
 
 // String representation of payment statuses
@@ -54,6 +55,7 @@ var paymentStatuses = [...]string{
 	"paid",
 	"no-funds ",
 	"failed",
+	"expired",
 }
 
 func (paymentStatus PaymentStatus) String() string {
@@ -213,7 +215,6 @@ func (service *PaymentService) GetPaymentSession(req *http.Request, id string) (
 	}
 
 	if totalAmount != paymentResource.Data.Amount {
-		// TODO Expire payment session
 		err = fmt.Errorf("amount in payment resource [%s] different from db [%s] for id [%s]", totalAmount, paymentResource.Data.Amount, paymentResource.ID)
 		log.ErrorR(req, err)
 		return nil, Forbidden, err
@@ -340,4 +341,12 @@ func validateCosts(costs *[]models.CostResourceRest) error {
 		}
 	}
 	return nil
+}
+
+func IsExpired(paymentSession models.PaymentResourceRest, cfg *config.Config) (bool, error) {
+	expiryTimeInMinutes, err := strconv.Atoi(cfg.ExpiryTimeInMinutes)
+	if err != nil {
+		return false, err
+	}
+	return paymentSession.CreatedAt.Add(time.Minute * time.Duration(expiryTimeInMinutes)).Before(time.Now()), nil
 }
