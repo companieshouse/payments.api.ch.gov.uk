@@ -51,6 +51,18 @@ type PaymentLinksRest struct {
 	Self     string `json:"self" validate:"required"`
 }
 
+// Costs contains details of all the Cost Resources
+type CostsRest struct {
+	Description      string             `json:"description"`
+	Etag             string             `json:"etag"`
+	Costs            []CostResourceRest `json:"items"`
+	Kind             string             `json:"kind"`
+	Links            PaymentLinksRest   `json:"links"`
+	PaidAt           time.Time          `json:"paid_at"`
+	PaymentReference string             `json:"payment_reference"`
+	Status           string             `json:"status"`
+}
+
 // CostResourceRest contains the details of an individual Cost Resource
 type CostResourceRest struct {
 	Amount                  string            `json:"amount"                    validate:"required"`
