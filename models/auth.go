@@ -5,5 +5,5 @@ type AuthUserDetails struct {
 	Email    string
 	Forename string
 	Surname  string
-	Id       string
+	ID       string
 }

@@ -34,14 +34,14 @@ var defaultCosts = models.CostsRest{
 var defaultUserDetails = models.AuthUserDetails{
 	Email:    "email@companieshouse.gov.uk",
 	Forename: "forename",
-	Id:       "id",
+	ID:       "id",
 	Surname:  "surname",
 }
 
-func createMockPaymentService(dao *dao.MockDAO, config *config.Config) PaymentService {
+func createMockPaymentService(mockDAO *dao.MockDAO, cfg *config.Config) PaymentService {
 	return PaymentService{
-		DAO:    dao,
-		Config: *config,
+		DAO:    mockDAO,
+		Config: *cfg,
 	}
 }
 
@@ -94,7 +94,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		httpmock.RegisterResponder("GET", "http://dummy-resource", nil)
 
 		authUserDetails := models.AuthUserDetails{
-			Id: "identity",
+			ID: "identity",
 		}
 
 		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
@@ -127,7 +127,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
 
 		authUserDetails := models.AuthUserDetails{
-			Id: "identity",
+			ID: "identity",
 		}
 		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 
@@ -155,7 +155,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
 
 		authUserDetails := models.AuthUserDetails{
-			Id: "identity",
+			ID: "identity",
 		}
 		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 

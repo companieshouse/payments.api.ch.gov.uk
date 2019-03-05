@@ -20,7 +20,7 @@ type Config struct {
 	MongoDBURL                 string `env:"MONGODB_URL"                     flag:"mongodb-url"                       flagDesc:"MongoDB server URL"`
 	DomainWhitelist            string `env:"DOMAIN_WHITELIST"                flag:"domain-whitelist"                  flagDesc:"List of Valid Domains"`
 	PaymentsWebURL             string `env:"PAYMENTS_WEB_URL"                flag:"payments-web-url"                  flagDesc:"Base URL for the Payment Service Web"`
-	PaymentsApiURL             string `env:"PAYMENTS_API_URL"                flag:"payments-api-url"                  flagDesc:"Base URL for the Payment Service API"`
+	PaymentsAPIURL             string `env:"PAYMENTS_API_URL"                flag:"payments-api-url"                  flagDesc:"Base URL for the Payment Service API"`
 	GovPayURL                  string `env:"GOV_PAY_URL"                     flag:"gov-pay-url"                       flagDesc:"URL used to make calls to GovPay"`
 	GovPayBearerTokenTreasury  string `env:"GOV_PAY_BEARER_TOKEN_TREASURY"   flag:"gov-pay-bearer-token-treasury"     flagDesc:"Bearer Token used to authenticate API calls with GovPay for treasury payments"`
 	GovPayBearerTokenChAccount string `env:"GOV_PAY_BEARER_TOKEN_CH_ACCOUNT" flag:"gov-pay-bearer-token-ch-account"   flagDesc:"Bearer Token used to authenticate API calls with GovPay for Companies House Payments"`

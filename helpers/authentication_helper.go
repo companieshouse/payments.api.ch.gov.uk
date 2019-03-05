@@ -40,7 +40,7 @@ func GetAuthorisedRoles(r *http.Request) string {
 
 func getAuthorisedRolesArray(r *http.Request) []string {
 	roles := r.Header.Get(ericAuthorisedRoles)
-	if len(roles) == 0 {
+	if roles == "" {
 		return nil
 	}
 
@@ -49,12 +49,12 @@ func getAuthorisedRolesArray(r *http.Request) []string {
 
 // IsRoleAuthorised checks whether a Role is Authorised
 func IsRoleAuthorised(r *http.Request, role string) bool {
-	if len(role) == 0 {
+	if role == "" {
 		return false
 	}
 
 	roles := getAuthorisedRolesArray(r)
-	if roles == nil || len(roles) == 0 {
+	if roles == nil {
 		return false
 	}
 

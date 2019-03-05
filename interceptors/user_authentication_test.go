@@ -2,10 +2,11 @@ package interceptors
 
 import (
 	"fmt"
-	"github.com/gorilla/mux"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/gorilla/mux"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -14,7 +15,6 @@ import (
 func GetTestHandler() http.HandlerFunc {
 	fn := func(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		return
 	}
 	return http.HandlerFunc(fn)
 }

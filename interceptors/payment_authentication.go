@@ -38,7 +38,7 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 		}
 
 		// Get user details from request
-		authorisedUser := userDetails.Id
+		authorisedUser := userDetails.ID
 		if authorisedUser == "" {
 			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor unauthorised: no authorised identity"))
 			w.WriteHeader(http.StatusUnauthorized)
@@ -91,18 +91,19 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 
 		// Now that we have the payment data and authorized user there are
 		// multiple cases that can be allowed through:
-		if authUserIsPaymentCreator {
+		switch {
+		case authUserIsPaymentCreator:
 			// 1) Authorized user created the payment
 			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as creator", debugMap)
 			// Call the next handler
 			next.ServeHTTP(w, r.WithContext(ctx))
-		} else if authUserHasPaymentLookupRole && isGetRequest {
+		case authUserHasPaymentLookupRole && isGetRequest:
 			// 2) Authorized user has permission to lookup any payment session and
 			// request is a GET i.e. to see payment data but not modify/delete
 			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as payment lookup role on GET", debugMap)
 			// Call the next handler
 			next.ServeHTTP(w, r.WithContext(ctx))
-		} else {
+		default:
 			// If none of the above conditions above are met then the request is
 			// unauthorized
 			w.WriteHeader(http.StatusUnauthorized)
