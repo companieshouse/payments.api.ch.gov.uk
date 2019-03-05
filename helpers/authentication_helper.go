@@ -6,7 +6,10 @@ import (
 )
 
 const (
-	Oauth2IdentityType     = "oauth2"
+	// Oauth2IdentityType defines the identity type for OAuth2.
+	Oauth2IdentityType = "oauth2"
+
+	// AdminPaymentLookupRole defines the path to check whether a user is authorised to look up a payment.
 	AdminPaymentLookupRole = "/admin/payment-lookup"
 
 	ericIdentity        = "ERIC-Identity"
@@ -15,18 +18,22 @@ const (
 	ericAuthorisedRoles = "ERIC-Authorised-Roles"
 )
 
+// GetAuthorisedIdentity gets the Identity from the Header.
 func GetAuthorisedIdentity(r *http.Request) string {
 	return r.Header.Get(ericIdentity)
 }
 
+// GetAuthorisedIdentityType gets the Identity Type from the Header.
 func GetAuthorisedIdentityType(r *http.Request) string {
 	return r.Header.Get(ericIdentityType)
 }
 
+// GetAuthorisedUser gets the User from the Header.
 func GetAuthorisedUser(r *http.Request) string {
 	return r.Header.Get(ericAuthorisedUser)
 }
 
+// GetAuthorisedRoles gets the Roles from the Header.
 func GetAuthorisedRoles(r *http.Request) string {
 	return r.Header.Get(ericAuthorisedRoles)
 }
@@ -40,6 +47,7 @@ func getAuthorisedRolesArray(r *http.Request) []string {
 	return strings.Split(roles, " ")
 }
 
+// IsRoleAuthorised checks whether a Role is Authorised
 func IsRoleAuthorised(r *http.Request, role string) bool {
 	if len(role) == 0 {
 		return false
