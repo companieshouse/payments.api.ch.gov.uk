@@ -23,7 +23,7 @@ var defaultCost = models.CostResourceRest{
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
-	Links:                   models.CostLinksRest{Self: "self"},
+	Links: models.CostLinksRest{Self: "self"},
 }
 
 var defaultCostArray = []models.CostResourceRest{
@@ -56,6 +56,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
 	cfg.DomainWhitelist = "http://dummy-url"
+	cfg.ExpiryTimeInMinutes = "90"
 
 	Convey("Empty Request Body", t, func() {
 		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
@@ -214,9 +215,9 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(paymentResourceRest.Status, ShouldEqual, "pending")
 		So(paymentResourceRest.Costs, ShouldResemble, defaultCostArray)
 		So(paymentResourceRest.MetaData, ShouldResemble, models.PaymentResourceMetaDataRest{
-			ID:                       "",
-			RedirectURI:              "",
-			State:                    "",
+			ID:          "",
+			RedirectURI: "",
+			State:       "",
 			ExternalPaymentStatusURI: "",
 		})
 
@@ -270,9 +271,9 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(paymentResourceRest.Status, ShouldEqual, "pending")
 		So(paymentResourceRest.Costs, ShouldResemble, []models.CostResourceRest{defaultCost, defaultCost})
 		So(paymentResourceRest.MetaData, ShouldResemble, models.PaymentResourceMetaDataRest{
-			ID:                       "",
-			RedirectURI:              "",
-			State:                    "",
+			ID:          "",
+			RedirectURI: "",
+			State:       "",
 			ExternalPaymentStatusURI: "",
 		})
 
@@ -636,7 +637,7 @@ func TestUnitValidateCosts(t *testing.T) {
 			ClassOfPayment:          []string{"class"},
 			Description:             "",
 			DescriptionIdentifier:   "identifier",
-			Links:                   models.CostLinksRest{Self: "self"},
+			Links: models.CostLinksRest{Self: "self"},
 		}}
 		So(validateCosts(&cost), ShouldNotBeNil)
 	})
@@ -647,7 +648,7 @@ func TestUnitValidateCosts(t *testing.T) {
 			ClassOfPayment:          []string{"class"},
 			Description:             "desc",
 			DescriptionIdentifier:   "identifier",
-			Links:                   models.CostLinksRest{Self: "self"},
+			Links: models.CostLinksRest{Self: "self"},
 		}}
 		So(validateCosts(&cost), ShouldBeNil)
 	})
@@ -659,7 +660,7 @@ func TestUnitValidateCosts(t *testing.T) {
 				ClassOfPayment:          []string{"class"},
 				Description:             "desc",
 				DescriptionIdentifier:   "identifier",
-				Links:                   models.CostLinksRest{Self: "self"},
+				Links: models.CostLinksRest{Self: "self"},
 			},
 			{
 				Amount:                  "20",
@@ -667,10 +668,30 @@ func TestUnitValidateCosts(t *testing.T) {
 				ClassOfPayment:          []string{"class"},
 				Description:             "",
 				DescriptionIdentifier:   "identifier",
-				Links:                   models.CostLinksRest{Self: "self"},
+				Links: models.CostLinksRest{Self: "self"},
 			},
 		}
 		So(validateCosts(&cost), ShouldNotBeNil)
+	})
+}
+
+func TestUnitIsExpired(t *testing.T) {
+	cfg, _ := config.Get()
+	cfg.ExpiryTimeInMinutes = "90"
+	defer resetConfig()
+
+	Convey("Expired Session", t, func() {
+		paymentResourceRest := models.PaymentResourceRest{CreatedAt: time.Now().Add(time.Hour * -2)}
+		expired, err := IsExpired(paymentResourceRest, cfg)
+		So(expired, ShouldEqual, true)
+		So(err, ShouldEqual, nil)
+	})
+
+	Convey("Unexpired Session", t, func() {
+		paymentResourceRest := models.PaymentResourceRest{CreatedAt: time.Now()}
+		expired, err := IsExpired(paymentResourceRest, cfg)
+		So(expired, ShouldEqual, false)
+		So(err, ShouldEqual, nil)
 	})
 }
 

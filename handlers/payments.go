@@ -9,7 +9,6 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
-	"github.com/gorilla/mux"
 )
 
 // HandleCreatePaymentSession creates a payment session and returns a journey URL for the calling app to redirect to
@@ -73,9 +72,21 @@ func HandleGetPaymentSession(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Check if the payment session is expired
+	isExpired, err := service.IsExpired(*paymentSession, &paymentService.Config)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error checking payment session expiry status: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if isExpired && paymentSession.Status != service.Paid.String() {
+		paymentSession.Status = service.Expired.String()
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 
-	err := json.NewEncoder(w).Encode(paymentSession)
+	err = json.NewEncoder(w).Encode(paymentSession)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -87,11 +98,25 @@ func HandleGetPaymentSession(w http.ResponseWriter, req *http.Request) {
 
 // HandlePatchPaymentSession patches and updates the payment session
 func HandlePatchPaymentSession(w http.ResponseWriter, req *http.Request) {
-	vars := mux.Vars(req)
-	id := vars["payment_id"]
-	if id == "" {
-		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
-		w.WriteHeader(http.StatusBadRequest)
+	// get payment resource from context, put there by PaymentAuthenticationInterceptor
+	paymentSession, ok := req.Context().Value(helpers.ContextKeyPaymentSession).(*models.PaymentResourceRest)
+	if !ok {
+		log.ErrorR(req, fmt.Errorf("invalid PaymentResourceRest in request context"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Check if the payment session is expired
+	isExpired, err := service.IsExpired(*paymentSession, &paymentService.Config)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error checking payment session expiry status: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if isExpired {
+		log.ErrorR(req, fmt.Errorf("payment session has expired"))
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
@@ -103,7 +128,7 @@ func HandlePatchPaymentSession(w http.ResponseWriter, req *http.Request) {
 
 	requestDecoder := json.NewDecoder(req.Body)
 	var PaymentResourceUpdateData models.PaymentResourceRest
-	err := requestDecoder.Decode(&PaymentResourceUpdateData)
+	err = requestDecoder.Decode(&PaymentResourceUpdateData)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("request body invalid: [%v]", err))
 		w.WriteHeader(http.StatusBadRequest)
@@ -111,18 +136,18 @@ func HandlePatchPaymentSession(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if PaymentResourceUpdateData.PaymentMethod == "" && PaymentResourceUpdateData.Status == "" {
-		log.ErrorR(req, fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", id))
+		log.ErrorR(req, fmt.Errorf("no valid fields for the patch request has been supplied for resource [%s]", paymentSession.MetaData.ID))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if PaymentResourceUpdateData.PaymentMethod == "" {
-		log.ErrorR(req, fmt.Errorf("no valid fields for the patch request have been supplied for resource [%s]", id))
+		log.ErrorR(req, fmt.Errorf("no valid fields for the patch request have been supplied for resource [%s]", paymentSession.MetaData.ID))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	responseType, err := paymentService.PatchPaymentSession(req, id, PaymentResourceUpdateData)
+	responseType, err := paymentService.PatchPaymentSession(req, paymentSession.MetaData.ID, PaymentResourceUpdateData)
 
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error patching payment resource: [%v]", err))
@@ -136,5 +161,5 @@ func HandlePatchPaymentSession(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	log.InfoR(req, "Successful PATCH request for payment resource", log.Data{"payment_id": id, "status": http.StatusOK})
+	log.InfoR(req, "Successful PATCH request for payment resource", log.Data{"payment_id": paymentSession.MetaData.ID, "status": http.StatusOK})
 }

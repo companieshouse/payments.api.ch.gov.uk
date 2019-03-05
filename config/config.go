@@ -24,14 +24,16 @@ type Config struct {
 	GovPayURL                  string `env:"GOV_PAY_URL"                     flag:"gov-pay-url"                       flagDesc:"URL used to make calls to GovPay"`
 	GovPayBearerTokenTreasury  string `env:"GOV_PAY_BEARER_TOKEN_TREASURY"   flag:"gov-pay-bearer-token-treasury"     flagDesc:"Bearer Token used to authenticate API calls with GovPay for treasury payments"`
 	GovPayBearerTokenChAccount string `env:"GOV_PAY_BEARER_TOKEN_CH_ACCOUNT" flag:"gov-pay-bearer-token-ch-account"   flagDesc:"Bearer Token used to authenticate API calls with GovPay for Companies House Payments"`
+	ExpiryTimeInMinutes        string `env:"EXPIRY_TIME_IN_MINUTES"          flag:"expiry-time-in-minsutes"           flagDesc:"The expiry time for the payment session in minutes"`
 }
 
 // DefaultConfig returns a pointer to a Config instance that has been populated
 // with default values.
 func DefaultConfig() *Config {
 	return &Config{
-		Database:   "payments",
-		Collection: "payments",
+		Database:            "payments",
+		Collection:          "payments",
+		ExpiryTimeInMinutes: "90",
 	}
 }
 
