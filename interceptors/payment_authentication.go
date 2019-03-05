@@ -48,7 +48,7 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 		// Get the payment session from the ID in request
 		paymentSession, responseType, err := paymentAuthenticationInterceptor.Service.GetPaymentSession(r, id)
 		if err != nil {
-			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor error when retrieving payment session: [%v]", err))
+			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor error when retrieving payment session: [%v]", err), log.Data{"service_response_type": responseType.String()})
 			switch responseType {
 			case service.Forbidden:
 				w.WriteHeader(http.StatusForbidden)

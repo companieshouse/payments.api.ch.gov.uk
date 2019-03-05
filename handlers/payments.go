@@ -32,7 +32,7 @@ func HandleCreatePaymentSession(w http.ResponseWriter, req *http.Request) {
 	paymentResource, responseType, err := paymentService.CreatePaymentSession(req, incomingPaymentResourceRequest)
 
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error creating payment resource: [%v]", err))
+		log.ErrorR(req, fmt.Errorf("error creating payment resource: [%v]", err), log.Data{"service_response_type": responseType.String()})
 		switch responseType {
 		case service.InvalidData:
 			w.WriteHeader(http.StatusBadRequest)
@@ -150,7 +150,7 @@ func HandlePatchPaymentSession(w http.ResponseWriter, req *http.Request) {
 	responseType, err := paymentService.PatchPaymentSession(req, paymentSession.MetaData.ID, PaymentResourceUpdateData)
 
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error patching payment resource: [%v]", err))
+		log.ErrorR(req, fmt.Errorf("error patching payment resource: [%v]", err), log.Data{"service_response_type": responseType.String()})
 		switch responseType {
 		case service.Error:
 			w.WriteHeader(http.StatusInternalServerError)
