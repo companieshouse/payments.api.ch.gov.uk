@@ -47,7 +47,7 @@ func getAuthorisedRolesArray(r *http.Request) []string {
 	return strings.Split(roles, " ")
 }
 
-// IsRoleAuthorised checks whether a Role is Authorise
+// IsRoleAuthorised checks whether a Role is Authorised
 func IsRoleAuthorised(r *http.Request, role string) bool {
 	if len(role) == 0 {
 		return false
