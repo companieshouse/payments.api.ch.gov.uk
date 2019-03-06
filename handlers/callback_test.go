@@ -23,7 +23,7 @@ var defaultCost = models.CostResourceRest{
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
-	Links:                   models.CostLinksRest{Self: "self"},
+	Links: models.CostLinksRest{Self: "self"},
 }
 
 var defaultCosts = models.CostsRest{
@@ -36,6 +36,10 @@ func createMockPaymentService(mockDAO *dao.MockDAO, cfg *config.Config) *service
 		DAO:    mockDAO,
 		Config: *cfg,
 	}
+}
+
+func mockProduceKafaMessage(path string) error {
+	return nil
 }
 
 func TestUnitHandleGovPayCallback(t *testing.T) {
@@ -160,6 +164,8 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
+
+
 	Convey("Error setting payment status", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		paymentService = createMockPaymentService(mock, cfg)
@@ -184,6 +190,8 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		govPayResponse := models.IncomingGovPayResponse{}
 		govPayJSONResponse, _ := httpmock.NewJsonResponder(200, govPayResponse)
 		httpmock.RegisterResponder("GET", cfg.GovPayURL, govPayJSONResponse)
+
+		handleKafkaMessage = mockProduceKafaMessage
 
 		req := httptest.NewRequest("GET", "/test", nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})

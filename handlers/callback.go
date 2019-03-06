@@ -10,6 +10,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+var handleKafkaMessage = produceKafkaMessage
+
 // HandleGovPayCallback handles the callback from Govpay and redirects the user
 func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 	// Get the payment session
@@ -110,7 +112,7 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 
 	log.InfoR(req, "Successfully Closed payment session", log.Data{"payment_id": id, "status": *statusResponse})
 
-	err = produceKafkaMessage(paymentSession.MetaData.ID)
+	err = handleKafkaMessage(paymentSession.MetaData.ID)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error producing kafka message: [%v]", err))
 		w.WriteHeader(http.StatusInternalServerError)
