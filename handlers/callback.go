@@ -110,6 +110,11 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 
 	log.InfoR(req, "Successfully Closed payment session", log.Data{"payment_id": id, "status": *statusResponse})
 
-	produceKafkaMessage()
+	err = produceKafkaMessage(paymentSession.MetaData.ID)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error producing kafka message: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	redirectUser(w, req, paymentSession.MetaData.RedirectURI, params)
 }

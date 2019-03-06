@@ -2,9 +2,13 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/companieshouse/chs.go/avro"
+	"github.com/companieshouse/chs.go/avro/schema"
+	"github.com/companieshouse/chs.go/kafka/producer"
+	"github.com/companieshouse/chs.go/log"
+	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"net/http"
 
-	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 )
 
@@ -28,6 +32,36 @@ func redirectUser(w http.ResponseWriter, r *http.Request, redirectURI string, pa
 	http.Redirect(w, r, generatedURL, http.StatusSeeOther)
 }
 
-func produceKafkaMessage() {
-	// TODO: Produce message to payment-processed topic
+type paymentProcessed struct {
+	PaymentSessionID string `avro:"payment_resource_url"`
+}
+
+func produceKafkaMessage(paymentID string) error {
+	cfg, err := config.Get()
+	kafkaProducer, err := producer.New(&producer.Config{Acks: &producer.WaitForAll, BrokerAddrs: cfg.BrokerAddr})
+	if err != nil {
+		log.Error(fmt.Errorf("error creating kafka producer: [%v]", err))
+		return err
+	}
+
+	paymentProcessedSchema, err := schema.Get(cfg.SchemaRegistryURL, "payment-processed")
+	producerAvro := &avro.Schema{
+		Definition: paymentProcessedSchema,
+	}
+
+	paymentProcessedMessage := paymentProcessed{PaymentSessionID: paymentID}
+	messageBytes, err := producerAvro.Marshal(paymentProcessedMessage)
+	if err != nil {
+		log.Error(fmt.Errorf("error marshalling payment processed message: [%v]", err))
+		return err
+	}
+
+	producerTopic := "payment-processed"
+	producerMessage := &producer.Message{
+		Value: messageBytes,
+		Topic: producerTopic,
+	}
+
+	kafkaProducer.Send(producerMessage)
+	return nil
 }
