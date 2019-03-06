@@ -20,7 +20,7 @@ func (service *PaymentService) CreateExternalPaymentJourney(req *http.Request, p
 	err := validateClassOfPayment(&paymentSession.Costs)
 	if err != nil {
 		log.ErrorR(req, err)
-		return InvalidData, nil, err
+		return nil, InvalidData, err
 	}
 
 	switch paymentSession.PaymentMethod {
