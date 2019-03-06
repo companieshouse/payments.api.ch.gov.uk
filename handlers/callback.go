@@ -34,6 +34,34 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Check if the payment session is expired
+	isExpired, err := service.IsExpired(*paymentSession, &paymentService.Config)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error checking payment session expiry status: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if isExpired {
+		// Set the status of the payment
+		paymentSession.Status = service.Expired.String()
+		responseType, err := paymentService.PatchPaymentSession(req, id, *paymentSession)
+		if err != nil {
+			log.ErrorR(req, fmt.Errorf("error setting payment status of expired payment session: [%v]", err))
+			switch responseType {
+			case service.Error:
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			default:
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		}
+		log.ErrorR(req, fmt.Errorf("payment session has expired"))
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
 	// Ensure payment method matches endpoint
 	if paymentSession.PaymentMethod != "GovPay" {
 		log.ErrorR(req, fmt.Errorf("payment method, [%s], for resource [%s] not recognised", paymentSession.PaymentMethod, id))
@@ -45,9 +73,9 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 	gp := &service.GovPayService{
 		PaymentService: *paymentService,
 	}
-	responseType, statusResponse, err := gp.CheckProvider(paymentSession)
+	statusResponse, responseType, err := gp.CheckProvider(paymentSession)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error getting payment status from govpay: [%v]", err))
+		log.ErrorR(req, fmt.Errorf("error getting payment status from govpay: [%v]", err), log.Data{"service_response_type": responseType.String()})
 		switch responseType {
 		case service.Error:
 			w.WriteHeader(http.StatusInternalServerError)
@@ -62,7 +90,7 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 	paymentSession.Status = statusResponse.Status
 	responseType, err = paymentService.PatchPaymentSession(req, id, *paymentSession)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error setting payment status: [%v]", err))
+		log.ErrorR(req, fmt.Errorf("error setting payment status: [%v]", err), log.Data{"service_response_type": responseType.String()})
 		switch responseType {
 		case service.Error:
 			w.WriteHeader(http.StatusInternalServerError)

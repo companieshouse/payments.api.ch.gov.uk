@@ -1,4 +1,3 @@
-// Package handlers defines the API endpoints.
 package handlers
 
 import (

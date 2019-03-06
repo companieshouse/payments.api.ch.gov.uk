@@ -4,9 +4,9 @@ import "time"
 
 // IncomingPaymentResourceRequest is the data received in the body of the incoming request
 type IncomingPaymentResourceRequest struct {
-	RedirectURI string `json:"redirect_uri" validate:"required"`
+	RedirectURI string `json:"redirect_uri" validate:"required,url"`
 	Reference   string `json:"reference"`
-	Resource    string `json:"resource"     validate:"required"`
+	Resource    string `json:"resource"     validate:"required,url"`
 	State       string `json:"state"        validate:"required"`
 }
 
@@ -49,6 +49,18 @@ type PaymentLinksRest struct {
 	Journey  string `json:"journey"`
 	Resource string `json:"resource"`
 	Self     string `json:"self" validate:"required"`
+}
+
+// Costs contains details of all the Cost Resources
+type CostsRest struct {
+	Description      string             `json:"description"`
+	Etag             string             `json:"etag"`
+	Costs            []CostResourceRest `json:"items"`
+	Kind             string             `json:"kind"`
+	Links            PaymentLinksRest   `json:"links"`
+	PaidAt           time.Time          `json:"paid_at"`
+	PaymentReference string             `json:"payment_reference"`
+	Status           string             `json:"status"`
 }
 
 // CostResourceRest contains the details of an individual Cost Resource
