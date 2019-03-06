@@ -34,9 +34,8 @@ type PaymentService struct {
 // PaymentStatus Enum Type
 type PaymentStatus int
 
-// PaymentSessionKind constant is the value stored in the payment resource kind field
+// PaymentSessionKind is the value stored in the payment resource kind field
 const PaymentSessionKind = "payment-session#payment-session"
-const PaymentSessionKey = "payment_session"
 
 // Enumeration containing all possible payment statuses
 const (
@@ -97,7 +96,7 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 	//  Create payment session REST data from writable input fields and decorating with read only fields
 	paymentResourceRest := models.PaymentResourceRest{}
 	paymentResourceRest.CreatedBy = models.CreatedByRest{
-		ID:       userDetails.Id,
+		ID:       userDetails.ID,
 		Email:    userDetails.Email,
 		Forename: userDetails.Forename,
 		Surname:  userDetails.Surname,
@@ -151,8 +150,8 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 }
 
 // PatchPaymentSession updates an existing payment session with the data provided from the Rest model
-func (service *PaymentService) PatchPaymentSession(req *http.Request, id string, PaymentResourceUpdateRest models.PaymentResourceRest) (ResponseType, error) {
-	PaymentResourceUpdate := transformers.PaymentTransformer{}.TransformToDB(PaymentResourceUpdateRest)
+func (service *PaymentService) PatchPaymentSession(req *http.Request, id string, paymentResourceUpdateRest models.PaymentResourceRest) (ResponseType, error) {
+	PaymentResourceUpdate := transformers.PaymentTransformer{}.TransformToDB(paymentResourceUpdateRest)
 	PaymentResourceUpdate.Data.Etag = generateEtag()
 
 	paymentSession, response, err := service.GetPaymentSession(req, id)
@@ -229,10 +228,7 @@ func (service *PaymentService) GetPaymentSession(req *http.Request, id string) (
 }
 
 func getTotalAmount(costs *[]models.CostResourceRest) (string, error) {
-	r, err := regexp.Compile(`^\d+(\.\d{2})?$`)
-	if err != nil {
-		return "", err
-	}
+	r := regexp.MustCompile(`^\d+(\.\d{2})?$`)
 	var totalAmount decimal.Decimal
 	for _, cost := range *costs {
 		matched := r.MatchString(cost.Amount)

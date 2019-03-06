@@ -9,6 +9,7 @@ type response_service interface {
 	checkProvider()
 }
 
+// RedirectParams contains parameters for redirecting.
 type RedirectParams struct {
 	State  string
 	Ref    string
