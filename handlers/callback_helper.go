@@ -18,6 +18,11 @@ const ProducerTopic = "payment-processed"
 // ProducerSchemaName is the schema which will be used to send the payment processed kafka message with
 const ProducerSchemaName = "payment-processed"
 
+// paymentProcessed represents the avro schema which can be found in the chs-kafka-schemas repo
+type paymentProcessed struct {
+	PaymentSessionID string `avro:"payment_resource_id"`
+}
+
 // redirectUser redirects user to the provided redirect_uri with query params
 func redirectUser(w http.ResponseWriter, r *http.Request, redirectURI string, params models.RedirectParams) {
 	// Redirect the user to the redirect_uri, passing the state, ref and status as query params
@@ -38,10 +43,8 @@ func redirectUser(w http.ResponseWriter, r *http.Request, redirectURI string, pa
 	http.Redirect(w, r, generatedURL, http.StatusSeeOther)
 }
 
-type paymentProcessed struct {
-	PaymentSessionID string `avro:"payment_resource_id"`
-}
-
+// produceKafkaMessage handles creating a producer, marshalling the payment id into the correct avro schema and sending
+// the message to the topic defined in ProducerTopic
 func produceKafkaMessage(paymentID string) error {
 	cfg, err := config.Get()
 	if err != nil {
@@ -64,9 +67,9 @@ func produceKafkaMessage(paymentID string) error {
 	message, err := prepareKafkaMessage(paymentID, *producerSchema)
 
 	// Send the message
-	_, offset, err := kafkaProducer.Send(message)
+	partition, offset, err := kafkaProducer.Send(message)
 	if err != nil {
-		log.Error(err, log.Data{"failed to send message at offset": offset})
+		log.Error(fmt.Errorf("failed to send message in partition: %d at offset %d", partition, offset))
 		return err
 	}
 	return nil

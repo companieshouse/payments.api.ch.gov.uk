@@ -324,8 +324,9 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		// Here we test that after preparing the message, the message represents the original message. We provide
 		// the schema and message (paymentID), prepare the message (which includes marshalling), then unmarshal to
 		// ensure the data being sent to the payments-processed topic has not been modified in any way
-		unmarshalledPaymentProcessed := paymentProcessed{}
+
 		message, err := prepareKafkaMessage(paymentID, *producerSchema)
+		unmarshalledPaymentProcessed := paymentProcessed{}
 		producerSchema.Unmarshal(message.Value, &unmarshalledPaymentProcessed)
 
 		So(err, ShouldEqual, nil)
