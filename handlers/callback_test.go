@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/companieshouse/chs.go/avro"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
@@ -38,6 +39,20 @@ func createMockPaymentService(mockDAO *dao.MockDAO, cfg *config.Config) *service
 	}
 }
 
+type CustomError struct {
+	message string
+}
+
+func (e CustomError) Error() string {
+	return e.message
+}
+
+// Mock function for erroring when preparing and sending kafka message
+func mockProduceKafaMessageError(path string) error {
+	return CustomError{"hello"}
+}
+
+// Mock function for successful preparing and sending of kafka message
 func mockProduceKafaMessage(path string) error {
 	return nil
 }
@@ -76,6 +91,61 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		w := httptest.NewRecorder()
 		HandleGovPayCallback(w, req)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
+	})
+
+	cfg.ExpiryTimeInMinutes = "60"
+	Convey("Payment session expired", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		paymentService = createMockPaymentService(mock, cfg)
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount:        "10.00",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				CreatedAt: time.Now().Add(time.Hour * -2),
+			},
+		}
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+
+		req := httptest.NewRequest("GET", "/test", nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
+		w := httptest.NewRecorder()
+		HandleGovPayCallback(w, req)
+		So(w.Code, ShouldEqual, http.StatusForbidden)
+	})
+
+	Convey("Payment session expired and patch failed", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		paymentService = createMockPaymentService(mock, cfg)
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount:        "10.00",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				CreatedAt: time.Now().Add(time.Hour * -2),
+			},
+		}
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(fmt.Errorf("error"))
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+
+		req := httptest.NewRequest("GET", "/test", nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
+		w := httptest.NewRecorder()
+		HandleGovPayCallback(w, req)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
 	Convey("Payment method not recognised", t, func() {
@@ -164,9 +234,41 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
+	Convey("Error sending kafka message", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		paymentService = createMockPaymentService(mock, cfg)
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount:        "10.00",
+				PaymentMethod: "GovPay",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				CreatedAt: time.Now(),
+			},
+		}
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
 
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jSONResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jSONResponse)
 
-	Convey("Error setting payment status", t, func() {
+		govPayResponse := models.IncomingGovPayResponse{}
+		govPayJSONResponse, _ := httpmock.NewJsonResponder(200, govPayResponse)
+		httpmock.RegisterResponder("GET", cfg.GovPayURL, govPayJSONResponse)
+
+		handleKafkaMessage = mockProduceKafaMessageError
+
+		req := httptest.NewRequest("GET", "/test", nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
+		w := httptest.NewRecorder()
+		HandleGovPayCallback(w, req)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Successful callback with redirect", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		paymentService = createMockPaymentService(mock, cfg)
 		paymentSession := models.PaymentResourceDB{
@@ -198,5 +300,59 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		w := httptest.NewRecorder()
 		HandleGovPayCallback(w, req)
 		So(w.Code, ShouldEqual, http.StatusSeeOther)
+	})
+
+	Convey("Successful message preparation with prepareKafkaMessage", t, func() {
+		paymentID := "12345"
+
+		// This is the schema that is used by the producer
+		schema := `{
+			"type": "record",
+			"name": "payment_processed",
+			"namespace": "payments",
+			"fields": [
+			{
+				"name": "payment_resource_id",
+				"type": "string"
+			}
+			]
+		}`
+
+		producerSchema := &avro.Schema{
+			Definition: schema,
+		}
+		// Here we test that after preparing the message, the message represents the original message. We provide
+		// the schema and message (paymentID), prepare the message (which includes marshalling), then unmarshal to
+		// ensure the data being sent to the payments-processed topic has not been modified in any way
+		unmarshalledPaymentProcessed := paymentProcessed{}
+		message, err := prepareKafkaMessage(paymentID, *producerSchema)
+		producerSchema.Unmarshal(message.Value, &unmarshalledPaymentProcessed)
+
+		So(err, ShouldEqual, nil)
+		So(unmarshalledPaymentProcessed.PaymentSessionID, ShouldEqual, "12345")
+	})
+
+	Convey("Unsuccessful message preparation with prepareKafkaMessage", t, func() {
+		paymentID := "12345"
+
+		// This is the schema that is used by the producer, the type is in the incorrect type, so should error when marshalling
+		schema := `{
+			"type": "record",
+			"name": "payment_processed",
+			"namespace": "payments",
+			"fields": [
+			{
+				"name": "payment_resource_id",
+				"type": "int"
+			}
+			]
+		}`
+
+		producerSchema := &avro.Schema{
+			Definition: schema,
+		}
+
+		_, err := prepareKafkaMessage(paymentID, *producerSchema)
+		So(err, ShouldNotBeEmpty)
 	})
 }
