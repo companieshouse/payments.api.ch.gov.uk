@@ -25,8 +25,8 @@ type Config struct {
 	GovPayBearerTokenTreasury  string   `env:"GOV_PAY_BEARER_TOKEN_TREASURY"   flag:"gov-pay-bearer-token-treasury"     flagDesc:"Bearer Token used to authenticate API calls with GovPay for treasury payments"`
 	GovPayBearerTokenChAccount string   `env:"GOV_PAY_BEARER_TOKEN_CH_ACCOUNT" flag:"gov-pay-bearer-token-ch-account"   flagDesc:"Bearer Token used to authenticate API calls with GovPay for Companies House Payments"`
 	ExpiryTimeInMinutes        string   `env:"EXPIRY_TIME_IN_MINUTES"          flag:"expiry-time-in-minsutes"           flagDesc:"The expiry time for the payment session in minutes"`
-	BrokerAddr                 []string `env:"KAFKA_BROKER_ADDR"          	   flag:"broker-addr"            			flagDesc:"Kafka broker address"`
-	SchemaRegistryURL          string   `env:"SCHEMA_REGISTRY_URL"        	   flag:"schema-registry-url"    			flagDesc:"Schema registry url"`
+	BrokerAddr                 []string `env:"KAFKA_BROKER_ADDR"               flag:"broker-addr"                       flagDesc:"Kafka broker address"`
+	SchemaRegistryURL          string   `env:"SCHEMA_REGISTRY_URL"             flag:"schema-registry-url"               flagDesc:"Schema registry url"`
 }
 
 // DefaultConfig returns a pointer to a Config instance that has been populated

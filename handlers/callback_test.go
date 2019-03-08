@@ -24,7 +24,7 @@ var defaultCost = models.CostResourceRest{
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
-	Links: models.CostLinksRest{Self: "self"},
+	Links:                   models.CostLinksRest{Self: "self"},
 }
 
 var defaultCosts = models.CostsRest{
@@ -99,7 +99,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		paymentService = createMockPaymentService(mock, cfg)
 		paymentSession := models.PaymentResourceDB{
 			Data: models.PaymentResourceDataDB{
-				Amount:        "10.00",
+				Amount: "10.00",
 				Links: models.PaymentLinksDB{
 					Resource: "http://dummy-url",
 				},
@@ -126,7 +126,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		paymentService = createMockPaymentService(mock, cfg)
 		paymentSession := models.PaymentResourceDB{
 			Data: models.PaymentResourceDataDB{
-				Amount:        "10.00",
+				Amount: "10.00",
 				Links: models.PaymentLinksDB{
 					Resource: "http://dummy-url",
 				},
@@ -325,11 +325,12 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		// the schema and message (paymentID), prepare the message (which includes marshalling), then unmarshal to
 		// ensure the data being sent to the payments-processed topic has not been modified in any way
 
-		message, err := prepareKafkaMessage(paymentID, *producerSchema)
+		message, pkmError := prepareKafkaMessage(paymentID, *producerSchema)
 		unmarshalledPaymentProcessed := paymentProcessed{}
-		producerSchema.Unmarshal(message.Value, &unmarshalledPaymentProcessed)
+		psError := producerSchema.Unmarshal(message.Value, &unmarshalledPaymentProcessed)
 
-		So(err, ShouldEqual, nil)
+		So(pkmError, ShouldEqual, nil)
+		So(psError, ShouldEqual, nil)
 		So(unmarshalledPaymentProcessed.PaymentSessionID, ShouldEqual, "12345")
 	})
 
