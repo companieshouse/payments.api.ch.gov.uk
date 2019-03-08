@@ -48,8 +48,8 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 	if isExpired {
 		// Set the status of the payment
 		paymentSession.Status = service.Expired.String()
-		responseType, error := paymentService.PatchPaymentSession(req, id, *paymentSession)
-		if error != nil {
+		responseType, err := paymentService.PatchPaymentSession(req, id, *paymentSession)
+		if err != nil {
 			log.ErrorR(req, fmt.Errorf("error setting payment status of expired payment session: [%v]", err))
 			switch responseType {
 			case service.Error:
