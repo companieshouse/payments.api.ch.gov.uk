@@ -73,10 +73,15 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusCreated, &models.IncomingGovPayResponse{})
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
 
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
 		paymentSession := models.PaymentResourceRest{
 			PaymentMethod: "GovPay",
 			Amount:        "3",
 			Status:        InProgress.String(),
+			Costs:         []models.CostResourceRest{costResource},
 		}
 
 		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
@@ -103,10 +108,15 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		})
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
 
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
 		paymentSession := models.PaymentResourceRest{
 			PaymentMethod: "GovPay",
 			Amount:        "4",
 			Status:        InProgress.String(),
+			Costs:         []models.CostResourceRest{costResource},
 		}
 
 		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)

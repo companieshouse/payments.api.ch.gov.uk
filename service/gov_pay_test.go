@@ -112,7 +112,15 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, httpmock.NewErrorResponder(fmt.Errorf("error")))
 
-		paymentResource := models.PaymentResourceRest{Amount: "250.567"}
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
+		paymentResource := models.PaymentResourceRest{
+			Amount: "250.567",
+			Costs:  []models.CostResourceRest{costResource},
+		}
+
 		req := httptest.NewRequest("", "/test", nil)
 		govPayResponse, responseType, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
 
@@ -130,7 +138,15 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, httpmock.NewErrorResponder(fmt.Errorf("error")))
 
-		paymentResource := models.PaymentResourceRest{Amount: "250"}
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
+		paymentResource := models.PaymentResourceRest{
+			Amount: "250",
+			Costs:  []models.CostResourceRest{costResource},
+		}
+
 		req := httptest.NewRequest("", "/test", nil)
 		govPayResponse, responseType, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
 
@@ -150,7 +166,15 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(500, "string")
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
 
-		paymentResource := models.PaymentResourceRest{Amount: "250"}
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
+		paymentResource := models.PaymentResourceRest{
+			Amount: "250",
+			Costs:  []models.CostResourceRest{costResource},
+		}
+
 		req := httptest.NewRequest("", "/test", nil)
 		govPayResponse, responseType, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
 
@@ -171,7 +195,15 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(500, IncomingGovPayResponse)
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
 
-		paymentResource := models.PaymentResourceRest{Amount: "250"}
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
+		paymentResource := models.PaymentResourceRest{
+			Amount: "250",
+			Costs:  []models.CostResourceRest{costResource},
+		}
+
 		req := httptest.NewRequest("", "/test", nil)
 		govPayResponse, responseType, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
 
@@ -199,7 +231,15 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusCreated, IncomingGovPayResponse)
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
 
-		paymentResource := models.PaymentResourceRest{Amount: "250"}
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
+		paymentResource := models.PaymentResourceRest{
+			Amount: "250",
+			Costs:  []models.CostResourceRest{costResource},
+		}
+
 		req := httptest.NewRequest("", "/test", nil)
 		_, _, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
 
@@ -225,7 +265,15 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusCreated, IncomingGovPayResponse)
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
 
-		paymentResource := models.PaymentResourceRest{Amount: "250"}
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
+		paymentResource := models.PaymentResourceRest{
+			Amount: "250",
+			Costs:  []models.CostResourceRest{costResource},
+		}
+
 		req := httptest.NewRequest("", "/test", nil)
 		govPayResponse, responseType, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
 
