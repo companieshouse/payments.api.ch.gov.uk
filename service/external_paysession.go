@@ -64,7 +64,7 @@ func validateClassOfPayment(costs *[]models.CostResourceRest) error {
 
 		//Check the Class Of Payments on separate resources are the same.
 		if (*costs)[i].ClassOfPayment[0] != (*costs)[0].ClassOfPayment[0] {
-			return fmt.Errorf("Two or more class of payments are different on the same transaction: [%v] and [%v] ", cost.Description[i], cost.Description[0])
+			return fmt.Errorf("Two or more class of payments are different on the same transaction: [%v] and [%v] ", (*costs)[0].Description, (*costs)[i].Description)
 		}
 	}
 	return nil

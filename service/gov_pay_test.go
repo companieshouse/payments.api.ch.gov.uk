@@ -246,7 +246,7 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		So(err.Error(), ShouldEqual, "error storing ExternalPaymentStatusURI for payment session: [error storing ExternalPaymentStatusURI on payment session: [error]]")
 	})
 
-	Convey("Valid request to GovPay and returned NextURL", t, func() {
+	Convey("Valid request to GovPay and returned NextURL for penalty", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 		mockGovPayService := createMockGovPayService(&mockPaymentService)
@@ -267,6 +267,42 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 
 		costResource := models.CostResourceRest{
 			ClassOfPayment: []string{"penalty"},
+		}
+
+		paymentResource := models.PaymentResourceRest{
+			Amount: "250",
+			Costs:  []models.CostResourceRest{costResource},
+		}
+
+		req := httptest.NewRequest("", "/test", nil)
+		govPayResponse, responseType, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
+
+		So(responseType.String(), ShouldEqual, Success.String())
+		So(govPayResponse, ShouldEqual, journeyURL)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Valid request to GovPay and returned NextURL for data maintenance", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockGovPayService := createMockGovPayService(&mockPaymentService)
+
+		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		journeyURL := "nextUrl"
+		NextURL := models.NextURL{HREF: journeyURL}
+		Self := models.Self{HREF: "paymentStatusURL"}
+
+		GovPayLinks := models.GovPayLinks{NextURL: NextURL, Self: Self}
+		IncomingGovPayResponse := models.IncomingGovPayResponse{GovPayLinks: GovPayLinks}
+
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusCreated, IncomingGovPayResponse)
+		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
+
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"data-maintenance"},
 		}
 
 		paymentResource := models.PaymentResourceRest{
