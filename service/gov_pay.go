@@ -61,8 +61,14 @@ func (gp *GovPayService) GenerateNextURLGovPay(req *http.Request, paymentResourc
 		return "", Error, fmt.Errorf("error generating request for GovPay: [%s]", err)
 	}
 
+	if paymentResource.Costs[0].ClassOfPayment[0] == "penalty" {
+		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenTreasury)
+	}
+	if paymentResource.Costs[0].ClassOfPayment[0] == "data-maintenance" {
+		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenChAccount)
+	}
+
 	request.Header.Add("accept", "application/json")
-	request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenTreasury) //TODO: Determine which token to use
 	request.Header.Add("content-type", "application/json")
 
 	resp, err := http.DefaultClient.Do(request)

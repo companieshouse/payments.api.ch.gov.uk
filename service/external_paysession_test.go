@@ -41,6 +41,63 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		So(err.Error(), ShouldEqual, "payment session is not in progress")
 	})
 
+	Convey("Class Of Payment different on same cost resource", t, func() {
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
+
+		req := httptest.NewRequest("", "/test", nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty", "data-maintenance"},
+			Description:    "mismatched cost resource",
+		}
+
+		paymentSession := models.PaymentResourceRest{
+			PaymentMethod: "GovPay",
+			Amount:        "3",
+			Status:        InProgress.String(),
+			Costs:         []models.CostResourceRest{costResource},
+		}
+
+		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
+		So(externalPaymentJourney, ShouldBeNil)
+		So(responseType.String(), ShouldEqual, InvalidData.String())
+		So(err.Error(), ShouldEqual, fmt.Sprintf("Two or more class of payments are different on the same cost resource: [%v] ", costResource.Description))
+	})
+
+	Convey("Class Of Payment different on different cost resources", t, func() {
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
+
+		req := httptest.NewRequest("", "/test", nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		costResource1 := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+			Description:    "penalty cost resource",
+		}
+
+		costResource2 := models.CostResourceRest{
+			ClassOfPayment: []string{"data-maintenance"},
+			Description:    "data-maintenance cost resource",
+		}
+
+		paymentSession := models.PaymentResourceRest{
+			PaymentMethod: "GovPay",
+			Amount:        "3",
+			Status:        InProgress.String(),
+			Costs:         []models.CostResourceRest{costResource1, costResource2},
+		}
+
+		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
+		So(externalPaymentJourney, ShouldBeNil)
+		So(responseType.String(), ShouldEqual, InvalidData.String())
+		So(err.Error(), ShouldEqual, fmt.Sprintf("Two or more class of payments are different on the same transaction: [%v] and [%v] ", costResource1.Description, costResource2.Description))
+	})
+
 	Convey("Error communicating with GOV.UK Pay", t, func() {
 		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
 
@@ -48,7 +105,6 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("GET", cfg.GovPayURL, httpmock.NewStringResponder(400, "error"))
 
 		paymentSession := models.PaymentResourceRest{
 			PaymentMethod: "GovPay",
@@ -73,10 +129,15 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusCreated, &models.IncomingGovPayResponse{})
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
 
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
 		paymentSession := models.PaymentResourceRest{
 			PaymentMethod: "GovPay",
 			Amount:        "3",
 			Status:        InProgress.String(),
+			Costs:         []models.CostResourceRest{costResource},
 		}
 
 		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
@@ -103,10 +164,15 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		})
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
 
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
 		paymentSession := models.PaymentResourceRest{
 			PaymentMethod: "GovPay",
 			Amount:        "4",
 			Status:        InProgress.String(),
+			Costs:         []models.CostResourceRest{costResource},
 		}
 
 		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
