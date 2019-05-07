@@ -4,9 +4,25 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/companieshouse/chs.go/avro"
+	"github.com/companieshouse/chs.go/avro/schema"
+	"github.com/companieshouse/chs.go/kafka/producer"
 	"github.com/companieshouse/chs.go/log"
+	"github.com/companieshouse/payments.api.ch.gov.uk/config"
+
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 )
+
+// ProducerTopic is the topic to which the payment processed kafka message is sent
+const ProducerTopic = "payment-processed"
+
+// ProducerSchemaName is the schema which will be used to send the payment processed kafka message with
+const ProducerSchemaName = "payment-processed"
+
+// paymentProcessed represents the avro schema which can be found in the chs-kafka-schemas repo
+type paymentProcessed struct {
+	PaymentSessionID string `avro:"payment_resource_id"`
+}
 
 // redirectUser redirects user to the provided redirect_uri with query params
 func redirectUser(w http.ResponseWriter, r *http.Request, redirectURI string, params models.RedirectParams) {
@@ -28,6 +44,58 @@ func redirectUser(w http.ResponseWriter, r *http.Request, redirectURI string, pa
 	http.Redirect(w, r, generatedURL, http.StatusSeeOther)
 }
 
-func produceKafkaMessage() {
-	// TODO: Produce message to payment-processed topic
+// produceKafkaMessage handles creating a producer, marshalling the payment id into the correct avro schema and sending
+// the message to the topic defined in ProducerTopic
+func produceKafkaMessage(paymentID string) error {
+	cfg, err := config.Get()
+	if err != nil {
+		err = fmt.Errorf("error getting config for kafka message production: [%v]", err)
+		return err
+	}
+
+	// Get a producer
+	kafkaProducer, err := producer.New(&producer.Config{Acks: &producer.WaitForAll, BrokerAddrs: cfg.BrokerAddr})
+	if err != nil {
+		err = fmt.Errorf("error creating kafka producer: [%v]", err)
+		return err
+	}
+	paymentProcessedSchema, err := schema.Get(cfg.SchemaRegistryURL, ProducerSchemaName)
+	if err != nil {
+		err = fmt.Errorf("error getting schema from schema registry: [%v]", err)
+		return err
+	}
+	producerSchema := &avro.Schema{
+		Definition: paymentProcessedSchema,
+	}
+
+	// Prepare a message with the avro schema
+	message, err := prepareKafkaMessage(paymentID, *producerSchema)
+	if err != nil {
+		err = fmt.Errorf("error preparing kafka message with schema: [%v]", err)
+		return err
+	}
+
+	// Send the message
+	partition, offset, err := kafkaProducer.Send(message)
+	if err != nil {
+		err = fmt.Errorf("failed to send message in partition: %d at offset %d", partition, offset)
+		return err
+	}
+	return nil
+}
+
+// prepareKafkaMessage is pulled out of produceKafkaMessage() to allow unit testing of non-kafka portion of code
+func prepareKafkaMessage(paymentID string, paymentProcessedSchema avro.Schema) (*producer.Message, error) {
+	paymentProcessedMessage := paymentProcessed{PaymentSessionID: paymentID}
+	messageBytes, err := paymentProcessedSchema.Marshal(paymentProcessedMessage)
+	if err != nil {
+		err = fmt.Errorf("error marshalling payment processed message: [%v]", err)
+		return nil, err
+	}
+
+	producerMessage := &producer.Message{
+		Value: messageBytes,
+		Topic: ProducerTopic,
+	}
+	return producerMessage, nil
 }

@@ -30,6 +30,8 @@ Variable                | Default   | Description
 `GOV_PAY_URL`           |           | URL for [GOV.UK Pay](https://www.payments.service.gov.uk)
 `GOV_PAY_BEARER_TOKEN`  |           | Bearer Token for [GOV.UK Pay](https://www.payments.service.gov.uk)
 `EXPIRY_TIME_IN_MINUTES`|           | Number of minutes before a payment session expires
+`KAFKA_BROKER_ADDR`     |           | Kafka Broker address
+`SCHEMA_REGISTRY_URL`   |           | Schema Registry URL
 
 ## Endpoints
 

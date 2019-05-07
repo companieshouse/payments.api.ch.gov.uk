@@ -46,7 +46,5 @@ func HandleCreateExternalPaymentJourney(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-
 	log.InfoR(req, "Successfully started session with GOV.UK Pay", log.Data{"payment_id": paymentSession.MetaData.ID, "status": http.StatusCreated})
 }
