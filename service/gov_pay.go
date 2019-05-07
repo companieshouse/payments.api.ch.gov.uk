@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 )
@@ -50,6 +51,7 @@ func (gp *GovPayService) GenerateNextURLGovPay(req *http.Request, paymentResourc
 	govPayRequest.Description = "Companies House Payment" // Hard-coded value for payment screens
 	govPayRequest.Reference = paymentResource.Reference
 	govPayRequest.ReturnURL = fmt.Sprintf("%s/callback/payments/govpay/%s", gp.PaymentService.Config.PaymentsAPIURL, paymentResource.MetaData.ID)
+	log.TraceR(req, "performing gov pay request", log.Data{"gov_pay_request_data": govPayRequest})
 
 	requestBody, err := json.Marshal(govPayRequest)
 	if err != nil {

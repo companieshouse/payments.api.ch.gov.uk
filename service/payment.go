@@ -63,7 +63,7 @@ func (paymentStatus PaymentStatus) String() string {
 
 // CreatePaymentSession creates a payment session and returns a journey URL for the calling app to redirect to
 func (service *PaymentService) CreatePaymentSession(req *http.Request, createResource models.IncomingPaymentResourceRequest) (*models.PaymentResourceRest, ResponseType, error) {
-
+	log.TraceR(req, "create payment session", log.Data{"create_resource": createResource})
 	err := validateIncomingPayment(createResource, &service.Config)
 	if err != nil {
 		err = fmt.Errorf("invalid incoming payment: [%v]", err)
