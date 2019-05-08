@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
@@ -91,6 +92,9 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 
 	// Set the status of the payment
 	paymentSession.Status = statusResponse.Status
+	// To match the format time is saved to mongo, e.g. "2018-11-22T08:39:16.782Z", truncate the time
+	paymentSession.CompletedAt = time.Now().Truncate(time.Millisecond)
+
 	responseType, err = paymentService.PatchPaymentSession(req, id, *paymentSession)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error setting payment status: [%v]", err), log.Data{"service_response_type": responseType.String()})

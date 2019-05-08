@@ -300,6 +300,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		w := httptest.NewRecorder()
 		HandleGovPayCallback(w, req)
 		So(w.Code, ShouldEqual, http.StatusSeeOther)
+		So(paymentSession.Data.CompletedAt, ShouldNotBeNil)
 	})
 
 	Convey("Successful message preparation with prepareKafkaMessage", t, func() {

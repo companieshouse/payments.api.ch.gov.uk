@@ -98,6 +98,9 @@ func (m *Mongo) PatchPaymentResource(id string, paymentUpdate *models.PaymentRes
 	if paymentUpdate.Data.Status != "" {
 		patchUpdate["data.status"] = paymentUpdate.Data.Status
 	}
+	if !paymentUpdate.Data.CompletedAt.IsZero() {
+		patchUpdate["data.completed_at"] = paymentUpdate.Data.CompletedAt
+	}
 	if paymentUpdate.ExternalPaymentStatusURI != "" {
 		patchUpdate["external_payment_status_url"] = paymentUpdate.ExternalPaymentStatusURI
 	}
