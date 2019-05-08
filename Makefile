@@ -52,8 +52,7 @@ package:
 	$(eval tmpdir := $(shell mktemp -d build-XXXXXXXXXX))
 	cp ./$(bin) $(tmpdir)
 	cp ./start.sh $(tmpdir)
-	cp ./routes.yaml $(tmpdir)
-	cd $(tmpdir) && zip -r ../$(bin)-$(version).zip $(bin) start.sh routes.yaml
+	cd $(tmpdir) && zip -r ../$(bin)-$(version).zip $(bin) start.sh
 	rm -rf $(tmpdir)
 
 .PHONY: dist
