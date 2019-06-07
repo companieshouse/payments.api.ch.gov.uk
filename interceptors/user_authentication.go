@@ -56,6 +56,7 @@ func UserAuthenticationInterceptor(next http.Handler) http.Handler {
 			// Call the next handler
 			next.ServeHTTP(w, r.WithContext(ctx))
 		} else if identityType == helpers.APIKeyIdentityType {
+			// Only allow payment session to be created by users with oauth2
 			if r.URL.Path == "/payments" {
 				log.Error(fmt.Errorf("authentication interceptor unauthorised: oauth2 identity type required for payment creation"))
 				w.WriteHeader(http.StatusUnauthorized)

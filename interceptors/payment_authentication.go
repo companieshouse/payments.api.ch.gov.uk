@@ -7,8 +7,6 @@ import (
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 
-	"github.com/davecgh/go-spew/spew"
-
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
@@ -121,8 +119,12 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as payment lookup role on GET", debugMap)
 			// Call the next handler
 			next.ServeHTTP(w, r.WithContext(ctx))
-		case isApiKeyRequest:
-			spew.Dump("OMGGGGGGG")
+		case isApiKeyRequest && apiKeyHasElevatedPrivileges:
+			// 3) Authorized API key with elevated privileges is an internal API key
+			// that we trust
+			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as api key elevated user", debugMap)
+			// Call the next handler
+			next.ServeHTTP(w, r.WithContext(ctx))
 		default:
 			// If none of the above conditions above are met then the request is
 			// unauthorized
