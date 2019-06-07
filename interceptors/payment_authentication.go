@@ -69,9 +69,8 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 		// Store paymentSession in context to use later in the handler
 		ctx := context.WithValue(r.Context(), helpers.ContextKeyPaymentSession, paymentSession)
 		authorisedUser := ""
-		if identityType == helpers.APIKeyIdentityType {
 
-		} else {
+		if identityType == helpers.Oauth2IdentityType {
 			// Get user details from context, passed in by UserAuthenticationInterceptor
 			userDetails, ok := r.Context().Value(helpers.ContextKeyUserDetails).(models.AuthUserDetails)
 			if !ok {
