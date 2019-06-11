@@ -38,6 +38,24 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 			return
 		}
 
+		authorisedUser := ""
+
+		// Get user details from context, passed in by UserAuthenticationInterceptor
+		userDetails, ok := r.Context().Value(helpers.ContextKeyUserDetails).(models.AuthUserDetails)
+		if !ok {
+			log.ErrorR(r, fmt.Errorf("PaymentAuthenticationInterceptor error: invalid AuthUserDetails from UserAuthenticationInterceptor"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// Get user details from request
+		authorisedUser = userDetails.ID
+		if authorisedUser == "" {
+			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor unauthorised: no authorised identity"))
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
 		// Get the payment session from the ID in request
 		paymentSession, responseType, err := paymentAuthenticationInterceptor.Service.GetPaymentSession(r, id)
 		if err != nil {
@@ -68,25 +86,6 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 
 		// Store paymentSession in context to use later in the handler
 		ctx := context.WithValue(r.Context(), helpers.ContextKeyPaymentSession, paymentSession)
-		authorisedUser := ""
-
-		if identityType == helpers.Oauth2IdentityType {
-			// Get user details from context, passed in by UserAuthenticationInterceptor
-			userDetails, ok := r.Context().Value(helpers.ContextKeyUserDetails).(models.AuthUserDetails)
-			if !ok {
-				log.ErrorR(r, fmt.Errorf("PaymentAuthenticationInterceptor error: invalid AuthUserDetails from UserAuthenticationInterceptor"))
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			// Get user details from request
-			authorisedUser = userDetails.ID
-			if authorisedUser == "" {
-				log.Error(fmt.Errorf("PaymentAuthenticationInterceptor unauthorised: no authorised identity"))
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-		}
 
 		// Set up variables that are used to determine authorisation below
 		isGetRequest := http.MethodGet == r.Method

@@ -70,6 +70,22 @@ func TestUnitUserAuthenticationInterceptor(t *testing.T) {
 		So(w.Code, ShouldEqual, 401)
 	})
 
+	Convey("API key request attempting to create a payment resource", t, func() {
+		path := fmt.Sprintf("/payments")
+		req, err := http.NewRequest("Post", path, nil)
+		req.Header.Set("Eric-Identity", "authorised_identity")
+		req.Header.Set("Eric-Identity-Type", "key")
+		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
+		req.Header.Set("ERIC-Authorised-Key-Roles", "*")
+
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+		test := UserAuthenticationInterceptor(GetTestHandler())
+		test.ServeHTTP(w, req)
+		So(w.Code, ShouldEqual, 401)
+	})
+
 	Convey("Happy path with populated headers", t, func() {
 		path := fmt.Sprintf("/payments/%s", "1234")
 		req, err := http.NewRequest("Get", path, nil)
