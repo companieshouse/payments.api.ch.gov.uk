@@ -92,7 +92,7 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 		isGetRequest := http.MethodGet == r.Method
 		authUserIsPaymentCreator := authorisedUser == paymentSession.CreatedBy.ID
 		authUserHasPaymentLookupRole := helpers.IsRoleAuthorised(r, helpers.AdminPaymentLookupRole)
-		isApiKeyRequest := helpers.IsKeyElevatedPrivilegesAuthorised(r)
+		isApiKeyRequest := identityType == helpers.APIKeyIdentityType
 		apiKeyHasElevatedPrivileges := helpers.IsKeyElevatedPrivilegesAuthorised(r)
 
 		// Set up debug map for logging at each exit point
