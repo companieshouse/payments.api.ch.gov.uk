@@ -39,10 +39,6 @@ func TestUnitTransformToDB(t *testing.T) {
 					Description:             "desc1",
 					DescriptionIdentifier:   "desc_identifier1",
 					DescriptionValues:       map[string]string{"val": "val1"},
-					Links: models.CostLinksRest{
-						Resource: "resource1",
-						Self:     "self1",
-					},
 				},
 				{
 					Amount:                  "73",
@@ -51,10 +47,6 @@ func TestUnitTransformToDB(t *testing.T) {
 					Description:             "desc2",
 					DescriptionIdentifier:   "desc_identifier2",
 					DescriptionValues:       map[string]string{"val": "val2"},
-					Links: models.CostLinksRest{
-						Resource: "resource2",
-						Self:     "self2",
-					},
 				},
 			},
 		}

@@ -23,7 +23,6 @@ var defaultCost = models.CostResourceRest{
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
-	Links:                   models.CostLinksRest{Self: "self"},
 }
 
 var defaultCosts = models.CostsRest{
@@ -90,7 +89,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("GET", "http://dummy-resource", nil)
+		httpmock.RegisterResponder("GET", "http://dummy-resource/payment", nil)
 
 		authUserDetails := models.AuthUserDetails{
 			ID: "identity",
@@ -107,7 +106,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
 		So(paymentResourceRest, ShouldBeNil)
 		So(status, ShouldEqual, Error)
-		So(err.Error(), ShouldEqual, "error getting payment resource: [error getting Cost Resource: [Get http://dummy-url: no responder found]]")
+		So(err.Error(), ShouldEqual, "error getting payment resource: [error getting Cost Resource: [Get http://dummy-url/payment: no responder found]]")
 	})
 
 	Convey("Error getting total amount from costs", t, func() {
@@ -123,7 +122,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 			Costs: []models.CostResourceRest{costResource},
 		}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costs)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-url/payment", jsonResponse)
 
 		authUserDetails := models.AuthUserDetails{
 			ID: "identity",
@@ -151,7 +150,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-url/payment", jsonResponse)
 
 		authUserDetails := models.AuthUserDetails{
 			ID: "identity",
@@ -181,7 +180,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-url/payment", jsonResponse)
 
 		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, defaultUserDetails)
 
@@ -218,9 +217,9 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(paymentResourceRest.Status, ShouldEqual, "pending")
 		So(paymentResourceRest.Costs, ShouldResemble, defaultCosts.Costs)
 		So(paymentResourceRest.MetaData, ShouldResemble, models.PaymentResourceMetaDataRest{
-			ID:                       "",
-			RedirectURI:              "",
-			State:                    "",
+			ID:          "",
+			RedirectURI: "",
+			State:       "",
 			ExternalPaymentStatusURI: "",
 		})
 
@@ -238,7 +237,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		costs := defaultCosts
 		costs.Costs = append(costs.Costs, defaultCost)
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costs)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-url/payment", jsonResponse)
 
 		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, defaultUserDetails)
 
@@ -275,9 +274,9 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(paymentResourceRest.Status, ShouldEqual, "pending")
 		So(paymentResourceRest.Costs, ShouldResemble, []models.CostResourceRest{defaultCost, defaultCost})
 		So(paymentResourceRest.MetaData, ShouldResemble, models.PaymentResourceMetaDataRest{
-			ID:                       "",
-			RedirectURI:              "",
-			State:                    "",
+			ID:          "",
+			RedirectURI: "",
+			State:       "",
 			ExternalPaymentStatusURI: "",
 		})
 
@@ -302,7 +301,7 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		costArray := []models.CostResourceRest{defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-resource/payment", jsonResponse)
 
 		resource := models.PaymentResourceRest{}
 		responseType, err := mockPaymentService.PatchPaymentSession(req, "1234", resource)
@@ -322,7 +321,7 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-resource/payment", jsonResponse)
 
 		resource := models.PaymentResourceRest{}
 		responseType, err := mockPaymentService.PatchPaymentSession(req, "1234", resource)
@@ -340,7 +339,7 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-resource/payment", jsonResponse)
 
 		resource := models.PaymentResourceRest{
 			PaymentMethod: "GovPay",
@@ -393,12 +392,12 @@ func TestUnitGetPayment(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("GET", "http://dummy-resource", nil)
+		httpmock.RegisterResponder("GET", "http://dummy-resource/payment", nil)
 
 		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "1234")
 		So(paymentResourceRest, ShouldBeNil)
 		So(status, ShouldEqual, Error)
-		So(err.Error(), ShouldEqual, "error getting payment resource: [error getting Cost Resource: [Get : no responder found]]")
+		So(err.Error(), ShouldEqual, "error getting payment resource: [error getting Cost Resource: [Get /payment: no responder found]]")
 	})
 
 	cfg.DomainWhitelist = "http://dummy-resource"
@@ -426,7 +425,7 @@ func TestUnitGetPayment(t *testing.T) {
 		costs := defaultCosts
 		costs.Costs = costArray
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costs)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-resource/payment", jsonResponse)
 
 		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "1234")
 		So(paymentResourceRest, ShouldBeNil)
@@ -457,7 +456,7 @@ func TestUnitGetPayment(t *testing.T) {
 		costs := defaultCosts
 		costs.Costs = costArray
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costs)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-resource/payment", jsonResponse)
 
 		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "1234")
 		So(paymentResourceRest, ShouldBeNil)
@@ -484,7 +483,7 @@ func TestUnitGetPayment(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-resource/payment", jsonResponse)
 
 		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "1234")
 		So(paymentResourceRest, ShouldResemble, &models.PaymentResourceRest{
@@ -500,9 +499,6 @@ func TestUnitGetPayment(t *testing.T) {
 					ClassOfPayment:          []string{"class"},
 					Description:             "desc",
 					DescriptionIdentifier:   "identifier",
-					Links: models.CostLinksRest{
-						Self: "self",
-					},
 				},
 			},
 			MetaData: models.PaymentResourceMetaDataRest{
@@ -534,7 +530,7 @@ func TestUnitGetPayment(t *testing.T) {
 		costs := defaultCosts
 		costs.Costs = append(costs.Costs, defaultCost)
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costs)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-resource/payment", jsonResponse)
 
 		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "1234")
 		So(paymentResourceRest, ShouldResemble, &models.PaymentResourceRest{
@@ -550,9 +546,6 @@ func TestUnitGetPayment(t *testing.T) {
 					ClassOfPayment:          []string{"class"},
 					Description:             "desc",
 					DescriptionIdentifier:   "identifier",
-					Links: models.CostLinksRest{
-						Self: "self",
-					},
 				},
 				{
 					Amount:                  "10",
@@ -560,9 +553,6 @@ func TestUnitGetPayment(t *testing.T) {
 					ClassOfPayment:          []string{"class"},
 					Description:             "desc",
 					DescriptionIdentifier:   "identifier",
-					Links: models.CostLinksRest{
-						Self: "self",
-					},
 				},
 			},
 			MetaData: models.PaymentResourceMetaDataRest{
@@ -599,19 +589,19 @@ func TestUnitGetCosts(t *testing.T) {
 	Convey("Error getting Cost Resource", t, func() {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("GET", "http://dummy-resource", nil)
+		httpmock.RegisterResponder("GET", "http://dummy-resource/payment", nil)
 
 		costResourceRest, status, err := getCosts("http://dummy-resource")
 		So(costResourceRest, ShouldBeNil)
 		So(status, ShouldEqual, Error)
-		So(err.Error(), ShouldEqual, "error getting Cost Resource: [Get http://dummy-resource: no responder found]")
+		So(err.Error(), ShouldEqual, "error getting Cost Resource: [Get http://dummy-resource/payment: no responder found]")
 	})
 
 	Convey("Failure status when getting Cost Resource", t, func() {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(400, nil)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-resource/payment", jsonResponse)
 
 		costResourceRest, status, err := getCosts("http://dummy-resource")
 		So(costResourceRest, ShouldBeNil)
@@ -628,7 +618,7 @@ func TestUnitGetCosts(t *testing.T) {
 			Costs: []models.CostResourceRest{cost},
 		}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costs)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-resource/payment", jsonResponse)
 
 		costResourceRest, status, err := getCosts("http://dummy-resource")
 		So(costResourceRest, ShouldBeNil)
@@ -684,7 +674,6 @@ func TestUnitValidateCosts(t *testing.T) {
 			ClassOfPayment:          []string{"class"},
 			Description:             "",
 			DescriptionIdentifier:   "identifier",
-			Links:                   models.CostLinksRest{Self: "self"},
 		}}
 		So(validateCosts(&cost), ShouldNotBeNil)
 	})
@@ -695,7 +684,6 @@ func TestUnitValidateCosts(t *testing.T) {
 			ClassOfPayment:          []string{"class"},
 			Description:             "desc",
 			DescriptionIdentifier:   "identifier",
-			Links:                   models.CostLinksRest{Self: "self"},
 		}}
 		So(validateCosts(&cost), ShouldBeNil)
 	})
@@ -707,7 +695,6 @@ func TestUnitValidateCosts(t *testing.T) {
 				ClassOfPayment:          []string{"class"},
 				Description:             "desc",
 				DescriptionIdentifier:   "identifier",
-				Links:                   models.CostLinksRest{Self: "self"},
 			},
 			{
 				Amount:                  "20",
@@ -715,7 +702,6 @@ func TestUnitValidateCosts(t *testing.T) {
 				ClassOfPayment:          []string{"class"},
 				Description:             "",
 				DescriptionIdentifier:   "identifier",
-				Links:                   models.CostLinksRest{Self: "self"},
 			},
 		}
 		So(validateCosts(&cost), ShouldNotBeNil)

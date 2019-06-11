@@ -25,7 +25,6 @@ var defaultCostRest = models.CostResourceRest{
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
-	Links:                   models.CostLinksRest{Self: "self"},
 }
 
 var defaultCosts = models.CostsRest{
@@ -221,7 +220,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-resource/payment", jsonResponse)
 
 		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
 		test.ServeHTTP(w, req.WithContext(ctx))
@@ -262,7 +261,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-resource/payment", jsonResponse)
 
 		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
 		test.ServeHTTP(w, req.WithContext(ctx))
@@ -303,7 +302,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-resource/payment", jsonResponse)
 
 		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
 		test.ServeHTTP(w, req.WithContext(ctx))
@@ -344,7 +343,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-resource/payment", jsonResponse)
 
 		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
 		test.ServeHTTP(w, req.WithContext(ctx))

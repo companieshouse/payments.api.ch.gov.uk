@@ -24,7 +24,6 @@ var defaultCost = models.CostResourceRest{
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
-	Links:                   models.CostLinksRest{Self: "self"},
 }
 
 var defaultCosts = models.CostsRest{
@@ -112,7 +111,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-url/payment", jsonResponse)
 
 		req := httptest.NewRequest("GET", "/test", nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
@@ -139,7 +138,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-url/payment", jsonResponse)
 
 		req := httptest.NewRequest("GET", "/test", nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
@@ -166,7 +165,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-url/payment", jsonResponse)
 
 		req := httptest.NewRequest("GET", "/test", nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
@@ -193,7 +192,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-url/payment", jsonResponse)
 
 		req := httptest.NewRequest("GET", "/test", nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
@@ -221,7 +220,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-url/payment", jsonResponse)
 
 		govPayResponse := models.IncomingGovPayResponse{}
 		govPayJSONResponse, _ := httpmock.NewJsonResponder(200, govPayResponse)
@@ -253,7 +252,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jSONResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jSONResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-url/payment", jSONResponse)
 
 		govPayResponse := models.IncomingGovPayResponse{}
 		govPayJSONResponse, _ := httpmock.NewJsonResponder(200, govPayResponse)
@@ -287,7 +286,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jSONResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jSONResponse)
+		httpmock.RegisterResponder("GET", "http://dummy-url/payment", jSONResponse)
 
 		govPayResponse := models.IncomingGovPayResponse{}
 		govPayJSONResponse, _ := httpmock.NewJsonResponder(200, govPayResponse)

@@ -244,7 +244,7 @@ func getTotalAmount(costs *[]models.CostResourceRest) (string, error) {
 
 func getCosts(resource string) (*models.CostsRest, ResponseType, error) {
 
-	resourceReq, err := http.NewRequest("GET", resource, nil)
+	resourceReq, err := http.NewRequest("GET", resource+"/payment", nil)
 	if err != nil {
 		return nil, Error, fmt.Errorf("failed to create Resource Request: [%v]", err)
 	}
