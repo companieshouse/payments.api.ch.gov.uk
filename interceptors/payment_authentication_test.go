@@ -309,47 +309,6 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusOK)
 	})
 
-	Convey("Happy path where user has elevated privileges key accessing a non-creator resource", t, func() {
-		path := fmt.Sprintf("/payments/%s", "1234")
-		req, err := http.NewRequest("GET", path, nil)
-		So(err, ShouldBeNil)
-		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
-		req.Header.Set("Eric-Identity", "identity")
-		req.Header.Set("Eric-Identity-Type", "key")
-		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
-		req.Header.Set("ERIC-Authorised-Key-Roles", "*")
-		authUserDetails := models.AuthUserDetails{
-			ID: "api-key-user",
-		}
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
-
-		mockDAO := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mockDAO, cfg)
-		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockService(&mockPaymentService)
-
-		mockDAO.EXPECT().GetPaymentResource("1234").Return(
-			&models.PaymentResourceDB{
-				ID: "1234",
-				Data: models.PaymentResourceDataDB{
-					Amount:    "10.00",
-					CreatedBy: models.CreatedByDB{ID: "identity"},
-					Links:     models.PaymentLinksDB{Resource: "http://dummy-resource"},
-				},
-			},
-			nil,
-		)
-
-		w := httptest.NewRecorder()
-		httpmock.Activate()
-		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
-
-		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
-		test.ServeHTTP(w, req.WithContext(ctx))
-		So(w.Code, ShouldEqual, http.StatusOK)
-	})
-
 	Convey("Unauthorised where user is admin and request is POST", t, func() {
 		path := fmt.Sprintf("/payments/%s", "1234")
 		req, err := http.NewRequest("POST", path, nil)
@@ -389,5 +348,45 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
 		test.ServeHTTP(w, req.WithContext(ctx))
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+	})
+
+	Convey("Happy path where user has elevated privileges key accessing a non-creator resource", t, func() {
+		path := fmt.Sprintf("/payments/%s", "1234")
+		req, err := http.NewRequest("GET", path, nil)
+		So(err, ShouldBeNil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
+		req.Header.Set("Eric-Identity", "identity")
+		req.Header.Set("Eric-Identity-Type", "key")
+		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
+		req.Header.Set("ERIC-Authorised-Key-Roles", "*")
+		authUserDetails := models.AuthUserDetails{
+			ID: "api-key-user",
+		}
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		mockDAO := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mockDAO, cfg)
+		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockService(&mockPaymentService)
+
+		mockDAO.EXPECT().GetPaymentResource("1234").Return(
+			&models.PaymentResourceDB{
+				ID: "1234",
+				Data: models.PaymentResourceDataDB{
+					Amount:    "10.00",
+					CreatedBy: models.CreatedByDB{ID: "identity"},
+					Links:     models.PaymentLinksDB{Resource: "http://dummy-resource"},
+				},
+			},
+			nil,
+		)
+
+		w := httptest.NewRecorder()
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+
+		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
+		test.ServeHTTP(w, req.WithContext(ctx))
+		So(w.Code, ShouldEqual, http.StatusOK)
 	})
 }

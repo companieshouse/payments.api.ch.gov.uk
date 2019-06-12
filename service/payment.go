@@ -79,7 +79,7 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 		return nil, Error, err
 	}
 
-	costs, costsResponseType, err := getCosts(createResource.Resource)
+	costs, costsResponseType, err := getCosts(createResource.Resource, &service.Config)
 	if err != nil {
 		err = fmt.Errorf("error getting payment resource: [%v]", err)
 		log.ErrorR(req, err)
@@ -200,7 +200,7 @@ func (service *PaymentService) GetPaymentSession(req *http.Request, id string) (
 		return nil, NotFound, nil
 	}
 
-	costs, costsResponseType, err := getCosts(paymentResource.Data.Links.Resource)
+	costs, costsResponseType, err := getCosts(paymentResource.Data.Links.Resource, &service.Config)
 	if err != nil {
 		err = fmt.Errorf("error getting payment resource: [%v]", err)
 		log.ErrorR(req, err)
@@ -242,12 +242,14 @@ func getTotalAmount(costs *[]models.CostResourceRest) (string, error) {
 	return totalAmount.StringFixed(2), nil
 }
 
-func getCosts(resource string) (*models.CostsRest, ResponseType, error) {
+func getCosts(resource string, cfg *config.Config) (*models.CostsRest, ResponseType, error) {
 
 	resourceReq, err := http.NewRequest("GET", resource, nil)
 	if err != nil {
 		return nil, Error, fmt.Errorf("failed to create Resource Request: [%v]", err)
 	}
+
+	resourceReq.SetBasicAuth(cfg.ChsAPIKey, "")
 
 	var client http.Client
 	resp, err := client.Do(resourceReq)

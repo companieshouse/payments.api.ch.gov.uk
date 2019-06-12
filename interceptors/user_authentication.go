@@ -36,23 +36,23 @@ func UserAuthenticationInterceptor(next http.Handler) http.Handler {
 			return
 		}
 
-		// Extract user details and add to context
-		userDetails := strings.Split(authorisedUser, ";")
-		authUserDetails := models.AuthUserDetails{ID: identity}
-
-		switch len(userDetails) {
-		case 1:
-			authUserDetails.Email = strings.TrimSpace(userDetails[0])
-		case 2:
-			authUserDetails.Email = strings.TrimSpace(userDetails[0])
-			authUserDetails.Forename = userDetails[1]
-		case 3:
-			authUserDetails.Email = strings.TrimSpace(userDetails[0])
-			authUserDetails.Forename = userDetails[1]
-			authUserDetails.Surname = userDetails[2]
-		}
-
 		if identityType == helpers.Oauth2IdentityType {
+			// Extract user details and add to context
+			userDetails := strings.Split(authorisedUser, ";")
+			authUserDetails := models.AuthUserDetails{ID: identity}
+
+			switch len(userDetails) {
+			case 1:
+				authUserDetails.Email = strings.TrimSpace(userDetails[0])
+			case 2:
+				authUserDetails.Email = strings.TrimSpace(userDetails[0])
+				authUserDetails.Forename = userDetails[1]
+			case 3:
+				authUserDetails.Email = strings.TrimSpace(userDetails[0])
+				authUserDetails.Forename = userDetails[1]
+				authUserDetails.Surname = userDetails[2]
+			}
+
 			ctx := context.WithValue(r.Context(), helpers.ContextKeyUserDetails, authUserDetails)
 			// Call the next handler
 			next.ServeHTTP(w, r.WithContext(ctx))

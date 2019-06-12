@@ -217,9 +217,9 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(paymentResourceRest.Status, ShouldEqual, "pending")
 		So(paymentResourceRest.Costs, ShouldResemble, defaultCosts.Costs)
 		So(paymentResourceRest.MetaData, ShouldResemble, models.PaymentResourceMetaDataRest{
-			ID:                       "",
-			RedirectURI:              "",
-			State:                    "",
+			ID:          "",
+			RedirectURI: "",
+			State:       "",
 			ExternalPaymentStatusURI: "",
 		})
 
@@ -274,9 +274,9 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(paymentResourceRest.Status, ShouldEqual, "pending")
 		So(paymentResourceRest.Costs, ShouldResemble, []models.CostResourceRest{defaultCost, defaultCost})
 		So(paymentResourceRest.MetaData, ShouldResemble, models.PaymentResourceMetaDataRest{
-			ID:                       "",
-			RedirectURI:              "",
-			State:                    "",
+			ID:          "",
+			RedirectURI: "",
+			State:       "",
 			ExternalPaymentStatusURI: "",
 		})
 
@@ -591,7 +591,7 @@ func TestUnitGetCosts(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("GET", "http://dummy-resource", nil)
 
-		costResourceRest, status, err := getCosts("http://dummy-resource")
+		costResourceRest, status, err := getCosts("http://dummy-resource", cfg)
 		So(costResourceRest, ShouldBeNil)
 		So(status, ShouldEqual, Error)
 		So(err.Error(), ShouldEqual, "error getting Cost Resource: [Get http://dummy-resource: no responder found]")
@@ -603,7 +603,7 @@ func TestUnitGetCosts(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(400, nil)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
-		costResourceRest, status, err := getCosts("http://dummy-resource")
+		costResourceRest, status, err := getCosts("http://dummy-resource", cfg)
 		So(costResourceRest, ShouldBeNil)
 		So(status, ShouldEqual, InvalidData)
 		So(err.Error(), ShouldEqual, "error getting Cost Resource")
@@ -620,7 +620,7 @@ func TestUnitGetCosts(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costs)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
-		costResourceRest, status, err := getCosts("http://dummy-resource")
+		costResourceRest, status, err := getCosts("http://dummy-resource", cfg)
 		So(costResourceRest, ShouldBeNil)
 		So(status, ShouldEqual, InvalidData)
 		So(err.Error(), ShouldEqual, "Key: 'CostResourceRest.Amount' Error:Field validation for 'Amount' failed on the 'required' tag")
