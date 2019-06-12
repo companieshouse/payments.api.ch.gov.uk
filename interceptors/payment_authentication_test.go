@@ -25,7 +25,6 @@ var defaultCostRest = models.CostResourceRest{
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
-	Links:                   models.CostLinksRest{Self: "self"},
 }
 
 var defaultCosts = models.CostsRest{

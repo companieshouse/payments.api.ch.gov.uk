@@ -71,11 +71,4 @@ type CostResourceRest struct {
 	Description             string            `json:"description"               validate:"required"`
 	DescriptionIdentifier   string            `json:"description_identifier"    validate:"required"`
 	DescriptionValues       map[string]string `json:"description_values"`
-	Links                   CostLinksRest     `json:"links"                     validate:"required"`
-}
-
-// CostLinksRest is a set of URLs related to the resource, including self
-type CostLinksRest struct {
-	Resource string `json:"resource"`
-	Self     string `json:"self" validate:"required"`
 }
