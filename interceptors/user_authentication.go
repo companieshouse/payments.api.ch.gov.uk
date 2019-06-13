@@ -29,14 +29,14 @@ func UserAuthenticationInterceptor(next http.Handler) http.Handler {
 			return
 		}
 
-		authorisedUser := helpers.GetAuthorisedUser(r)
-		if authorisedUser == "" {
-			log.Error(fmt.Errorf("authentication interceptor unauthorised: no authorised user"))
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
 		if identityType == helpers.Oauth2IdentityType {
+			authorisedUser := helpers.GetAuthorisedUser(r)
+			if authorisedUser == "" {
+				log.Error(fmt.Errorf("authentication interceptor unauthorised: no authorised user"))
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+
 			// Extract user details and add to context
 			userDetails := strings.Split(authorisedUser, ";")
 			authUserDetails := models.AuthUserDetails{ID: identity}
