@@ -9,13 +9,20 @@ const (
 	// Oauth2IdentityType defines the identity type for OAuth2.
 	Oauth2IdentityType = "oauth2"
 
+	// API key defines the identity type for an API key auth.
+	APIKeyIdentityType = "key"
+
+	// API key defines the identity type for an API key auth.
+	APIKeyElevatedRole = "*"
+
 	// AdminPaymentLookupRole defines the path to check whether a user is authorised to look up a payment.
 	AdminPaymentLookupRole = "/admin/payment-lookup"
 
-	ericIdentity        = "ERIC-Identity"
-	ericIdentityType    = "ERIC-Identity-Type"
-	ericAuthorisedUser  = "ERIC-Authorised-User"
-	ericAuthorisedRoles = "ERIC-Authorised-Roles"
+	ericIdentity           = "ERIC-Identity"
+	ericIdentityType       = "ERIC-Identity-Type"
+	ericAuthorisedUser     = "ERIC-Authorised-User"
+	ericAuthorisedRoles    = "ERIC-Authorised-Roles"
+	ericAuthorisedKeyRoles = "ERIC-Authorised-Key-Roles"
 )
 
 // GetAuthorisedIdentity gets the Identity from the Header.
@@ -36,6 +43,11 @@ func GetAuthorisedUser(r *http.Request) string {
 // GetAuthorisedRoles gets the Roles from the Header.
 func GetAuthorisedRoles(r *http.Request) string {
 	return r.Header.Get(ericAuthorisedRoles)
+}
+
+// GetAuthorisedKeyRoles gets the Key Roles from the Header.
+func GetAuthorisedKeyRoles(r *http.Request) string {
+	return r.Header.Get(ericAuthorisedKeyRoles)
 }
 
 func getAuthorisedRolesArray(r *http.Request) []string {
@@ -59,6 +71,11 @@ func IsRoleAuthorised(r *http.Request, role string) bool {
 	}
 
 	return contains(roles, role)
+}
+
+// IsKeyElevatedPrivilegesAuthorised checks whether te API key has elevated privileges
+func IsKeyElevatedPrivilegesAuthorised(r *http.Request) bool {
+	return APIKeyElevatedRole == GetAuthorisedKeyRoles(r)
 }
 
 // contains returns whether array contains string s.

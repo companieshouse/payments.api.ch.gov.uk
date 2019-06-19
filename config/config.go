@@ -27,6 +27,7 @@ type Config struct {
 	ExpiryTimeInMinutes        string   `env:"EXPIRY_TIME_IN_MINUTES"          flag:"expiry-time-in-minutes"            flagDesc:"The expiry time for the payment session in minutes"`
 	BrokerAddr                 []string `env:"KAFKA_BROKER_ADDR"               flag:"broker-addr"                       flagDesc:"Kafka broker address"`
 	SchemaRegistryURL          string   `env:"SCHEMA_REGISTRY_URL"             flag:"schema-registry-url"               flagDesc:"Schema registry url"`
+	ChsAPIKey                  string   `env:"CHS_API_KEY"                     flag:"chs-api-key"                       flagDesc:"API access key"`
 }
 
 // DefaultConfig returns a pointer to a Config instance that has been populated

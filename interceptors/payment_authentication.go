@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
-	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/gorilla/mux"
 )
@@ -29,20 +30,32 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 			return
 		}
 
-		// Get user details from context, passed in by UserAuthenticationInterceptor
-		userDetails, ok := r.Context().Value(helpers.ContextKeyUserDetails).(models.AuthUserDetails)
-		if !ok {
-			log.ErrorR(r, fmt.Errorf("PaymentAuthenticationInterceptor error: invalid AuthUserDetails from UserAuthenticationInterceptor"))
-			w.WriteHeader(http.StatusInternalServerError)
+		// Get identity type from request
+		identityType := helpers.GetAuthorisedIdentityType(r)
+		if !(identityType == helpers.Oauth2IdentityType || identityType == helpers.APIKeyIdentityType) {
+			log.Error(fmt.Errorf("authentication interceptor unauthorised: not oauth2 or API key identity type"))
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
-		// Get user details from request
-		authorisedUser := userDetails.ID
-		if authorisedUser == "" {
-			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor unauthorised: no authorised identity"))
-			w.WriteHeader(http.StatusUnauthorized)
-			return
+		authorisedUser := ""
+
+		if identityType == helpers.Oauth2IdentityType {
+			// Get user details from context, passed in by UserAuthenticationInterceptor
+			userDetails, ok := r.Context().Value(helpers.ContextKeyUserDetails).(models.AuthUserDetails)
+			if !ok {
+				log.ErrorR(r, fmt.Errorf("PaymentAuthenticationInterceptor error: invalid AuthUserDetails from UserAuthenticationInterceptor"))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			// Get user details from request
+			authorisedUser = userDetails.ID
+			if authorisedUser == "" {
+				log.Error(fmt.Errorf("PaymentAuthenticationInterceptor unauthorised: no authorised identity"))
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
 		}
 
 		// Get the payment session from the ID in request
@@ -80,12 +93,15 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 		isGetRequest := http.MethodGet == r.Method
 		authUserIsPaymentCreator := authorisedUser == paymentSession.CreatedBy.ID
 		authUserHasPaymentLookupRole := helpers.IsRoleAuthorised(r, helpers.AdminPaymentLookupRole)
+		isApiKeyRequest := identityType == helpers.APIKeyIdentityType
+		apiKeyHasElevatedPrivileges := helpers.IsKeyElevatedPrivilegesAuthorised(r)
 
 		// Set up debug map for logging at each exit point
 		debugMap := log.Data{
 			"payment_id":                        id,
 			"auth_user_is_payment_creator":      authUserIsPaymentCreator,
 			"auth_user_has_payment_lookup_role": authUserHasPaymentLookupRole,
+			"api_key_has_elevated_privileges":   apiKeyHasElevatedPrivileges,
 			"request_method":                    r.Method,
 		}
 
@@ -101,6 +117,12 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 			// 2) Authorized user has permission to lookup any payment session and
 			// request is a GET i.e. to see payment data but not modify/delete
 			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as payment lookup role on GET", debugMap)
+			// Call the next handler
+			next.ServeHTTP(w, r.WithContext(ctx))
+		case isApiKeyRequest && apiKeyHasElevatedPrivileges:
+			// 3) Authorized API key with elevated privileges is an internal API key
+			// that we trust
+			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as api key elevated user", debugMap)
 			// Call the next handler
 			next.ServeHTTP(w, r.WithContext(ctx))
 		default:
