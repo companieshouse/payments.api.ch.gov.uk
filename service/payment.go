@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/companieshouse/chs.go/authentication"
-	"github.com/companieshouse/chs.go/data"
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
@@ -72,7 +71,7 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 	}
 
 	// Get user details from context, put there by UserAuthenticationInterceptor
-	userDetails, ok := req.Context().Value(authentication.ContextKeyUserDetails).(data.AuthUserDetails)
+	userDetails, ok := req.Context().Value(authentication.ContextKeyUserDetails).(authentication.AuthUserDetails)
 	if !ok {
 		err = fmt.Errorf("invalid AuthUserDetails in request context")
 		log.ErrorR(req, err)

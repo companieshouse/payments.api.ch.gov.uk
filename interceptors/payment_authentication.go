@@ -7,7 +7,6 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"net/http"
 
-	"github.com/companieshouse/chs.go/data"
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/gorilla/mux"
@@ -42,7 +41,7 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 
 		if identityType == helpers.Oauth2IdentityType {
 			// Get user details from context, passed in by UserAuthenticationInterceptor
-			userDetails, ok := r.Context().Value(authentication.ContextKeyUserDetails).(data.AuthUserDetails)
+			userDetails, ok := r.Context().Value(authentication.ContextKeyUserDetails).(authentication.AuthUserDetails)
 			if !ok {
 				log.ErrorR(r, fmt.Errorf("PaymentAuthenticationInterceptor error: invalid AuthUserDetails from UserAuthenticationInterceptor"))
 				w.WriteHeader(http.StatusInternalServerError)

@@ -8,8 +8,6 @@ import (
 	"testing"
 
 	"github.com/companieshouse/chs.go/authentication"
-	"github.com/companieshouse/chs.go/data"
-
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
@@ -120,7 +118,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "noroles")
 		// Pass no ID (identity)
-		authUserDetails := data.AuthUserDetails{}
+		authUserDetails := authentication.AuthUserDetails{}
 		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 
 		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockDAOAndService(mockCtrl, cfg)
@@ -140,7 +138,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("Eric-Identity-Type", "oauth2")
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "/admin/payment-lookup")
-		authUserDetails := data.AuthUserDetails{
+		authUserDetails := authentication.AuthUserDetails{
 			ID: "identity",
 		}
 		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
@@ -172,7 +170,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("Eric-Identity-Type", "oauth2")
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "/admin/payment-lookup")
-		authUserDetails := data.AuthUserDetails{
+		authUserDetails := authentication.AuthUserDetails{
 			ID: "identity",
 		}
 		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
@@ -204,7 +202,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("Eric-Identity-Type", "oauth2")
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "/admin/payment-lookup")
-		authUserDetails := data.AuthUserDetails{
+		authUserDetails := authentication.AuthUserDetails{
 			ID: "identity",
 		}
 		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
@@ -245,7 +243,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("Eric-Identity-Type", "oauth2")
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "noroles")
-		authUserDetails := data.AuthUserDetails{
+		authUserDetails := authentication.AuthUserDetails{
 			ID: "identity",
 		}
 		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
@@ -286,7 +284,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("Eric-Identity-Type", "oauth2")
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "/admin/payment-lookup")
-		authUserDetails := data.AuthUserDetails{
+		authUserDetails := authentication.AuthUserDetails{
 			ID: "identity",
 		}
 		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
@@ -327,7 +325,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("Eric-Identity-Type", "oauth2")
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "/admin/payment-lookup")
-		authUserDetails := data.AuthUserDetails{
+		authUserDetails := authentication.AuthUserDetails{
 			ID: "identity",
 		}
 		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
@@ -368,7 +366,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("Eric-Identity-Type", "key")
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Key-Roles", "*")
-		authUserDetails := data.AuthUserDetails{
+		authUserDetails := authentication.AuthUserDetails{
 			ID: "api-key-user",
 		}
 		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)

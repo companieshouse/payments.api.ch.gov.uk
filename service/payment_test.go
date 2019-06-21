@@ -9,8 +9,6 @@ import (
 	"time"
 
 	"github.com/companieshouse/chs.go/authentication"
-	"github.com/companieshouse/chs.go/data"
-
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
@@ -32,7 +30,7 @@ var defaultCosts = models.CostsRest{
 	Costs:       []models.CostResourceRest{defaultCost},
 }
 
-var defaultUserDetails = data.AuthUserDetails{
+var defaultUserDetails = authentication.AuthUserDetails{
 	Email:    "email@companieshouse.gov.uk",
 	Forename: "forename",
 	ID:       "id",
@@ -93,7 +91,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("GET", "http://dummy-resource", nil)
 
-		authUserDetails := data.AuthUserDetails{
+		authUserDetails := authentication.AuthUserDetails{
 			ID: "identity",
 		}
 
@@ -126,7 +124,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costs)
 		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
 
-		authUserDetails := data.AuthUserDetails{
+		authUserDetails := authentication.AuthUserDetails{
 			ID: "identity",
 		}
 		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
@@ -154,7 +152,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
 		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
 
-		authUserDetails := data.AuthUserDetails{
+		authUserDetails := authentication.AuthUserDetails{
 			ID: "identity",
 		}
 		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
