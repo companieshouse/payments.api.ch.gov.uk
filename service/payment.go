@@ -6,6 +6,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/companieshouse/chs.go/data"
+	"github.com/companieshouse/chs.go/interceptors/helpers"
+	"github.com/companieshouse/chs.go/log"
+	"github.com/companieshouse/payments.api.ch.gov.uk/config"
+	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
+	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/companieshouse/payments.api.ch.gov.uk/transformers"
+	"github.com/shopspring/decimal"
+	"gopkg.in/go-playground/validator.v9"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -14,15 +23,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/companieshouse/chs.go/log"
-	"github.com/companieshouse/payments.api.ch.gov.uk/config"
-	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
-	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
-	"github.com/companieshouse/payments.api.ch.gov.uk/models"
-	"github.com/companieshouse/payments.api.ch.gov.uk/transformers"
-	"github.com/shopspring/decimal"
-	"gopkg.in/go-playground/validator.v9"
 )
 
 // PaymentService contains the DAO for db access
@@ -72,7 +72,7 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 	}
 
 	// Get user details from context, put there by UserAuthenticationInterceptor
-	userDetails, ok := req.Context().Value(helpers.ContextKeyUserDetails).(models.AuthUserDetails)
+	userDetails, ok := req.Context().Value(helpers.ContextKeyUserDetails).(data.AuthUserDetails)
 	if !ok {
 		err = fmt.Errorf("invalid AuthUserDetails in request context")
 		log.ErrorR(req, err)
