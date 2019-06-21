@@ -7,9 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/companieshouse/chs.go/authentication"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
-	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/golang/mock/gomock"
@@ -18,6 +18,13 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func GetTestHandler() http.HandlerFunc {
+	fn := func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}
+	return http.HandlerFunc(fn)
+}
 
 var defaultCostRest = models.CostResourceRest{
 	Amount:                  "10",
@@ -91,7 +98,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		authUserDetails := models.PaymentResourceRest{
 			Status: "test",
 		}
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 
 		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockDAOAndService(mockCtrl, cfg)
 
@@ -111,8 +118,8 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "noroles")
 		// Pass no ID (identity)
-		authUserDetails := models.AuthUserDetails{}
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		authUserDetails := authentication.AuthUserDetails{}
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 
 		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockDAOAndService(mockCtrl, cfg)
 
@@ -131,10 +138,10 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("Eric-Identity-Type", "oauth2")
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "/admin/payment-lookup")
-		authUserDetails := models.AuthUserDetails{
+		authUserDetails := authentication.AuthUserDetails{
 			ID: "identity",
 		}
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 
 		mockDAO := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mockDAO, cfg)
@@ -163,10 +170,10 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("Eric-Identity-Type", "oauth2")
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "/admin/payment-lookup")
-		authUserDetails := models.AuthUserDetails{
+		authUserDetails := authentication.AuthUserDetails{
 			ID: "identity",
 		}
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 
 		mockDAO := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mockDAO, cfg)
@@ -195,10 +202,10 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("Eric-Identity-Type", "oauth2")
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "/admin/payment-lookup")
-		authUserDetails := models.AuthUserDetails{
+		authUserDetails := authentication.AuthUserDetails{
 			ID: "identity",
 		}
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 
 		mockDAO := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mockDAO, cfg)
@@ -236,10 +243,10 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("Eric-Identity-Type", "oauth2")
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "noroles")
-		authUserDetails := models.AuthUserDetails{
+		authUserDetails := authentication.AuthUserDetails{
 			ID: "identity",
 		}
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 
 		mockDAO := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mockDAO, cfg)
@@ -277,10 +284,10 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("Eric-Identity-Type", "oauth2")
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "/admin/payment-lookup")
-		authUserDetails := models.AuthUserDetails{
+		authUserDetails := authentication.AuthUserDetails{
 			ID: "identity",
 		}
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 
 		mockDAO := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mockDAO, cfg)
@@ -318,10 +325,10 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("Eric-Identity-Type", "oauth2")
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "/admin/payment-lookup")
-		authUserDetails := models.AuthUserDetails{
+		authUserDetails := authentication.AuthUserDetails{
 			ID: "identity",
 		}
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 
 		mockDAO := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mockDAO, cfg)
@@ -359,10 +366,10 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("Eric-Identity-Type", "key")
 		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Key-Roles", "*")
-		authUserDetails := models.AuthUserDetails{
+		authUserDetails := authentication.AuthUserDetails{
 			ID: "api-key-user",
 		}
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 		mockDAO := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mockDAO, cfg)
 		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockService(&mockPaymentService)
