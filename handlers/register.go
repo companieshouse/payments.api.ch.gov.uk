@@ -5,7 +5,7 @@ import (
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/interceptors"
 
-	chsInterceptors "github.com/companieshouse/chs.go/interceptors"
+	"github.com/companieshouse/chs.go/authentication"
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
@@ -52,9 +52,9 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	callbackRouter.HandleFunc("/payments/govpay/{payment_id}", HandleGovPayCallback).Methods("GET").Name("handle-govpay-callback")
 
 	// Set middleware for subrouters
-	rootPaymentRouter.Use(log.Handler, chsInterceptors.UserAuthenticationInterceptor)
+	rootPaymentRouter.Use(log.Handler, authentication.UserAuthenticationInterceptor)
 	getPaymentRouter.Use(pa.PaymentAuthenticationIntercept)
-	privateRouter.Use(log.Handler, chsInterceptors.UserAuthenticationInterceptor, pa.PaymentAuthenticationIntercept)
+	privateRouter.Use(log.Handler, authentication.UserAuthenticationInterceptor, pa.PaymentAuthenticationIntercept)
 	callbackRouter.Use(log.Handler)
 }
 

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/companieshouse/chs.go/authentication"
 	"github.com/companieshouse/chs.go/data"
-	"github.com/companieshouse/chs.go/interceptors/helpers"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
@@ -97,7 +97,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 			ID: "identity",
 		}
 
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 
 		resource := models.IncomingPaymentResourceRequest{
 			RedirectURI: "http://www.companieshouse.gov.uk",
@@ -129,7 +129,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		authUserDetails := data.AuthUserDetails{
 			ID: "identity",
 		}
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 
 		resource := models.IncomingPaymentResourceRequest{
 			Resource:    "http://dummy-url",
@@ -157,7 +157,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		authUserDetails := data.AuthUserDetails{
 			ID: "identity",
 		}
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 
 		resource := models.IncomingPaymentResourceRequest{
 			RedirectURI: "http://www.companieshouse.gov.uk",
@@ -184,7 +184,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
 		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
 
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, defaultUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, defaultUserDetails)
 
 		resource := models.IncomingPaymentResourceRequest{
 			Resource:    "http://dummy-url",
@@ -241,7 +241,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costs)
 		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
 
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, defaultUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, defaultUserDetails)
 
 		resource := models.IncomingPaymentResourceRequest{
 			Resource:    "http://dummy-url",

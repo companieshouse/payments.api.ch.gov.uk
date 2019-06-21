@@ -3,7 +3,7 @@ package interceptors
 import (
 	"context"
 	"fmt"
-	chsHelpers "github.com/companieshouse/chs.go/interceptors/helpers"
+	"github.com/companieshouse/chs.go/authentication"
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"net/http"
 
@@ -31,7 +31,7 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 		}
 
 		// Get identity type from request
-		identityType := chsHelpers.GetAuthorisedIdentityType(r)
+		identityType := authentication.GetAuthorisedIdentityType(r)
 		if !(identityType == helpers.Oauth2IdentityType || identityType == helpers.APIKeyIdentityType) {
 			log.Error(fmt.Errorf("authentication interceptor unauthorised: not oauth2 or API key identity type"))
 			w.WriteHeader(http.StatusUnauthorized)
@@ -42,7 +42,7 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 
 		if identityType == helpers.Oauth2IdentityType {
 			// Get user details from context, passed in by UserAuthenticationInterceptor
-			userDetails, ok := r.Context().Value(chsHelpers.ContextKeyUserDetails).(data.AuthUserDetails)
+			userDetails, ok := r.Context().Value(authentication.ContextKeyUserDetails).(data.AuthUserDetails)
 			if !ok {
 				log.ErrorR(r, fmt.Errorf("PaymentAuthenticationInterceptor error: invalid AuthUserDetails from UserAuthenticationInterceptor"))
 				w.WriteHeader(http.StatusInternalServerError)

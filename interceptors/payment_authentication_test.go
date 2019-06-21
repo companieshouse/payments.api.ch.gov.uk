@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/companieshouse/chs.go/authentication"
 	"github.com/companieshouse/chs.go/data"
-	"github.com/companieshouse/chs.go/interceptors/helpers"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
@@ -100,7 +100,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		authUserDetails := models.PaymentResourceRest{
 			Status: "test",
 		}
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 
 		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockDAOAndService(mockCtrl, cfg)
 
@@ -121,7 +121,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		req.Header.Set("ERIC-Authorised-Roles", "noroles")
 		// Pass no ID (identity)
 		authUserDetails := data.AuthUserDetails{}
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 
 		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockDAOAndService(mockCtrl, cfg)
 
@@ -143,7 +143,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		authUserDetails := data.AuthUserDetails{
 			ID: "identity",
 		}
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 
 		mockDAO := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mockDAO, cfg)
@@ -175,7 +175,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		authUserDetails := data.AuthUserDetails{
 			ID: "identity",
 		}
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 
 		mockDAO := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mockDAO, cfg)
@@ -207,7 +207,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		authUserDetails := data.AuthUserDetails{
 			ID: "identity",
 		}
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 
 		mockDAO := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mockDAO, cfg)
@@ -248,7 +248,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		authUserDetails := data.AuthUserDetails{
 			ID: "identity",
 		}
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 
 		mockDAO := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mockDAO, cfg)
@@ -289,7 +289,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		authUserDetails := data.AuthUserDetails{
 			ID: "identity",
 		}
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 
 		mockDAO := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mockDAO, cfg)
@@ -330,7 +330,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		authUserDetails := data.AuthUserDetails{
 			ID: "identity",
 		}
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 
 		mockDAO := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mockDAO, cfg)
@@ -371,7 +371,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		authUserDetails := data.AuthUserDetails{
 			ID: "api-key-user",
 		}
-		ctx := context.WithValue(req.Context(), helpers.ContextKeyUserDetails, authUserDetails)
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 		mockDAO := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mockDAO, cfg)
 		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockService(&mockPaymentService)
