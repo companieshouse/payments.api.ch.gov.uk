@@ -27,8 +27,6 @@ else
     source "${APP_DIR}/app_env"
 fi
 
-exec "${APP_DIR}/payments.api.ch.gov.uk" "-bind-addr=:${PORT}"
-
 # Read brokers from environment and split on comma
 IFS=',' read -ra BROKERS <<< "${KAFKA_BROKER_ADDR}"
 
