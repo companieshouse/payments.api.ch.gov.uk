@@ -34,6 +34,8 @@ func (gp GovPayService) CheckProvider(paymentResource *models.PaymentResourceRes
 	// Return state
 	if state.Finished && state.Status == "success" {
 		return &models.StatusResponse{Status: "paid"}, Success, nil
+	} else if state.Finished && state.Code == "P0030" {
+		return &models.StatusResponse{Status: "cancelled"}, Success, nil
 	}
 	return &models.StatusResponse{Status: "failed"}, Error, nil
 }
@@ -109,7 +111,12 @@ func (gp *GovPayService) getGovPayPaymentState(paymentResource *models.PaymentRe
 	}
 
 	request.Header.Add("accept", "application/json")
-	request.Header.Add("authorization", "Bearer "+cfg.GovPayBearerTokenTreasury) //TODO: Determine which token to use
+	if paymentResource.Costs[0].ClassOfPayment[0] == "penalty" {
+		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenTreasury)
+	}
+	if paymentResource.Costs[0].ClassOfPayment[0] == "data-maintenance" {
+		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenChAccount)
+	}
 	request.Header.Add("content-type", "application/json")
 
 	// Make call to GovPay to check state of payment

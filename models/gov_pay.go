@@ -29,6 +29,7 @@ type IncomingGovPayResponse struct {
 type State struct {
 	Status   string `json:"status"`
 	Finished bool   `json:"finished"`
+	Code     string `json:"code"`
 }
 
 // RefundSummary is the refund status of the payment
