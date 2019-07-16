@@ -102,5 +102,5 @@ type Cancel struct {
 // PaymentDetails is used by the payment-details endpoint to return card type and an auth number which is the payment id
 type PaymentDetails struct {
 	CardType  string `json:"card_type"`
-	PaymentId string `json:"payment_id"`
+	PaymentID string `json:"payment_id"`
 }

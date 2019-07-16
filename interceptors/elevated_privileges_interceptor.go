@@ -19,9 +19,9 @@ func ElevatedPrivilegesInterceptor(next http.Handler) http.Handler {
 			return
 		}
 
-		isApiKeyRequest := identityType == helpers.APIKeyIdentityType
+		isAPIKeyRequest := identityType == helpers.APIKeyIdentityType
 		apiKeyHasElevatedPrivileges := helpers.IsKeyElevatedPrivilegesAuthorised(r)
-		if isApiKeyRequest && apiKeyHasElevatedPrivileges {
+		if isAPIKeyRequest && apiKeyHasElevatedPrivileges {
 			// Call the next handler
 			next.ServeHTTP(w, r)
 		} else {

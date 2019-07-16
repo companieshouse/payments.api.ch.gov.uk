@@ -141,7 +141,7 @@ func (gp *GovPayService) getGovPayPaymentState(paymentResource *models.PaymentRe
 	return &govPayResponse.State, Success, nil
 }
 
-// To get the details of a GovPay payment, GET the payment resource from GovPay
+// GetGovPayPaymentDetails gets the details of a GovPay payment
 func (gp *GovPayService) GetGovPayPaymentDetails(paymentResource *models.PaymentResourceRest) (*models.PaymentDetails, ResponseType, error) {
 	request, err := http.NewRequest("GET", paymentResource.MetaData.ExternalPaymentStatusURI, nil)
 	if err != nil {
@@ -174,7 +174,7 @@ func (gp *GovPayService) GetGovPayPaymentDetails(paymentResource *models.Payment
 		return nil, Error, fmt.Errorf("error reading response from GovPay when getting payment detaisl: [%s]", err)
 	}
 
-	paymentDetails := &models.PaymentDetails{govPayResponse.CardBrand, govPayResponse.PaymentID}
+	paymentDetails := &models.PaymentDetails{CardType: govPayResponse.CardBrand, PaymentID: govPayResponse.PaymentID}
 	// Return the payment details
 	return paymentDetails, Success, nil
 }

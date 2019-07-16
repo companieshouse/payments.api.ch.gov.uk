@@ -3,12 +3,11 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/companieshouse/payments.api.ch.gov.uk/interceptors"
-
 	"github.com/companieshouse/chs.go/authentication"
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
+	"github.com/companieshouse/payments.api.ch.gov.uk/interceptors"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/gorilla/mux"
 )

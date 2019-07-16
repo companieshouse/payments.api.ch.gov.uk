@@ -465,7 +465,7 @@ func TestUnitGetGovPayPaymentDetails(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		GovPayPaymentDetails := models.PaymentDetails{CardType: "Visa", PaymentId: "1234"}
+		GovPayPaymentDetails := models.PaymentDetails{CardType: "Visa", PaymentID: "1234"}
 		IncomingGovPayResponse := models.IncomingGovPayResponse{CardBrand: "Visa", PaymentID: "1234"}
 
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, IncomingGovPayResponse)
