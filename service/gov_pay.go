@@ -149,10 +149,11 @@ func (gp *GovPayService) GetGovPayPaymentDetails(paymentResource *models.Payment
 	}
 
 	request.Header.Add("accept", "application/json")
-	if paymentResource.Costs[0].ClassOfPayment[0] == "penalty" {
+
+	class := paymentResource.Costs[0].ClassOfPayment[0]
+	if class == "penalty" {
 		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenTreasury)
-	}
-	if paymentResource.Costs[0].ClassOfPayment[0] == "data-maintenance" {
+	} else if class == "data-maintenance" {
 		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenChAccount)
 	}
 
