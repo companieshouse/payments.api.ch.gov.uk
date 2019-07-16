@@ -95,6 +95,30 @@ func TestUnitCheckProvider(t *testing.T) {
 		So(statusResponse.Status, ShouldEqual, "failed")
 		So(err, ShouldBeNil)
 	})
+
+	Convey("Status - cancelled", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockGovPayService := createMockGovPayService(&mockPaymentService)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		GovPayState := models.State{Status: "failed", Finished: true, Code: "P0030"}
+		IncomingGovPayResponse := models.IncomingGovPayResponse{State: GovPayState}
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, IncomingGovPayResponse)
+		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
+
+		paymentResourceRest := models.PaymentResourceRest{
+			MetaData: models.PaymentResourceMetaDataRest{
+				ExternalPaymentStatusURI: "external_uri",
+			},
+		}
+
+		statusResponse, responseType, err := mockGovPayService.CheckProvider(&paymentResourceRest)
+		So(responseType.String(), ShouldEqual, Success.String())
+		So(statusResponse.Status, ShouldEqual, "cancelled")
+		So(err, ShouldBeNil)
+	})
 }
 
 func TestUnitGenerateNextURLGovPay(t *testing.T) {
