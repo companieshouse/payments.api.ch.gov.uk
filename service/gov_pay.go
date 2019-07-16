@@ -134,6 +134,45 @@ func (gp *GovPayService) getGovPayPaymentState(paymentResource *models.PaymentRe
 	return &govPayResponse.State, Success, nil
 }
 
+// To get the details of a GovPay payment, GET the payment resource from GovPay
+func (gp *GovPayService) GetGovPayPaymentDetails(paymentResource *models.PaymentResourceRest) (*models.PaymentDetails, ResponseType, error) {
+	request, err := http.NewRequest("GET", paymentResource.MetaData.ExternalPaymentStatusURI, nil)
+	if err != nil {
+		return nil, Error, fmt.Errorf("error generating request for GovPay: [%s]", err)
+	}
+
+	request.Header.Add("accept", "application/json")
+	if paymentResource.Costs[0].ClassOfPayment[0] == "penalty" {
+		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenTreasury)
+	}
+	if paymentResource.Costs[0].ClassOfPayment[0] == "data-maintenance" {
+		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenChAccount)
+	}
+	request.Header.Add("content-type", "application/json")
+
+	// Make call to GovPay to check state of payment
+	resp, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return nil, Error, fmt.Errorf("error sending request to GovPay to check payment status: [%s]", err)
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, Error, fmt.Errorf("error reading response from GovPay when checking payment status: [%s]", err)
+	}
+
+	govPayResponse := &models.IncomingGovPayResponse{}
+	err = json.Unmarshal(body, govPayResponse)
+	if err != nil {
+		return nil, Error, fmt.Errorf("error reading response from GovPay when checking payment status: [%s]", err)
+	}
+
+	paymentDetails := &models.PaymentDetails{govPayResponse.CardBrand, govPayResponse.PaymentID}
+	// Return the payment details
+	return paymentDetails, Success, nil
+}
+
 // decimalPayment will always be in the form XX.XX (e.g: 12.00) due to getTotalAmount converting to decimal with 2 fixed places right of decimal point.
 func convertToPenceFromDecimal(decimalPayment string) (int, error) {
 	pencePayment := strings.Replace(decimalPayment, ".", "", 1)

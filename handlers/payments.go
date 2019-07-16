@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gorilla/mux"
+
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
@@ -162,4 +164,58 @@ func HandlePatchPaymentSession(w http.ResponseWriter, req *http.Request) {
 	}
 
 	log.InfoR(req, "Successful PATCH request for payment resource", log.Data{"payment_id": paymentSession.MetaData.ID, "status": http.StatusOK})
+}
+
+// HandleGetPaymentDetails retrieves the payment details from the external provider
+func HandleGetPaymentDetails(w http.ResponseWriter, req *http.Request) {
+	// Get the payment session
+	vars := mux.Vars(req)
+	id := vars["payment_id"]
+	if id == "" {
+		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// The payment session must be retrieved directly to enable access to metadata outside the data block
+	paymentSession, _, err := paymentService.GetPaymentSession(req, id)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error getting payment session: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if paymentSession == nil {
+		log.ErrorR(req, fmt.Errorf("payment session not found. id: %s", id))
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	// Get the state of a GovPay payment
+	gp := &service.GovPayService{
+		PaymentService: *paymentService,
+	}
+
+	statusResponse, responseType, err := gp.GetGovPayPaymentDetails(paymentSession)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error getting payment status from govpay: [%v]", err), log.Data{"service_response_type": responseType.String()})
+		switch responseType {
+		case service.Error:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(statusResponse)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	log.InfoR(req, "Successful GET request for payment details: ", log.Data{"payment_id": paymentSession.MetaData.ID})
 }
