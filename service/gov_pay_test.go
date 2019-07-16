@@ -35,11 +35,15 @@ func TestUnitCheckProvider(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		jsonResponse := httpmock.NewErrorResponder(errors.New("error"))
 		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
 
 		paymentResourceRest := models.PaymentResourceRest{
 			MetaData: models.PaymentResourceMetaDataRest{
 				ExternalPaymentStatusURI: "external_uri",
 			},
+			Costs: []models.CostResourceRest{costResource},
 		}
 
 		statusResponse, responseType, err := mockGovPayService.CheckProvider(&paymentResourceRest)
@@ -60,10 +64,15 @@ func TestUnitCheckProvider(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, IncomingGovPayResponse)
 		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
 
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
 		paymentResourceRest := models.PaymentResourceRest{
 			MetaData: models.PaymentResourceMetaDataRest{
 				ExternalPaymentStatusURI: "external_uri",
 			},
+			Costs: []models.CostResourceRest{costResource},
 		}
 
 		statusResponse, responseType, err := mockGovPayService.CheckProvider(&paymentResourceRest)
@@ -84,10 +93,15 @@ func TestUnitCheckProvider(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, IncomingGovPayResponse)
 		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
 
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
 		paymentResourceRest := models.PaymentResourceRest{
 			MetaData: models.PaymentResourceMetaDataRest{
 				ExternalPaymentStatusURI: "external_uri",
 			},
+			Costs: []models.CostResourceRest{costResource},
 		}
 
 		statusResponse, responseType, err := mockGovPayService.CheckProvider(&paymentResourceRest)
@@ -108,10 +122,15 @@ func TestUnitCheckProvider(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, IncomingGovPayResponse)
 		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
 
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
 		paymentResourceRest := models.PaymentResourceRest{
 			MetaData: models.PaymentResourceMetaDataRest{
 				ExternalPaymentStatusURI: "external_uri",
 			},
+			Costs: []models.CostResourceRest{costResource},
 		}
 
 		statusResponse, responseType, err := mockGovPayService.CheckProvider(&paymentResourceRest)
@@ -360,10 +379,15 @@ func TestUnitGetGovPayPaymentState(t *testing.T) {
 		jsonResponse := httpmock.NewErrorResponder(errors.New("error"))
 		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
 
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
 		paymentResourceRest := models.PaymentResourceRest{
 			MetaData: models.PaymentResourceMetaDataRest{
 				ExternalPaymentStatusURI: "external_uri",
 			},
+			Costs: []models.CostResourceRest{costResource},
 		}
 		govPayResponse, responseType, err := mockGovPayService.getGovPayPaymentState(&paymentResourceRest, cfg)
 		So(responseType.String(), ShouldEqual, Error.String())
@@ -383,16 +407,83 @@ func TestUnitGetGovPayPaymentState(t *testing.T) {
 
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, IncomingGovPayResponse)
 		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
 
 		paymentResource := models.PaymentResourceRest{
 			MetaData: models.PaymentResourceMetaDataRest{
 				ExternalPaymentStatusURI: "external_uri",
 			},
+			Costs: []models.CostResourceRest{costResource},
 		}
 		govPayResponse, responseType, err := mockGovPayService.getGovPayPaymentState(&paymentResource, cfg)
 
 		So(responseType.String(), ShouldEqual, Success.String())
 		So(govPayResponse, ShouldResemble, &GovPayState)
+		So(err, ShouldBeNil)
+	})
+
+}
+
+func TestUnitGetGovPayPaymentDetails(t *testing.T) {
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	cfg, _ := config.Get()
+
+	Convey("Error sending request to GOV.UK Pay", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockGovPayService := createMockGovPayService(&mockPaymentService)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse := httpmock.NewErrorResponder(errors.New("error"))
+		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
+
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
+		paymentResourceRest := models.PaymentResourceRest{
+			MetaData: models.PaymentResourceMetaDataRest{
+				ExternalPaymentStatusURI: "external_uri",
+			},
+			Costs: []models.CostResourceRest{costResource},
+		}
+		govPayResponse, responseType, err := mockGovPayService.GetGovPayPaymentDetails(&paymentResourceRest)
+		So(responseType.String(), ShouldEqual, Error.String())
+		So(govPayResponse, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "error sending request to GovPay to get payment details: [Get external_uri: error]")
+	})
+
+	Convey("Valid GET request to GovPay and return payment details", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockGovPayService := createMockGovPayService(&mockPaymentService)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		GovPayPaymentDetails := models.PaymentDetails{CardType: "Visa", PaymentId: "1234"}
+		IncomingGovPayResponse := models.IncomingGovPayResponse{CardBrand: "Visa", PaymentID: "1234"}
+
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, IncomingGovPayResponse)
+		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
+		paymentResource := models.PaymentResourceRest{
+			MetaData: models.PaymentResourceMetaDataRest{
+				ExternalPaymentStatusURI: "external_uri",
+			},
+			Costs: []models.CostResourceRest{costResource},
+		}
+		govPayResponse, responseType, err := mockGovPayService.GetGovPayPaymentDetails(&paymentResource)
+
+		So(responseType.String(), ShouldEqual, Success.String())
+		So(govPayResponse, ShouldResemble, &GovPayPaymentDetails)
 		So(err, ShouldBeNil)
 	})
 

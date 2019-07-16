@@ -155,24 +155,23 @@ func (gp *GovPayService) GetGovPayPaymentDetails(paymentResource *models.Payment
 	if paymentResource.Costs[0].ClassOfPayment[0] == "data-maintenance" {
 		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenChAccount)
 	}
-	request.Header.Add("content-type", "application/json")
 
-	// Make call to GovPay to check state of payment
+	// Make call to GovPay to get payment details
 	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
-		return nil, Error, fmt.Errorf("error sending request to GovPay to check payment status: [%s]", err)
+		return nil, Error, fmt.Errorf("error sending request to GovPay to get payment details: [%s]", err)
 	}
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, Error, fmt.Errorf("error reading response from GovPay when checking payment status: [%s]", err)
+		return nil, Error, fmt.Errorf("error reading response from GovPay when getting payment details: [%s]", err)
 	}
 
 	govPayResponse := &models.IncomingGovPayResponse{}
 	err = json.Unmarshal(body, govPayResponse)
 	if err != nil {
-		return nil, Error, fmt.Errorf("error reading response from GovPay when checking payment status: [%s]", err)
+		return nil, Error, fmt.Errorf("error reading response from GovPay when getting payment detaisl: [%s]", err)
 	}
 
 	paymentDetails := &models.PaymentDetails{govPayResponse.CardBrand, govPayResponse.PaymentID}
