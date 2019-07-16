@@ -176,7 +176,6 @@ func (gp *GovPayService) GetGovPayPaymentDetails(paymentResource *models.Payment
 	}
 
 	paymentDetails := &models.PaymentDetails{CardType: govPayResponse.CardBrand, PaymentID: govPayResponse.PaymentID}
-	// Return the payment details
 	return paymentDetails, Success, nil
 }
 
