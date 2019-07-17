@@ -19,14 +19,11 @@ func ElevatedPrivilegesInterceptor(next http.Handler) http.Handler {
 			return
 		}
 
-		isAPIKeyRequest := identityType == helpers.APIKeyIdentityType
-		apiKeyHasElevatedPrivileges := helpers.IsKeyElevatedPrivilegesAuthorised(r)
-		if isAPIKeyRequest && apiKeyHasElevatedPrivileges {
+		if helpers.IsKeyElevatedPrivilegesAuthorised(r) {
 			// Call the next handler
 			next.ServeHTTP(w, r)
 		} else {
-			// If the request is not with an elevated privileges API key then the request is
-			// unauthorized
+			// If the request is not with an elevated privileges API key then the request is unauthorized
 			w.WriteHeader(http.StatusUnauthorized)
 			log.Error(fmt.Errorf("elevated privileges interceptor unauthorised: not elevated privileges API key"))
 		}
