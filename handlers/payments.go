@@ -9,7 +9,6 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
-	"github.com/gorilla/mux"
 )
 
 // HandleCreatePaymentSession creates a payment session and returns a journey URL for the calling app to redirect to
@@ -167,15 +166,6 @@ func HandlePatchPaymentSession(w http.ResponseWriter, req *http.Request) {
 
 // HandleGetPaymentDetails retrieves the payment details from the external provider
 func HandleGetPaymentDetails(w http.ResponseWriter, req *http.Request) {
-	// Get the payment session
-	vars := mux.Vars(req)
-	id := vars["payment_id"]
-	if id == "" {
-		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
 	// The payment session must be retrieved directly to enable access to metadata outside the data block
 	paymentSession, ok := req.Context().Value(helpers.ContextKeyPaymentSession).(*models.PaymentResourceRest)
 	if !ok {

@@ -123,16 +123,8 @@ func TestUnitHandleGetPaymentDetails(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	Convey("payment_id not supplied", t, func() {
-		req := httptest.NewRequest("GET", "/test", nil)
-		w := httptest.NewRecorder()
-		HandleGetPaymentDetails(w, req)
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
-	})
-
 	Convey("Error getting payment session", t, func() {
 		req := httptest.NewRequest("GET", "/test", nil)
-		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
 		w := httptest.NewRecorder()
 		HandleGetPaymentDetails(w, req)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -146,7 +138,6 @@ func TestUnitHandleGetPaymentDetails(t *testing.T) {
 		}
 
 		req := httptest.NewRequest("GET", "/test", nil)
-		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
 		ctx := context.WithValue(req.Context(), helpers.ContextKeyPaymentSession, &paymentResource)
 		w := httptest.NewRecorder()
 		HandleGetPaymentDetails(w, req.WithContext(ctx))
