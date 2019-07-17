@@ -177,15 +177,10 @@ func HandleGetPaymentDetails(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// The payment session must be retrieved directly to enable access to metadata outside the data block
-	paymentSession, _, err := paymentService.GetPaymentSession(req, id)
-	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error getting payment session: [%v]", err))
+	paymentSession, ok := req.Context().Value(helpers.ContextKeyPaymentSession).(*models.PaymentResourceRest)
+	if !ok {
+		log.ErrorR(req, fmt.Errorf("invalid PaymentResourceRest in request context"))
 		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if paymentSession == nil {
-		log.ErrorR(req, fmt.Errorf("payment session not found. id: %s", id))
-		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
