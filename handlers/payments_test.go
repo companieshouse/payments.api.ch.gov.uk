@@ -10,10 +10,13 @@ import (
 	"time"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
+	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
+	"gopkg.in/jarcoal/httpmock.v1"
 )
 
 func TestUnitHandleCreatePaymentSession(t *testing.T) {
@@ -113,5 +116,73 @@ func TestUnitHandlePatchPaymentSession(t *testing.T) {
 		Register(mux.NewRouter(), *cfg)
 		HandlePatchPaymentSession(w, req.WithContext(ctx))
 		So(w.Code, ShouldEqual, 403)
+	})
+}
+
+func TestUnitHandleGetPaymentDetails(t *testing.T) {
+
+	cfg, _ := config.Get()
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	Convey("payment_id not supplied", t, func() {
+		req := httptest.NewRequest("GET", "/test", nil)
+		w := httptest.NewRecorder()
+		HandleGetPaymentDetails(w, req)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+	})
+
+	Convey("Error getting payment session", t, func() {
+		req := httptest.NewRequest("GET", "/test", nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
+		w := httptest.NewRecorder()
+		HandleGetPaymentDetails(w, req)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("payment session not found", t, func() {
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jSONResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jSONResponse)
+
+		mock := dao.NewMockDAO(mockCtrl)
+		paymentService = createMockPaymentService(mock, cfg)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(nil, nil).AnyTimes()
+
+		req := httptest.NewRequest("GET", "/test", nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
+		w := httptest.NewRecorder()
+		HandleGetPaymentDetails(w, req)
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+	})
+
+	Convey("Error getting payment status from Gov Pay", t, func() {
+
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount:        "10.00",
+				PaymentMethod: "GovPay",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				CreatedAt: time.Now(),
+			},
+		}
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jSONResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jSONResponse)
+
+		mock := dao.NewMockDAO(mockCtrl)
+		paymentService = createMockPaymentService(mock, cfg)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+
+		req := httptest.NewRequest("GET", "/test", nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
+		w := httptest.NewRecorder()
+		HandleGetPaymentDetails(w, req)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 }
