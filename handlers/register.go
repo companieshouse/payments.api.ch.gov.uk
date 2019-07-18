@@ -50,7 +50,7 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	privatePatchRouter.HandleFunc("", HandlePatchPaymentSession).Methods("PATCH").Name("patch-payment")
 
 	privateJourneyRouter := mainRouter.PathPrefix("/private/payments/{payment_id}/external-journey").Subrouter()
-	privateJourneyRouter.HandleFunc("/payments/{payment_id}/external-journey", HandleCreateExternalPaymentJourney).Methods("POST").Name("create-external-payment-journey")
+	privateJourneyRouter.HandleFunc("", HandleCreateExternalPaymentJourney).Methods("POST").Name("create-external-payment-journey")
 
 	// callback endpoints should not be intercepted by the paymentauth or userauth interceptors, so needs to be it's own subrouter
 	callbackRouter := mainRouter.PathPrefix("/callback").Subrouter()
