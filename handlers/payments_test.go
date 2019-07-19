@@ -12,6 +12,8 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/companieshouse/payments.api.ch.gov.uk/service"
+	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -113,5 +115,32 @@ func TestUnitHandlePatchPaymentSession(t *testing.T) {
 		Register(mux.NewRouter(), *cfg)
 		HandlePatchPaymentSession(w, req.WithContext(ctx))
 		So(w.Code, ShouldEqual, 403)
+	})
+}
+
+func TestUnitHandleGetPaymentDetails(t *testing.T) {
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	Convey("Error getting payment session", t, func() {
+		req := httptest.NewRequest("GET", "/test", nil)
+		w := httptest.NewRecorder()
+		HandleGetPaymentDetails(w, req)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Error getting payment status from Gov Pay", t, func() {
+
+		paymentResource := models.PaymentResourceRest{
+			Status: service.InProgress.String(),
+			Costs:  []models.CostResourceRest{{ClassOfPayment: []string{"class"}}},
+		}
+
+		req := httptest.NewRequest("GET", "/test", nil)
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyPaymentSession, &paymentResource)
+		w := httptest.NewRecorder()
+		HandleGetPaymentDetails(w, req.WithContext(ctx))
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 }

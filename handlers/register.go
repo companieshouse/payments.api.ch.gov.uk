@@ -3,12 +3,11 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/companieshouse/payments.api.ch.gov.uk/interceptors"
-
 	"github.com/companieshouse/chs.go/authentication"
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
+	"github.com/companieshouse/payments.api.ch.gov.uk/interceptors"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/gorilla/mux"
 )
@@ -42,10 +41,16 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	getPaymentRouter := rootPaymentRouter.PathPrefix("/{payment_id}").Subrouter()
 	getPaymentRouter.HandleFunc("", HandleGetPaymentSession).Methods("GET").Name("get-payment")
 
-	// All private endpoints need  payment and user auth, so needs to be it's own subrouter
-	privateRouter := mainRouter.PathPrefix("/private").Subrouter()
-	privateRouter.HandleFunc("/payments/{payment_id}", HandlePatchPaymentSession).Methods("PATCH").Name("patch-payment")
-	privateRouter.HandleFunc("/payments/{payment_id}/external-journey", HandleCreateExternalPaymentJourney).Methods("POST").Name("create-external-payment-journey")
+	// payment-details endpoint needs it's own interceptor
+	paymentDetailsRouter := mainRouter.PathPrefix("/private/payments/{payment_id}/payment-details").Subrouter()
+	paymentDetailsRouter.HandleFunc("", HandleGetPaymentDetails).Methods("GET").Name("get-payment-details")
+
+	// All private endpoints need  payment and user auth, and due to router limitations of applying interceptors, need their own subrouters
+	privatePatchRouter := mainRouter.PathPrefix("/private/payments/{payment_id}").Subrouter()
+	privatePatchRouter.HandleFunc("", HandlePatchPaymentSession).Methods("PATCH").Name("patch-payment")
+
+	privateJourneyRouter := mainRouter.PathPrefix("/private/payments/{payment_id}/external-journey").Subrouter()
+	privateJourneyRouter.HandleFunc("", HandleCreateExternalPaymentJourney).Methods("POST").Name("create-external-payment-journey")
 
 	// callback endpoints should not be intercepted by the paymentauth or userauth interceptors, so needs to be it's own subrouter
 	callbackRouter := mainRouter.PathPrefix("/callback").Subrouter()
@@ -54,7 +59,10 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	// Set middleware for subrouters
 	rootPaymentRouter.Use(log.Handler, authentication.UserAuthenticationInterceptor)
 	getPaymentRouter.Use(pa.PaymentAuthenticationIntercept)
-	privateRouter.Use(log.Handler, authentication.UserAuthenticationInterceptor, pa.PaymentAuthenticationIntercept)
+	paymentDetailsRouter.Use(log.Handler, interceptors.ElevatedPrivilegesInterceptor, pa.PaymentAuthenticationIntercept)
+	privatePatchRouter.Use(log.Handler, authentication.UserAuthenticationInterceptor, pa.PaymentAuthenticationIntercept)
+	privateJourneyRouter.Use(log.Handler, authentication.UserAuthenticationInterceptor, pa.PaymentAuthenticationIntercept)
+
 	callbackRouter.Use(log.Handler)
 }
 

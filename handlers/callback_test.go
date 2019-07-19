@@ -215,7 +215,6 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 			},
 		}
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
-		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
@@ -247,7 +246,6 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 			},
 		}
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
-		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
@@ -279,6 +277,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 				},
 				CreatedAt: time.Now(),
 			},
+			ExternalPaymentStatusURI: "http://dummy-url",
 		}
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)

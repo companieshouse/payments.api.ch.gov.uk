@@ -3,11 +3,11 @@ package interceptors
 import (
 	"context"
 	"fmt"
-	"github.com/companieshouse/chs.go/authentication"
-	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"net/http"
 
+	"github.com/companieshouse/chs.go/authentication"
 	"github.com/companieshouse/chs.go/log"
+	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/gorilla/mux"
 )

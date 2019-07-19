@@ -23,6 +23,7 @@ type IncomingGovPayResponse struct {
 	SettlementSummary SettlementSummary `json:"settlement_summary"`
 	DelayedCapture    bool              `json:"delayed_capture"`
 	GovPayLinks       GovPayLinks       `json:"_links"`
+	CardBrand         string            `json:"card_brand"`
 }
 
 // State is the current state of the payment
@@ -96,4 +97,10 @@ type Refunds struct {
 type Cancel struct {
 	HREF   string `json:"href"`
 	Method string `json:"method"`
+}
+
+// PaymentDetails is used by the payment-details endpoint to return card type and an auth number which is the payment id
+type PaymentDetails struct {
+	CardType  string `json:"card_type"`
+	PaymentID string `json:"payment_id"`
 }
