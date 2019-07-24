@@ -70,5 +70,6 @@ type CostResourceRest struct {
 	ClassOfPayment          []string          `json:"class_of_payment"          validate:"required"`
 	Description             string            `json:"description"               validate:"required"`
 	DescriptionIdentifier   string            `json:"description_identifier"    validate:"required"`
+	ProductType 			string            `json:"product_type"              validate:"required"`
 	DescriptionValues       map[string]string `json:"description_values"`
 }
