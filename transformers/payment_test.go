@@ -30,6 +30,7 @@ func TestUnitTransformToDB(t *testing.T) {
 			},
 			PaymentMethod: "method",
 			Reference:     "ref",
+			CompanyNumber: "companyNumber",
 			Status:        "pending",
 			Costs: []models.CostResourceRest{
 				{
@@ -70,6 +71,7 @@ func TestUnitTransformToDB(t *testing.T) {
 				},
 				PaymentMethod: "method",
 				Reference:     "ref",
+				CompanyNumber: "companyNumber",
 				Status:        "pending",
 			},
 		}
@@ -100,6 +102,7 @@ func TestUnitTransformToRest(t *testing.T) {
 				},
 				PaymentMethod: "method",
 				Reference:     "ref",
+				CompanyNumber: "companyNumber",
 				Status:        "pending",
 			},
 		}
@@ -121,6 +124,7 @@ func TestUnitTransformToRest(t *testing.T) {
 			},
 			PaymentMethod: "method",
 			Reference:     "ref",
+			CompanyNumber: "companyNumber",
 			Status:        "pending",
 		}
 

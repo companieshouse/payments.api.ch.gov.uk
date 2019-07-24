@@ -4,10 +4,11 @@ import "time"
 
 // IncomingPaymentResourceRequest is the data received in the body of the incoming request
 type IncomingPaymentResourceRequest struct {
-	RedirectURI string `json:"redirect_uri" validate:"required,url"`
-	Reference   string `json:"reference"`
-	Resource    string `json:"resource"     validate:"required,url"`
-	State       string `json:"state"        validate:"required"`
+	RedirectURI   string `json:"redirect_uri"    validate:"required,url"`
+	Reference     string `json:"reference"`
+	Resource      string `json:"resource"        validate:"required,url"`
+	State         string `json:"state"           validate:"required"`
+	CompanyNumber string `json:"company_number"`
 }
 
 // PaymentResourceRest is public facing payment details to be returned in the response
@@ -21,6 +22,7 @@ type PaymentResourceRest struct {
 	Links                   PaymentLinksRest            `json:"links"`
 	PaymentMethod           string                      `json:"payment_method,omitempty"`
 	Reference               string                      `json:"reference,omitempty"`
+	CompanyNumber           string                      `json:"company_number,omitempty"`
 	Status                  string                      `json:"status"`
 	Costs                   []CostResourceRest          `json:"costs"`
 	Etag                    string                      `json:"etag"`

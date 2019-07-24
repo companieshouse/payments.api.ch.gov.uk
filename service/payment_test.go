@@ -185,10 +185,11 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, defaultUserDetails)
 
 		resource := models.IncomingPaymentResourceRequest{
-			Resource:    "http://dummy-url",
-			Reference:   "ref",
-			RedirectURI: "http://www.companieshouse.gov.uk",
-			State:       "state",
+			Resource:      "http://dummy-url",
+			Reference:     "ref",
+			CompanyNumber: "companyNumber",
+			RedirectURI:   "http://www.companieshouse.gov.uk",
+			State:         "state",
 		}
 
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
@@ -214,12 +215,13 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(regSelf.MatchString(paymentResourceRest.Links.Self), ShouldEqual, true)
 		So(paymentResourceRest.PaymentMethod, ShouldBeEmpty)
 		So(paymentResourceRest.Reference, ShouldEqual, "ref")
+		So(paymentResourceRest.CompanyNumber, ShouldEqual, "companyNumber")
 		So(paymentResourceRest.Status, ShouldEqual, "pending")
 		So(paymentResourceRest.Costs, ShouldResemble, defaultCosts.Costs)
 		So(paymentResourceRest.MetaData, ShouldResemble, models.PaymentResourceMetaDataRest{
-			ID:          "",
-			RedirectURI: "",
-			State:       "",
+			ID:                       "",
+			RedirectURI:              "",
+			State:                    "",
 			ExternalPaymentStatusURI: "",
 		})
 
@@ -242,10 +244,11 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, defaultUserDetails)
 
 		resource := models.IncomingPaymentResourceRequest{
-			Resource:    "http://dummy-url",
-			Reference:   "ref",
-			RedirectURI: "http://www.companieshouse.gov.uk",
-			State:       "state",
+			Resource:      "http://dummy-url",
+			Reference:     "ref",
+			CompanyNumber: "companyNumber",
+			RedirectURI:   "http://www.companieshouse.gov.uk",
+			State:         "state",
 		}
 
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
@@ -271,12 +274,13 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(regSelf.MatchString(paymentResourceRest.Links.Self), ShouldEqual, true)
 		So(paymentResourceRest.PaymentMethod, ShouldBeEmpty)
 		So(paymentResourceRest.Reference, ShouldEqual, "ref")
+		So(paymentResourceRest.CompanyNumber, ShouldEqual, "companyNumber")
 		So(paymentResourceRest.Status, ShouldEqual, "pending")
 		So(paymentResourceRest.Costs, ShouldResemble, []models.CostResourceRest{defaultCost, defaultCost})
 		So(paymentResourceRest.MetaData, ShouldResemble, models.PaymentResourceMetaDataRest{
-			ID:          "",
-			RedirectURI: "",
-			State:       "",
+			ID:                       "",
+			RedirectURI:              "",
+			State:                    "",
 			ExternalPaymentStatusURI: "",
 		})
 

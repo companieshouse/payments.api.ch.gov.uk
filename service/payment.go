@@ -117,6 +117,7 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 	}
 
 	paymentResourceRest.Reference = createResource.Reference
+	paymentResourceRest.CompanyNumber = createResource.CompanyNumber
 	paymentResourceRest.Status = Pending.String()
 	paymentResourceRest.Kind = PaymentSessionKind
 	paymentResourceRest.Etag = generateEtag()
