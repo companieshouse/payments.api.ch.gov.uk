@@ -28,6 +28,18 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	pa := &interceptors.PaymentAuthenticationInterceptor{
 		Service: *paymentService,
 	}
+
+	oauth2OnlyInterceptor := &authentication.OAuth2OnlyAuthenticationInterceptor{
+		OAuth2OnlyPathToHTTPMethods: map[string][]string{
+			"/payments": []string{http.MethodPost}, // only oauth2 users can create payment sessions
+		},
+	}
+
+	userAuthInterceptor := &authentication.UserAuthenticationInterceptor{
+		AllowAPIKeyUser:                true,
+		RequireElevatedAPIKeyPrivilege: true,
+	}
+
 	mainRouter.HandleFunc("/healthcheck", healthCheck).Methods("GET").Name("get-healthcheck")
 
 	// Create subrouters. All routes except /callback need auth middleware, so router needs to be split up. This allows
@@ -57,12 +69,11 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	callbackRouter.HandleFunc("/payments/govpay/{payment_id}", HandleGovPayCallback).Methods("GET").Name("handle-govpay-callback")
 
 	// Set middleware for subrouters
-	rootPaymentRouter.Use(log.Handler, authentication.UserAuthenticationInterceptor)
+	rootPaymentRouter.Use(log.Handler, oauth2OnlyInterceptor.OAuth2OnlyAuthenticationIntercept, userAuthInterceptor.UserAuthenticationIntercept)
 	getPaymentRouter.Use(pa.PaymentAuthenticationIntercept)
 	paymentDetailsRouter.Use(log.Handler, interceptors.ElevatedPrivilegesInterceptor, pa.PaymentAuthenticationIntercept)
-	privatePatchRouter.Use(log.Handler, authentication.UserAuthenticationInterceptor, pa.PaymentAuthenticationIntercept)
-	privateJourneyRouter.Use(log.Handler, authentication.UserAuthenticationInterceptor, pa.PaymentAuthenticationIntercept)
-
+	privatePatchRouter.Use(log.Handler, userAuthInterceptor.UserAuthenticationIntercept, pa.PaymentAuthenticationIntercept)
+	privateJourneyRouter.Use(log.Handler, userAuthInterceptor.UserAuthenticationIntercept, pa.PaymentAuthenticationIntercept)
 	callbackRouter.Use(log.Handler)
 }
 
