@@ -30,7 +30,7 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	}
 	// only oauth2 users can create payment sessions
 	oauth2OnlyInterceptor := &authentication.OAuth2OnlyAuthenticationInterceptor{
-		OAuth2OnlyPathToHTTPMethods: map[string][]string{
+		StrictPaths: map[string][]string{
 			"/payments": []string{http.MethodPost},
 		},
 	}
