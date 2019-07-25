@@ -4,22 +4,22 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/companieshouse/chs.go/authentication"
 	"github.com/companieshouse/chs.go/log"
-	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 )
 
 // ElevatedPrivilegesInterceptor checks that the user is authenticated
 func ElevatedPrivilegesInterceptor(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check headers for identity type and identity
-		identityType := helpers.GetAuthorisedIdentityType(r)
-		if !(identityType == helpers.APIKeyIdentityType) {
+		identityType := authentication.GetAuthorisedIdentityType(r)
+		if !(identityType == authentication.APIKeyIdentityType) {
 			log.Error(fmt.Errorf("elevated privileges interceptor unauthorised: not API key identity type"))
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
-		if helpers.IsKeyElevatedPrivilegesAuthorised(r) {
+		if authentication.IsKeyElevatedPrivilegesAuthorised(r) {
 			// Call the next handler
 			next.ServeHTTP(w, r)
 		} else {
