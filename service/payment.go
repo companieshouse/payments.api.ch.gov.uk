@@ -102,6 +102,7 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 	}
 	paymentResourceRest.Costs = costs.Costs
 	paymentResourceRest.Description = costs.Description
+	paymentResourceRest.CompanyNumber = costs.CompanyNumber
 	paymentResourceRest.Amount = totalAmount
 	// To match the format time is saved to mongo, e.g. "2018-11-22T08:39:16.782Z", truncate the time
 	paymentResourceRest.CreatedAt = time.Now().Truncate(time.Millisecond)
@@ -117,7 +118,6 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 	}
 
 	paymentResourceRest.Reference = createResource.Reference
-	paymentResourceRest.CompanyNumber = createResource.CompanyNumber
 	paymentResourceRest.Status = Pending.String()
 	paymentResourceRest.Kind = PaymentSessionKind
 	paymentResourceRest.Etag = generateEtag()

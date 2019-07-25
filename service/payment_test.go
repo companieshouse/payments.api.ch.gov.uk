@@ -26,8 +26,9 @@ var defaultCost = models.CostResourceRest{
 }
 
 var defaultCosts = models.CostsRest{
-	Description: "costs_desc",
-	Costs:       []models.CostResourceRest{defaultCost},
+	Description:   "costs_desc",
+	Costs:         []models.CostResourceRest{defaultCost},
+	CompanyNumber: "companyNumber",
 }
 
 var defaultUserDetails = authentication.AuthUserDetails{
@@ -187,7 +188,6 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		resource := models.IncomingPaymentResourceRequest{
 			Resource:      "http://dummy-url",
 			Reference:     "ref",
-			CompanyNumber: "companyNumber",
 			RedirectURI:   "http://www.companieshouse.gov.uk",
 			State:         "state",
 		}
@@ -246,7 +246,6 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		resource := models.IncomingPaymentResourceRequest{
 			Resource:      "http://dummy-url",
 			Reference:     "ref",
-			CompanyNumber: "companyNumber",
 			RedirectURI:   "http://www.companieshouse.gov.uk",
 			State:         "state",
 		}
