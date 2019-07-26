@@ -23,6 +23,7 @@ var defaultCost = models.CostResourceRest{
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
+	ProductType:             "productType",
 }
 
 var defaultCosts = models.CostsRest{
@@ -499,6 +500,7 @@ func TestUnitGetPayment(t *testing.T) {
 					ClassOfPayment:          []string{"class"},
 					Description:             "desc",
 					DescriptionIdentifier:   "identifier",
+					ProductType:             "productType",
 				},
 			},
 			MetaData: models.PaymentResourceMetaDataRest{
@@ -546,6 +548,7 @@ func TestUnitGetPayment(t *testing.T) {
 					ClassOfPayment:          []string{"class"},
 					Description:             "desc",
 					DescriptionIdentifier:   "identifier",
+					ProductType:             "productType",
 				},
 				{
 					Amount:                  "10",
@@ -553,6 +556,7 @@ func TestUnitGetPayment(t *testing.T) {
 					ClassOfPayment:          []string{"class"},
 					Description:             "desc",
 					DescriptionIdentifier:   "identifier",
+					ProductType:             "productType",
 				},
 			},
 			MetaData: models.PaymentResourceMetaDataRest{
@@ -684,6 +688,7 @@ func TestUnitValidateCosts(t *testing.T) {
 			ClassOfPayment:          []string{"class"},
 			Description:             "desc",
 			DescriptionIdentifier:   "identifier",
+			ProductType:             "productType",
 		}}
 		So(validateCosts(&cost), ShouldBeNil)
 	})
