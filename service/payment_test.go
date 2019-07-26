@@ -217,9 +217,9 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(paymentResourceRest.Status, ShouldEqual, "pending")
 		So(paymentResourceRest.Costs, ShouldResemble, defaultCosts.Costs)
 		So(paymentResourceRest.MetaData, ShouldResemble, models.PaymentResourceMetaDataRest{
-			ID:                       "",
-			RedirectURI:              "",
-			State:                    "",
+			ID:          "",
+			RedirectURI: "",
+			State:       "",
 			ExternalPaymentStatusURI: "",
 		})
 
@@ -274,9 +274,9 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(paymentResourceRest.Status, ShouldEqual, "pending")
 		So(paymentResourceRest.Costs, ShouldResemble, []models.CostResourceRest{defaultCost, defaultCost})
 		So(paymentResourceRest.MetaData, ShouldResemble, models.PaymentResourceMetaDataRest{
-			ID:                       "",
-			RedirectURI:              "",
-			State:                    "",
+			ID:          "",
+			RedirectURI: "",
+			State:       "",
 			ExternalPaymentStatusURI: "",
 		})
 
