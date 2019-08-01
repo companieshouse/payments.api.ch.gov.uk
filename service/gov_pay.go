@@ -123,7 +123,14 @@ func (gp *GovPayService) GetGovPayPaymentDetails(paymentResource *models.Payment
 		return nil, Error, err
 	}
 
-	paymentDetails := &models.PaymentDetails{CardType: govPayResponse.CardBrand, PaymentID: govPayResponse.PaymentID}
+	paymentDetails := &models.PaymentDetails{CardType: govPayResponse.CardBrand, PaymentID: govPayResponse.PaymentID, TransactionDate: govPayResponse.CreatedDate}
+
+	if govPayResponse.State.Finished && govPayResponse.State.Status == "success" {
+		paymentDetails.PaymentStatus = "accepted"
+	} else if govPayResponse.State.Finished && govPayResponse.State.Code == "P0010" {
+		paymentDetails.PaymentStatus = "rejected"
+	}
+
 	return paymentDetails, Success, nil
 }
 

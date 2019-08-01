@@ -22,6 +22,7 @@ type PaymentResourceDataDB struct {
 	Links                   PaymentLinksDB `bson:"links"`
 	PaymentMethod           string         `bson:"payment_method"`
 	Reference               string         `bson:"reference,omitempty"`
+	CompanyNumber           string         `bson:"company_number,omitempty"`
 	Status                  string         `bson:"status"`
 	Etag                    string         `bson:"etag"`
 	Kind                    string         `bson:"kind"`

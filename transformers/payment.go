@@ -23,6 +23,7 @@ func (pt PaymentTransformer) TransformToDB(rest models.PaymentResourceRest) mode
 		Description:   rest.Description,
 		PaymentMethod: rest.PaymentMethod,
 		Reference:     rest.Reference,
+		CompanyNumber: rest.CompanyNumber,
 		Status:        rest.Status,
 		Etag:          rest.Etag,
 		Kind:          rest.Kind,
@@ -48,6 +49,7 @@ func (pt PaymentTransformer) TransformToRest(dbResource models.PaymentResourceDB
 		Description:   dbResource.Data.Description,
 		PaymentMethod: dbResource.Data.PaymentMethod,
 		Reference:     dbResource.Data.Reference,
+		CompanyNumber: dbResource.Data.CompanyNumber,
 		Status:        dbResource.Data.Status,
 		Links:         models.PaymentLinksRest(dbResource.Data.Links),
 		Etag:          dbResource.Data.Etag,
@@ -56,9 +58,9 @@ func (pt PaymentTransformer) TransformToRest(dbResource models.PaymentResourceDB
 
 	// One-way transformation of DB metadata: related to, but not part of the payment rest data json spec
 	paymentResource.MetaData = models.PaymentResourceMetaDataRest{
-		ID:                       dbResource.ID,
-		RedirectURI:              dbResource.RedirectURI,
-		State:                    dbResource.State,
+		ID:          dbResource.ID,
+		RedirectURI: dbResource.RedirectURI,
+		State:       dbResource.State,
 		ExternalPaymentStatusURI: dbResource.ExternalPaymentStatusURI,
 	}
 
