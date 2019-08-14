@@ -51,7 +51,7 @@ func (gp *GovPayService) GenerateNextURLGovPay(req *http.Request, paymentResourc
 
 	govPayRequest.Amount = amountToPay
 	govPayRequest.Description = "Companies House Payment" // Hard-coded value for payment screens
-	govPayRequest.Reference = paymentResource.Reference
+	govPayRequest.Reference = paymentResource.MetaData.ID
 	govPayRequest.ReturnURL = fmt.Sprintf("%s/callback/payments/govpay/%s", gp.PaymentService.Config.PaymentsAPIURL, paymentResource.MetaData.ID)
 	log.TraceR(req, "performing gov pay request", log.Data{"gov_pay_request_data": govPayRequest})
 
@@ -123,7 +123,7 @@ func (gp *GovPayService) GetGovPayPaymentDetails(paymentResource *models.Payment
 		return nil, Error, err
 	}
 
-	paymentDetails := &models.PaymentDetails{CardType: govPayResponse.CardBrand, PaymentID: govPayResponse.PaymentID, TransactionDate: govPayResponse.CreatedDate}
+	paymentDetails := &models.PaymentDetails{CardType: govPayResponse.CardBrand, ExternalPaymentID: govPayResponse.PaymentID, TransactionDate: govPayResponse.CreatedDate}
 
 	if govPayResponse.State.Finished && govPayResponse.State.Status == "success" {
 		paymentDetails.PaymentStatus = "accepted"
