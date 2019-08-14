@@ -3,10 +3,11 @@ package service
 import (
 	"errors"
 	"fmt"
-	"gopkg.in/jarcoal/httpmock.v1"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"gopkg.in/jarcoal/httpmock.v1"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
@@ -465,7 +466,7 @@ func TestUnitGetGovPayPaymentDetails(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		govPayPaymentDetails := models.PaymentDetails{CardType: "Visa", PaymentID: "1234", TransactionDate: "2016-01-21T17:15:000Z", PaymentStatus: "accepted"}
+		govPayPaymentDetails := models.PaymentDetails{CardType: "Visa", ExternalPaymentID: "1234", TransactionDate: "2016-01-21T17:15:000Z", PaymentStatus: "accepted"}
 		govPayState := models.State{Status: "success", Finished: true}
 		incomingGovPayResponse := models.IncomingGovPayResponse{CardBrand: "Visa", PaymentID: "1234", CreatedDate: "2016-01-21T17:15:000Z", State: govPayState}
 
