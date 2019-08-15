@@ -284,7 +284,12 @@ func getCosts(resource string, cfg *config.Config) (*models.CostsRest, ResponseT
 	return costs, Success, nil
 }
 
-// Generates a string of 15 alpha numeric characters
+// Generates a string of 15 alpha numeric characters. this needs to be less than 16 characters as these id's are also
+// being sent to E5 (our finance system) when paying for late filing penalties. Although this restriction is currently
+// being imposed on us by an external system, there is enough entropy here that makes collisions highly unlikely, with
+// a total range being 15**62.
+//
+// **If you change the implementation of this test, you must run the utility test `go test ./... -run 'Util'**
 func generateID() string {
 	idLength := 15
 	rand.Seed(time.Now().UTC().UnixNano())
