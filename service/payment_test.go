@@ -635,9 +635,38 @@ func TestUnitGetCosts(t *testing.T) {
 }
 
 func TestUnitGenerateID(t *testing.T) {
-	Convey("Valid generated PaymentResource ID", t, func() {
-		re := regexp.MustCompile("^[0-9]{20}$")
-		So(re.MatchString(generateID()), ShouldEqual, true)
+	Convey("generateID", t, func() {
+		Convey("generates a id with a length of 15", func() {
+			So(generateID(), ShouldHaveLength, 15)
+		})
+		Convey("has a low collision rate", func() {
+			// generate 100,000 id's
+			times := 100000 // 100 thousand
+			generated := make([]string, times)
+
+			for i := 0; i < times; i++ {
+				ref := generateID()
+				generated[i] = ref
+			}
+
+			// check for dups by creating a map of string->int and counting the the entry values whilst
+			// iterating through the generated map
+			generatedCheck := make(map[string]int)
+			var duplicates []string
+			for _, reference := range generated {
+				_, exists := generatedCheck[reference]
+				if exists {
+					duplicates = append(duplicates, reference)
+				} else {
+					generatedCheck[reference] = 1
+				}
+			}
+
+			if  len(duplicates) != 0 {
+				t.Errorf("%d duplicate id's generated", len(duplicates))
+				t.Fail()
+			}
+		})
 	})
 }
 
