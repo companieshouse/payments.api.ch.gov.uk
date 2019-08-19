@@ -634,10 +634,40 @@ func TestUnitGetCosts(t *testing.T) {
 	})
 }
 
+// TestUtilGenerateIDForDuplicates this will test the generateID func's capability for generating unique id's
+// if a duplicate is generated, this test will fail.
+func TestUtilGenerateIDForDuplicates(t *testing.T) {
+	// generate 100,000 id's
+	times := 100000 // 100 thousand
+	generated := make([]string, times)
+
+	for i := 0; i < times; i++ {
+		ref := generateID()
+		generated[i] = ref
+	}
+
+	// check for dups by creating a map of string->int and counting the the entry values whilst
+	// iterating through the generated map
+	generatedCheck := make(map[string]int)
+	var duplicates []string
+	for _, reference := range generated {
+		_, exists := generatedCheck[reference]
+		if exists {
+			duplicates = append(duplicates, reference)
+		} else {
+			generatedCheck[reference] = 1
+		}
+	}
+
+	if  len(duplicates) != 0 {
+		t.Errorf("%d duplicate id's generated", len(duplicates))
+		t.Fail()
+	}
+}
+
 func TestUnitGenerateID(t *testing.T) {
-	Convey("Valid generated PaymentResource ID", t, func() {
-		re := regexp.MustCompile("^[0-9]{20}$")
-		So(re.MatchString(generateID()), ShouldEqual, true)
+	Convey("generates a id with a length of 15", t, func() {
+		So(generateID(), ShouldHaveLength, 15)
 	})
 }
 
