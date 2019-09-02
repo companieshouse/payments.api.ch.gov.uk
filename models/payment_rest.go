@@ -21,6 +21,7 @@ type PaymentResourceRest struct {
 	Links                   PaymentLinksRest            `json:"links"`
 	PaymentMethod           string                      `json:"payment_method,omitempty"`
 	Reference               string                      `json:"reference,omitempty"`
+	CompanyNumber           string                      `json:"company_number,omitempty"`
 	Status                  string                      `json:"status"`
 	Costs                   []CostResourceRest          `json:"costs"`
 	Etag                    string                      `json:"etag"`
@@ -61,6 +62,7 @@ type CostsRest struct {
 	PaidAt           time.Time          `json:"paid_at"`
 	PaymentReference string             `json:"payment_reference"`
 	Status           string             `json:"status"`
+	CompanyNumber    string             `json:"company_number"`
 }
 
 // CostResourceRest contains the details of an individual Cost Resource
@@ -70,5 +72,6 @@ type CostResourceRest struct {
 	ClassOfPayment          []string          `json:"class_of_payment"          validate:"required"`
 	Description             string            `json:"description"               validate:"required"`
 	DescriptionIdentifier   string            `json:"description_identifier"    validate:"required"`
+	ProductType             string            `json:"product_type"              validate:"required"`
 	DescriptionValues       map[string]string `json:"description_values"`
 }

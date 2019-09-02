@@ -32,6 +32,7 @@ var defaultCostRest = models.CostResourceRest{
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
+	ProductType:             "productType",
 }
 
 var defaultCosts = models.CostsRest{

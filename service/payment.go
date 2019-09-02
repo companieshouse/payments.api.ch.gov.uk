@@ -6,14 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/companieshouse/chs.go/authentication"
-	"github.com/companieshouse/chs.go/log"
-	"github.com/companieshouse/payments.api.ch.gov.uk/config"
-	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
-	"github.com/companieshouse/payments.api.ch.gov.uk/models"
-	"github.com/companieshouse/payments.api.ch.gov.uk/transformers"
-	"github.com/shopspring/decimal"
-	"gopkg.in/go-playground/validator.v9"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -22,6 +14,15 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/companieshouse/chs.go/authentication"
+	"github.com/companieshouse/chs.go/log"
+	"github.com/companieshouse/payments.api.ch.gov.uk/config"
+	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
+	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/companieshouse/payments.api.ch.gov.uk/transformers"
+	"github.com/shopspring/decimal"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // PaymentService contains the DAO for db access
@@ -102,6 +103,7 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 	}
 	paymentResourceRest.Costs = costs.Costs
 	paymentResourceRest.Description = costs.Description
+	paymentResourceRest.CompanyNumber = costs.CompanyNumber
 	paymentResourceRest.Amount = totalAmount
 	// To match the format time is saved to mongo, e.g. "2018-11-22T08:39:16.782Z", truncate the time
 	paymentResourceRest.CreatedAt = time.Now().Truncate(time.Millisecond)
@@ -282,12 +284,21 @@ func getCosts(resource string, cfg *config.Config) (*models.CostsRest, ResponseT
 	return costs, Success, nil
 }
 
-// Generates a string of 20 numbers made up of 7 random numbers, followed by 13 numbers derived from the current time
-func generateID() (i string) {
+// Generates a string of 15 alpha numeric characters. this needs to be less than 16 characters as these id's are also
+// being sent to E5 (our finance system) when paying for late filing penalties. Although this restriction is currently
+// being imposed on us by an external system, there is enough entropy here that makes collisions highly unlikely, with
+// a total range being 15**62.
+//
+// **If you change the implementation of this test, you must run the utility test `go test ./... -run 'Util'**
+func generateID() string {
+	idLength := 15
 	rand.Seed(time.Now().UTC().UnixNano())
-	ranNumber := fmt.Sprintf("%07d", rand.Intn(9999999))
-	millis := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
-	return ranNumber + millis
+	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890")
+	id := make([]rune, idLength)
+	for i := 0; i < idLength; i++ {
+		id[i] = chars[rand.Intn(len(chars))]
+	}
+	return string(id)
 }
 
 // generateEtag generates a random etag which is generated on every write action on the payment session

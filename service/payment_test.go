@@ -23,11 +23,13 @@ var defaultCost = models.CostResourceRest{
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
+	ProductType:             "productType",
 }
 
 var defaultCosts = models.CostsRest{
-	Description: "costs_desc",
-	Costs:       []models.CostResourceRest{defaultCost},
+	Description:   "costs_desc",
+	Costs:         []models.CostResourceRest{defaultCost},
+	CompanyNumber: "companyNumber",
 }
 
 var defaultUserDetails = authentication.AuthUserDetails{
@@ -214,12 +216,13 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(regSelf.MatchString(paymentResourceRest.Links.Self), ShouldEqual, true)
 		So(paymentResourceRest.PaymentMethod, ShouldBeEmpty)
 		So(paymentResourceRest.Reference, ShouldEqual, "ref")
+		So(paymentResourceRest.CompanyNumber, ShouldEqual, "companyNumber")
 		So(paymentResourceRest.Status, ShouldEqual, "pending")
 		So(paymentResourceRest.Costs, ShouldResemble, defaultCosts.Costs)
 		So(paymentResourceRest.MetaData, ShouldResemble, models.PaymentResourceMetaDataRest{
-			ID:          "",
-			RedirectURI: "",
-			State:       "",
+			ID:                       "",
+			RedirectURI:              "",
+			State:                    "",
 			ExternalPaymentStatusURI: "",
 		})
 
@@ -271,12 +274,13 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(regSelf.MatchString(paymentResourceRest.Links.Self), ShouldEqual, true)
 		So(paymentResourceRest.PaymentMethod, ShouldBeEmpty)
 		So(paymentResourceRest.Reference, ShouldEqual, "ref")
+		So(paymentResourceRest.CompanyNumber, ShouldEqual, "companyNumber")
 		So(paymentResourceRest.Status, ShouldEqual, "pending")
 		So(paymentResourceRest.Costs, ShouldResemble, []models.CostResourceRest{defaultCost, defaultCost})
 		So(paymentResourceRest.MetaData, ShouldResemble, models.PaymentResourceMetaDataRest{
-			ID:          "",
-			RedirectURI: "",
-			State:       "",
+			ID:                       "",
+			RedirectURI:              "",
+			State:                    "",
 			ExternalPaymentStatusURI: "",
 		})
 
@@ -499,6 +503,7 @@ func TestUnitGetPayment(t *testing.T) {
 					ClassOfPayment:          []string{"class"},
 					Description:             "desc",
 					DescriptionIdentifier:   "identifier",
+					ProductType:             "productType",
 				},
 			},
 			MetaData: models.PaymentResourceMetaDataRest{
@@ -546,6 +551,7 @@ func TestUnitGetPayment(t *testing.T) {
 					ClassOfPayment:          []string{"class"},
 					Description:             "desc",
 					DescriptionIdentifier:   "identifier",
+					ProductType:             "productType",
 				},
 				{
 					Amount:                  "10",
@@ -553,6 +559,7 @@ func TestUnitGetPayment(t *testing.T) {
 					ClassOfPayment:          []string{"class"},
 					Description:             "desc",
 					DescriptionIdentifier:   "identifier",
+					ProductType:             "productType",
 				},
 			},
 			MetaData: models.PaymentResourceMetaDataRest{
@@ -627,10 +634,40 @@ func TestUnitGetCosts(t *testing.T) {
 	})
 }
 
+// TestUtilGenerateIDForDuplicates this will test the generateID func's capability for generating unique id's
+// if a duplicate is generated, this test will fail.
+func TestUtilGenerateIDForDuplicates(t *testing.T) {
+	// generate 100,000 id's
+	times := 100000 // 100 thousand
+	generated := make([]string, times)
+
+	for i := 0; i < times; i++ {
+		ref := generateID()
+		generated[i] = ref
+	}
+
+	// check for dups by creating a map of string->int and counting the the entry values whilst
+	// iterating through the generated map
+	generatedCheck := make(map[string]int)
+	var duplicates []string
+	for _, reference := range generated {
+		_, exists := generatedCheck[reference]
+		if exists {
+			duplicates = append(duplicates, reference)
+		} else {
+			generatedCheck[reference] = 1
+		}
+	}
+
+	if  len(duplicates) != 0 {
+		t.Errorf("%d duplicate id's generated", len(duplicates))
+		t.Fail()
+	}
+}
+
 func TestUnitGenerateID(t *testing.T) {
-	Convey("Valid generated PaymentResource ID", t, func() {
-		re := regexp.MustCompile("^[0-9]{20}$")
-		So(re.MatchString(generateID()), ShouldEqual, true)
+	Convey("generates a id with a length of 15", t, func() {
+		So(generateID(), ShouldHaveLength, 15)
 	})
 }
 
@@ -684,6 +721,7 @@ func TestUnitValidateCosts(t *testing.T) {
 			ClassOfPayment:          []string{"class"},
 			Description:             "desc",
 			DescriptionIdentifier:   "identifier",
+			ProductType:             "productType",
 		}}
 		So(validateCosts(&cost), ShouldBeNil)
 	})

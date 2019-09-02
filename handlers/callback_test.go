@@ -24,6 +24,7 @@ var defaultCost = models.CostResourceRest{
 	ClassOfPayment:          []string{"class"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
+	ProductType:             "productType",
 }
 
 var defaultCosts = models.CostsRest{
@@ -215,7 +216,6 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 			},
 		}
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
-		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
@@ -247,7 +247,6 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 			},
 		}
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
-		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
@@ -279,6 +278,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 				},
 				CreatedAt: time.Now(),
 			},
+			ExternalPaymentStatusURI: "http://dummy-url",
 		}
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)

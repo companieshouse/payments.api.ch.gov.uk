@@ -163,3 +163,43 @@ func HandlePatchPaymentSession(w http.ResponseWriter, req *http.Request) {
 
 	log.InfoR(req, "Successful PATCH request for payment resource", log.Data{"payment_id": paymentSession.MetaData.ID, "status": http.StatusOK})
 }
+
+// HandleGetPaymentDetails retrieves the payment details from the external provider
+func HandleGetPaymentDetails(w http.ResponseWriter, req *http.Request) {
+	// The payment session must be retrieved directly to enable access to metadata outside the data block
+	paymentSession, ok := req.Context().Value(helpers.ContextKeyPaymentSession).(*models.PaymentResourceRest)
+	if !ok {
+		log.ErrorR(req, fmt.Errorf("invalid PaymentResourceRest in request context"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Get the state of a GovPay payment
+	gp := &service.GovPayService{
+		PaymentService: *paymentService,
+	}
+
+	statusResponse, responseType, err := gp.GetGovPayPaymentDetails(paymentSession)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error getting payment status from govpay: [%v]", err), log.Data{"service_response_type": responseType.String()})
+		switch responseType {
+		case service.Error:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(statusResponse)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	log.InfoR(req, "Successful GET request for payment details: ", log.Data{"payment_id": paymentSession.MetaData.ID})
+}

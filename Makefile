@@ -39,6 +39,10 @@ test: test-unit test-integration
 test-unit: test-deps
 	set -a; go test $(TESTS) -run 'Unit'
 
+.PHONY: test-util
+test-util:
+	set -a; go test $(TESTS) -run 'Util'
+
 .PHONY: test-integration
 test-integration: test-deps
 	$(source_env); go test $(TESTS) -run 'Integration'

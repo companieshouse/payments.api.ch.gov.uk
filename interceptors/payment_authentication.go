@@ -3,11 +3,11 @@ package interceptors
 import (
 	"context"
 	"fmt"
-	"github.com/companieshouse/chs.go/authentication"
-	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"net/http"
 
+	"github.com/companieshouse/chs.go/authentication"
 	"github.com/companieshouse/chs.go/log"
+	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/gorilla/mux"
 )
@@ -31,7 +31,7 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 
 		// Get identity type from request
 		identityType := authentication.GetAuthorisedIdentityType(r)
-		if !(identityType == helpers.Oauth2IdentityType || identityType == helpers.APIKeyIdentityType) {
+		if !(identityType == authentication.Oauth2IdentityType || identityType == authentication.APIKeyIdentityType) {
 			log.Error(fmt.Errorf("authentication interceptor unauthorised: not oauth2 or API key identity type"))
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -39,7 +39,7 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 
 		authorisedUser := ""
 
-		if identityType == helpers.Oauth2IdentityType {
+		if identityType == authentication.Oauth2IdentityType {
 			// Get user details from context, passed in by UserAuthenticationInterceptor
 			userDetails, ok := r.Context().Value(authentication.ContextKeyUserDetails).(authentication.AuthUserDetails)
 			if !ok {
@@ -91,9 +91,9 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 		// Set up variables that are used to determine authorisation below
 		isGetRequest := http.MethodGet == r.Method
 		authUserIsPaymentCreator := authorisedUser == paymentSession.CreatedBy.ID
-		authUserHasPaymentLookupRole := helpers.IsRoleAuthorised(r, helpers.AdminPaymentLookupRole)
-		isApiKeyRequest := identityType == helpers.APIKeyIdentityType
-		apiKeyHasElevatedPrivileges := helpers.IsKeyElevatedPrivilegesAuthorised(r)
+		authUserHasPaymentLookupRole := authentication.IsRoleAuthorised(r, helpers.AdminPaymentLookupRole)
+		isApiKeyRequest := identityType == authentication.APIKeyIdentityType
+		apiKeyHasElevatedPrivileges := authentication.IsKeyElevatedPrivilegesAuthorised(r)
 
 		// Set up debug map for logging at each exit point
 		debugMap := log.Data{
