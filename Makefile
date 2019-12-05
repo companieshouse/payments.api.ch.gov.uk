@@ -11,6 +11,9 @@ commit       := $(shell git rev-parse --short HEAD)
 tag          := $(shell git tag -l 'v*-rc*' --points-at HEAD)
 version      := $(shell if [[ -n "$(tag)" ]]; then echo $(tag) | sed 's/^v//'; else echo $(commit); fi)
 
+.EXPORT_ALL_VARIABLES:
+GO111MODULE = on
+
 .PHONY: all
 all: build
 
@@ -18,33 +21,19 @@ all: build
 fmt:
 	go fmt ./...
 
-.PHONY: deps
-deps:
-	go get ./...
-
 .PHONY: build
-build: deps fmt $(bin)
-
-$(bin):
-	go build -o ./$(bin)
-
-.PHONY: test-deps
-test-deps: deps
-	go get -t ./...
+build: fmt
+	go build
 
 .PHONY: test
 test: test-unit test-integration
 
 .PHONY: test-unit
-test-unit: test-deps
-	set -a; go test $(TESTS) -run 'Unit'
-
-.PHONY: test-util
-test-util:
-	set -a; go test $(TESTS) -run 'Util'
+test-unit:
+	go test $(TESTS) -run 'Unit'
 
 .PHONY: test-integration
-test-integration: test-deps
+test-integration:
 	$(source_env); go test $(TESTS) -run 'Integration'
 
 .PHONY: clean
@@ -63,11 +52,13 @@ package:
 dist: clean build package
 
 .PHONY: xunit-tests
-xunit-tests: test-deps
+xunit-tests: GO111MODULE = off
+xunit-tests:
 	go get github.com/tebeka/go2xunit
-	@set -a; $(test_unit_env); go test -v $(TESTS) -run 'Unit' | go2xunit -output $(xunit_output)
+	@set -a; go test -v $(TESTS) -run 'Unit' | go2xunit -output $(xunit_output)
 
 .PHONY: lint
+lint: GO111MODULE = off
 lint:
 	go get -u github.com/alecthomas/gometalinter
 	gometalinter --install
