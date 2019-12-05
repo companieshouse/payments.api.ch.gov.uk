@@ -14,7 +14,7 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
-	"gopkg.in/jarcoal/httpmock.v1"
+	"github.com/jarcoal/httpmock"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
