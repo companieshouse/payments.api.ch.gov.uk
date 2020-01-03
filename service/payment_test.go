@@ -634,9 +634,9 @@ func TestUnitGetCosts(t *testing.T) {
 	})
 }
 
-// TestUtilGenerateIDForDuplicates this will test the generateID func's capability for generating unique id's
+// TestUnitGenerateIDForDuplicates this will test the generateID func's capability for generating unique id's
 // if a duplicate is generated, this test will fail.
-func TestUtilGenerateIDForDuplicates(t *testing.T) {
+func TestUnitGenerateIDForDuplicates(t *testing.T) {
 	// generate 100,000 id's
 	times := 100000 // 100 thousand
 	generated := make([]string, times)
