@@ -71,6 +71,9 @@ func (gp *GovPayService) GenerateNextURLGovPay(req *http.Request, paymentResourc
 	if paymentResource.Costs[0].ClassOfPayment[0] == "data-maintenance" {
 		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenChAccount)
 	}
+	if paymentResource.Costs[0].ClassOfPayment[0] == "orderable-item" {
+		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenChAccount)
+	}
 
 	request.Header.Add("accept", "application/json")
 	request.Header.Add("content-type", "application/json")

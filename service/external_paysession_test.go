@@ -11,8 +11,8 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
-	. "github.com/smartystreets/goconvey/convey"
 	"github.com/jarcoal/httpmock"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestUnitCreateExternalPayment(t *testing.T) {
@@ -50,7 +50,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty", "data-maintenance"},
+			ClassOfPayment: []string{"penalty", "data-maintenance", "orderable-item"},
 			Description:    "mismatched cost resource",
 		}
 
@@ -95,7 +95,8 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
 		So(externalPaymentJourney, ShouldBeNil)
 		So(responseType.String(), ShouldEqual, InvalidData.String())
-		So(err.Error(), ShouldEqual, fmt.Sprintf("Two or more class of payments are different on the same transaction: [%v] and [%v] ", costResource1.Description, costResource2.Description))
+		So(err.Error(), ShouldEqual, fmt.Sprintf("Two or more class of payments are different on the same transaction: [%v] and [%v] ",
+			costResource1.Description, costResource2.Description))
 	})
 
 	Convey("Error communicating with GOV.UK Pay", t, func() {
@@ -171,6 +172,41 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		paymentSession := models.PaymentResourceRest{
 			PaymentMethod: "GovPay",
 			Amount:        "4",
+			Status:        InProgress.String(),
+			Costs:         []models.CostResourceRest{costResource},
+		}
+
+		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
+		So(err, ShouldBeNil)
+		So(responseType.String(), ShouldEqual, Success.String())
+		So(externalPaymentJourney.NextURL, ShouldEqual, "response_url")
+	})
+
+	Convey("Create External Payment Journey for orderable-item - success", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
+
+		req := httptest.NewRequest("", "/test", nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusCreated, &models.IncomingGovPayResponse{
+			GovPayLinks: models.GovPayLinks{
+				NextURL: models.NextURL{
+					HREF: "response_url",
+				},
+			},
+		})
+		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
+
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"orderable-item"},
+		}
+
+		paymentSession := models.PaymentResourceRest{
+			PaymentMethod: "GovPay",
+			Amount:        "3",
 			Status:        InProgress.String(),
 			Costs:         []models.CostResourceRest{costResource},
 		}
