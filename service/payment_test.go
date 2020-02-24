@@ -13,8 +13,8 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/golang/mock/gomock"
-	. "github.com/smartystreets/goconvey/convey"
 	"github.com/jarcoal/httpmock"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var defaultCost = models.CostResourceRest{
@@ -659,7 +659,7 @@ func TestUnitGenerateIDForDuplicates(t *testing.T) {
 		}
 	}
 
-	if  len(duplicates) != 0 {
+	if len(duplicates) != 0 {
 		t.Errorf("%d duplicate id's generated", len(duplicates))
 		t.Fail()
 	}

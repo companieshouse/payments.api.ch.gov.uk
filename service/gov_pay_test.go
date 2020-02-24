@@ -326,6 +326,42 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		So(err, ShouldBeNil)
 	})
 
+	Convey("Valid request to GovPay and returned NextURL for orderable-item", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockGovPayService := createMockGovPayService(&mockPaymentService)
+
+		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		journeyURL := "orderable-item-nextUrl"
+		NextURL := models.NextURL{HREF: journeyURL}
+		Self := models.Self{HREF: "paymentStatusURL"}
+
+		GovPayLinks := models.GovPayLinks{NextURL: NextURL, Self: Self}
+		IncomingGovPayResponse := models.IncomingGovPayResponse{GovPayLinks: GovPayLinks}
+
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusCreated, IncomingGovPayResponse)
+		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
+
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"orderable-item"},
+		}
+
+		paymentResource := models.PaymentResourceRest{
+			Amount: "250",
+			Costs:  []models.CostResourceRest{costResource},
+		}
+
+		req := httptest.NewRequest("", "/test", nil)
+		govPayResponse, responseType, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
+
+		So(responseType.String(), ShouldEqual, Success.String())
+		So(govPayResponse, ShouldEqual, journeyURL)
+		So(err, ShouldBeNil)
+	})
+
 	Convey("Valid request to GovPay and returned NextURL for data maintenance", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
