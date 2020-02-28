@@ -52,7 +52,7 @@ var paymentStatuses = [...]string{
 	"pending",
 	"in-progress",
 	"paid",
-	"no-funds ",
+	"no-funds",
 	"failed",
 	"expired",
 }
