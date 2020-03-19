@@ -115,7 +115,7 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 		Status: paymentSession.Status,
 	}
 
-	log.InfoR(req, "Successfully Closed payment session", log.Data{"payment_id": id, "status": *statusResponse})
+	log.InfoR(req, "Successfully Closed payment session", log.Data{"payment_id": id, "status": paymentSession.Status})
 
 	err = handleKafkaMessage(paymentSession.MetaData.ID)
 	if err != nil {
