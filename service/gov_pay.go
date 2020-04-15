@@ -157,7 +157,7 @@ func callGovPay(gp *GovPayService, paymentResource *models.PaymentResourceRest) 
 	class := paymentResource.Costs[0].ClassOfPayment[0]
 	if class == "penalty" {
 		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenTreasury)
-	} else if class == "data-maintenance" {
+	} else if class == "data-maintenance" || class == "orderable-item" {
 		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenChAccount)
 	}
 	request.Header.Add("content-type", "application/json")
