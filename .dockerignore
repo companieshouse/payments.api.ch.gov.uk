@@ -1,0 +1,13 @@
+*
+
+!config
+!dao
+!handlers
+!helpers
+!interceptors
+!models
+!service
+!transformers
+!go.mod
+!go.sum
+!main.go

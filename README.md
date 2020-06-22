@@ -85,3 +85,9 @@ and returns a Payment Resource in the response:
 ## External Payment Providers
 
 The only external payment provider currently supported is [GOV.UK Pay](https://www.payments.service.gov.uk).
+
+### Docker
+
+To build the Docker container:
+
+    DOCKER_BUILDKIT=1 docker build --ssh default -t 169942020521.dkr.ecr.eu-west-1.amazonaws.com/local/payments.api.ch.gov.uk:latest .
