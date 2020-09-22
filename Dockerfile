@@ -1,17 +1,7 @@
-# syntax=docker/dockerfile:1.0.0-experimental
+FROM 169942020521.dkr.ecr.eu-west-1.amazonaws.com/base/golang:1.15-alpine-builder
 
-FROM 169942020521.dkr.ecr.eu-west-1.amazonaws.com/ci-golang-build:latest as builder
+FROM 169942020521.dkr.ecr.eu-west-1.amazonaws.com/base/golang:1.15-alpine-runtime
 
-WORKDIR /build
+CMD ["-bind-addr=:3055"]
 
-COPY . ./
-
-RUN --mount=type=ssh go fmt ./... && go build
-
-FROM golang:1.14-alpine
-
-WORKDIR /app
-
-COPY --from=builder /build/payments.api.ch.gov.uk ./
-
-CMD ["/app/payments.api.ch.gov.uk"]
+EXPOSE 3055
