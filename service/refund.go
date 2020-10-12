@@ -20,7 +20,7 @@ const (
 )
 
 type RefundService struct {
-	GovPayService GovPayService
+	GovPayService ProviderService
 	DAO           dao.DAO
 	Config        config.Config
 }
@@ -40,7 +40,7 @@ func (service *RefundService) CreateRefund(req *http.Request, id string, createR
 		return nil, InvalidData, err
 	}
 
-	refundRequest := models.CreateRefundGovPayRequest{}
+	refundRequest := &models.CreateRefundGovPayRequest{}
 	refundRequest.Amount = createRefundResource.Amount
 	refundRequest.RefundAmountAvailable = refundSummary.AmountAvailable
 

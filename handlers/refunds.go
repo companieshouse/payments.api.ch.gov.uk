@@ -34,7 +34,7 @@ func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	gp := service.GovPayService{
+	gp := &service.GovPayService{
 		PaymentService: *paymentService,
 	}
 

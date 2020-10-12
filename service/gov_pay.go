@@ -15,6 +15,14 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 )
 
+type ProviderService interface {
+	CheckProvider(paymentResource *models.PaymentResourceRest) (*models.StatusResponse, ResponseType, error)
+	GenerateNextURLGovPay(req *http.Request, paymentResource *models.PaymentResourceRest) (string, ResponseType, error)
+	GetGovPayPaymentDetails(paymentResource *models.PaymentResourceRest) (*models.PaymentDetails, ResponseType, error)
+	GetGovPayRefundSummary(req *http.Request, id string) (*models.PaymentResourceRest, *models.RefundSummary, ResponseType, error)
+	CreateRefund(paymentResource *models.PaymentResourceRest, refundRequest *models.CreateRefundGovPayRequest) (*models.CreateRefundGovPayResponse, ResponseType, error)
+}
+
 // GovPayService handles the specific functionality of integrating GovPay provider into Payment Sessions
 type GovPayService struct {
 	PaymentService PaymentService
@@ -167,7 +175,7 @@ func (gp *GovPayService) GetGovPayRefundSummary(req *http.Request, id string) (*
 	return paymentSession, &govPayResponse.RefundSummary, Success, nil
 }
 
-func (gp *GovPayService) CreateRefund(paymentResource *models.PaymentResourceRest, refundRequest models.CreateRefundGovPayRequest) (*models.CreateRefundGovPayResponse, ResponseType, error) {
+func (gp *GovPayService) CreateRefund(paymentResource *models.PaymentResourceRest, refundRequest *models.CreateRefundGovPayRequest) (*models.CreateRefundGovPayResponse, ResponseType, error) {
 	requestBody, err := json.Marshal(refundRequest)
 	if err != nil {
 		return nil, Error, fmt.Errorf("error reading refund GovPayRequest: [%s]", err)
