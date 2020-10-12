@@ -57,6 +57,10 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	paymentDetailsRouter := mainRouter.PathPrefix("/private/payments/{payment_id}/payment-details").Subrouter()
 	paymentDetailsRouter.HandleFunc("", HandleGetPaymentDetails).Methods("GET").Name("get-payment-details")
 
+	// payment-details endpoint needs it's own interceptor
+	createRefundRouter := mainRouter.PathPrefix("/payments/{paymentId}/refunds").Subrouter()
+	createRefundRouter.HandleFunc("", HandleCreateRefund).Methods("POST").Name("create-refund")
+
 	// All private endpoints need  payment and user auth, and due to router limitations of applying interceptors, need their own subrouters
 	privatePatchRouter := mainRouter.PathPrefix("/private/payments/{payment_id}").Subrouter()
 	privatePatchRouter.HandleFunc("", HandlePatchPaymentSession).Methods("PATCH").Name("patch-payment")
@@ -72,6 +76,7 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	rootPaymentRouter.Use(log.Handler, oauth2OnlyInterceptor.OAuth2OnlyAuthenticationIntercept, userAuthInterceptor.UserAuthenticationIntercept)
 	getPaymentRouter.Use(pa.PaymentAuthenticationIntercept)
 	paymentDetailsRouter.Use(log.Handler, authentication.ElevatedPrivilegesInterceptor, pa.PaymentAuthenticationIntercept)
+	createRefundRouter.Use(log.Handler, authentication.ElevatedPrivilegesInterceptor)
 	privatePatchRouter.Use(log.Handler, userAuthInterceptor.UserAuthenticationIntercept, pa.PaymentAuthenticationIntercept)
 	privateJourneyRouter.Use(log.Handler, userAuthInterceptor.UserAuthenticationIntercept, pa.PaymentAuthenticationIntercept)
 	callbackRouter.Use(log.Handler)

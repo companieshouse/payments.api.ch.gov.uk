@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -133,6 +134,82 @@ func (gp *GovPayService) GetGovPayPaymentDetails(paymentResource *models.Payment
 	}
 
 	return paymentDetails, Success, nil
+}
+
+// GetGovPayRefundSummary gets refund summary of a GovPay payment
+func (gp *GovPayService) GetGovPayRefundSummary(req *http.Request, id string) (*models.PaymentResourceRest, *models.RefundSummary, ResponseType, error) {
+	// Get PaymentSession for the GovPay call
+	paymentSession, response, err := gp.PaymentService.GetPaymentSession(req, id)
+	if err != nil {
+		err = fmt.Errorf("error getting payment resource: [%v]", err)
+		log.ErrorR(req, err)
+		return nil, nil, response, err
+	}
+
+	govPayResponse, err := callGovPay(gp, paymentSession)
+	if err != nil {
+		return nil, nil, Error, err
+	}
+
+	switch govPayResponse.RefundSummary.Status {
+	case RefundUnavailable:
+		err = errors.New("cannot refund the payment - check if the payment failed")
+		return nil, nil, Error, err
+	case RefundFull:
+		err = errors.New("cannot refund the payment - the full amount has already been refunded")
+		return nil, nil, Error, err
+	case RefundPending:
+		err = errors.New("cannot refund the payment - the user has not completed the payment")
+		return nil, nil, Error, err
+	}
+
+	// Return the refund summary
+	return paymentSession, &govPayResponse.RefundSummary, Success, nil
+}
+
+func (gp *GovPayService) CreateRefund(paymentResource *models.PaymentResourceRest, refundRequest models.CreateRefundGovPayRequest) (*models.CreateRefundGovPayResponse, ResponseType, error) {
+	requestBody, err := json.Marshal(refundRequest)
+	if err != nil {
+		return nil, Error, fmt.Errorf("error reading refund GovPayRequest: [%s]", err)
+	}
+
+	request, err := http.NewRequest("POST", gp.PaymentService.Config.GovPayURL, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, Error, fmt.Errorf("error generating request for GovPay: [%s]", err)
+	}
+
+	if paymentResource.Costs[0].ClassOfPayment[0] == "penalty" {
+		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenTreasury)
+	}
+	if paymentResource.Costs[0].ClassOfPayment[0] == "data-maintenance" ||
+		paymentResource.Costs[0].ClassOfPayment[0] == "orderable-item" {
+		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenChAccount)
+	}
+
+	request.Header.Add("accept", "application/json")
+	request.Header.Add("content-type", "application/json")
+
+	resp, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return nil, Error, fmt.Errorf("error sending request to GovPay to create a refund: [%s]", err)
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, Error, fmt.Errorf("error reading response from GovPay: [%s]", err)
+	}
+
+	govPayResponse := &models.CreateRefundGovPayResponse{}
+	err = json.Unmarshal(body, govPayResponse)
+	if err != nil {
+		return nil, Error, fmt.Errorf("error reading response from GovPay: [%s]", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, Error, fmt.Errorf("error status [%v] back from GovPay: [%s]", resp.StatusCode, govPayResponse.Status)
+	}
+
+	return govPayResponse, Success, nil
 }
 
 // decimalPayment will always be in the form XX.XX (e.g: 12.00) due to getTotalAmount converting to decimal with 2 fixed places right of decimal point.
