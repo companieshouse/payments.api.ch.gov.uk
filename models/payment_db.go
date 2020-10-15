@@ -9,6 +9,7 @@ type PaymentResourceDB struct {
 	State                    string                `bson:"state"`
 	ExternalPaymentStatusURI string                `bson:"external_payment_status_url"`
 	Data                     PaymentResourceDataDB `bson:"data"`
+	Refunds                  []RefundResourceDB    `bson:"refunds"`
 }
 
 // PaymentResourceDataDB is public facing payment details to be returned in the response

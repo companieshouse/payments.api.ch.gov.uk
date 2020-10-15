@@ -6,7 +6,9 @@ import (
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
+	"github.com/companieshouse/payments.api.ch.gov.uk/mappers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/companieshouse/payments.api.ch.gov.uk/transformers"
 	"net/http"
 )
 
@@ -40,9 +42,10 @@ func (service *RefundService) CreateRefund(req *http.Request, id string, createR
 		return nil, InvalidData, err
 	}
 
-	refundRequest := &models.CreateRefundGovPayRequest{}
-	refundRequest.Amount = createRefundResource.Amount
-	refundRequest.RefundAmountAvailable = refundSummary.AmountAvailable
+	refundRequest := &models.CreateRefundGovPayRequest{
+		Amount:                createRefundResource.Amount,
+		RefundAmountAvailable: refundSummary.AmountAvailable,
+	}
 
 	// Call GovPay to initiate a Refund
 	refund, response, err := service.GovPayService.CreateRefund(paymentSession, refundRequest)
@@ -50,6 +53,18 @@ func (service *RefundService) CreateRefund(req *http.Request, id string, createR
 		err = fmt.Errorf("error creating refund in govpay: [%v]", err)
 		log.ErrorR(req, err)
 		return nil, response, err
+	}
+
+	//Add refund information to payment session
+	paymentSession.Refunds = append(paymentSession.Refunds, mappers.MapToRefundRest(*refund))
+	paymentResourceUpdate := transformers.PaymentTransformer{}.TransformToDB(*paymentSession)
+
+	//Save refund information to mongoDB
+	err = service.DAO.PatchPaymentResource(id, &paymentResourceUpdate)
+	if err != nil {
+		err = fmt.Errorf("error patching payment session on database: [%v]", err)
+		log.Error(err)
+		return nil, Error, err
 	}
 
 	return refund, Success, nil

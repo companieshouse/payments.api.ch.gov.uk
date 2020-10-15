@@ -33,7 +33,8 @@ func (pt PaymentTransformer) TransformToDB(rest models.PaymentResourceRest) mode
 	paymentResourceData.Links = models.PaymentLinksDB(rest.Links)
 
 	paymentResource := models.PaymentResourceDB{
-		Data: paymentResourceData,
+		Data:    paymentResourceData,
+		Refunds: getRefundsDB(rest.Refunds),
 	}
 
 	return paymentResource
@@ -54,6 +55,7 @@ func (pt PaymentTransformer) TransformToRest(dbResource models.PaymentResourceDB
 		Links:         models.PaymentLinksRest(dbResource.Data.Links),
 		Etag:          dbResource.Data.Etag,
 		Kind:          dbResource.Data.Kind,
+		Refunds:       getRefundsRest(dbResource.Refunds),
 	}
 
 	// One-way transformation of DB metadata: related to, but not part of the payment rest data json spec
@@ -65,4 +67,56 @@ func (pt PaymentTransformer) TransformToRest(dbResource models.PaymentResourceDB
 	}
 
 	return paymentResource
+}
+
+func getRefundsDB(refunds []models.RefundResourceRest) []models.RefundResourceDB {
+	var refundsDB []models.RefundResourceDB
+
+	for i := 0; i < len(refunds); i++ {
+		refundDB := models.RefundResourceDB{
+			RefundId:    refunds[i].RefundId,
+			CreatedDate: refunds[i].CreatedDate,
+			Amount:      refunds[i].Amount,
+			Links: models.RefundLinksDB{
+				Self: models.RefundSelfDB{
+					HREF:   refunds[i].Links.Self.HREF,
+					Method: refunds[i].Links.Self.Method,
+				},
+				Payment: models.RefundPaymentDB{
+					HREF:   refunds[i].Links.Payment.HREF,
+					Method: refunds[i].Links.Payment.Method,
+				},
+			},
+			Status: refunds[i].Status,
+		}
+		refundsDB = append(refundsDB, refundDB)
+	}
+
+	return refundsDB
+}
+
+func getRefundsRest(refunds []models.RefundResourceDB) []models.RefundResourceRest {
+	var refundsRest []models.RefundResourceRest
+
+	for i := 0; i < len(refunds); i++ {
+		refundRest := models.RefundResourceRest{
+			RefundId:    refunds[i].RefundId,
+			CreatedDate: refunds[i].CreatedDate,
+			Amount:      refunds[i].Amount,
+			Links: models.RefundLinksRest{
+				Self: models.RefundSelfRest{
+					HREF:   refunds[i].Links.Self.HREF,
+					Method: refunds[i].Links.Self.Method,
+				},
+				Payment: models.RefundPaymentRest{
+					HREF:   refunds[i].Links.Payment.HREF,
+					Method: refunds[i].Links.Payment.Method,
+				},
+			},
+			Status: refunds[i].Status,
+		}
+		refundsRest = append(refundsRest, refundRest)
+	}
+
+	return refundsRest
 }
