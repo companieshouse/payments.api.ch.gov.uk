@@ -117,7 +117,7 @@ type PaymentDetails struct {
 type CreateRefundGovPayResponse struct {
 	RefundId    string            `json:"refund_id"`
 	CreatedDate string            `json:"created_date"`
-	Amount      string            `json:"amount"`
+	Amount      int               `json:"amount"`
 	Links       GovPayRefundLinks `json:"_links"`
 	Status      string            `json:"status"`
 }

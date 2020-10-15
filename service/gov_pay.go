@@ -162,13 +162,13 @@ func (gp *GovPayService) GetGovPayRefundSummary(req *http.Request, id string) (*
 	switch govPayResponse.RefundSummary.Status {
 	case RefundUnavailable:
 		err = errors.New("cannot refund the payment - check if the payment failed")
-		return nil, nil, Error, err
+		return nil, nil, InvalidData, err
 	case RefundFull:
 		err = errors.New("cannot refund the payment - the full amount has already been refunded")
-		return nil, nil, Error, err
+		return nil, nil, InvalidData, err
 	case RefundPending:
 		err = errors.New("cannot refund the payment - the user has not completed the payment")
-		return nil, nil, Error, err
+		return nil, nil, InvalidData, err
 	}
 
 	// Return the refund summary
@@ -181,7 +181,7 @@ func (gp *GovPayService) CreateRefund(paymentResource *models.PaymentResourceRes
 		return nil, Error, fmt.Errorf("error reading refund GovPayRequest: [%s]", err)
 	}
 
-	request, err := http.NewRequest("POST", gp.PaymentService.Config.GovPayURL, bytes.NewBuffer(requestBody))
+	request, err := http.NewRequest("POST", paymentResource.MetaData.ExternalPaymentStatusURI+"/refunds", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, Error, fmt.Errorf("error generating request for GovPay: [%s]", err)
 	}
@@ -213,7 +213,7 @@ func (gp *GovPayService) CreateRefund(paymentResource *models.PaymentResourceRes
 	if err != nil {
 		return nil, Error, fmt.Errorf("error reading response from GovPay: [%s]", err)
 	}
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
 		return nil, Error, fmt.Errorf("error status [%v] back from GovPay: [%s]", resp.StatusCode, govPayResponse.Status)
 	}
 

@@ -6,7 +6,7 @@ func GetCreateRefundGovPayResponse() *models.CreateRefundGovPayResponse {
 	return &models.CreateRefundGovPayResponse{
 		RefundId:    "ABC",
 		CreatedDate: "",
-		Amount:      "8",
+		Amount:      8,
 		Links:       models.GovPayRefundLinks{},
 		Status:      "success",
 	}

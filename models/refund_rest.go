@@ -7,6 +7,6 @@ type CreateRefundRequest struct {
 type CreateRefundResponse struct {
 	RefundId    string `json:"refund_id"`
 	CreatedDate string `json:"created_date"`
-	Amount      string `json:"amount"`
+	Amount      int    `json:"amount"`
 	Status      string `json:"status"`
 }
