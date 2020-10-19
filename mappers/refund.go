@@ -14,10 +14,10 @@ func MapToRefundRest(response models.CreateRefundGovPayResponse) models.RefundRe
 
 func MapToRefundResponse(gpResponse models.CreateRefundGovPayResponse) models.CreateRefundResponse {
 	return models.CreateRefundResponse{
-		RefundId:    gpResponse.RefundId,
-		Amount:      gpResponse.Amount,
-		CreatedDate: gpResponse.CreatedDate,
-		Status:      gpResponse.Status,
+		RefundId:        gpResponse.RefundId,
+		Amount:          gpResponse.Amount,
+		CreatedDateTime: gpResponse.CreatedDate,
+		Status:          gpResponse.Status,
 	}
 }
 

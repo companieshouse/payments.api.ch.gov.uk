@@ -5,10 +5,10 @@ type CreateRefundRequest struct {
 }
 
 type CreateRefundResponse struct {
-	RefundId    string `json:"refund_id"`
-	CreatedDate string `json:"created_date"`
-	Amount      int    `json:"amount"`
-	Status      string `json:"status"`
+	RefundId        string `json:"refund_id"`
+	CreatedDateTime string `json:"created_date_time"`
+	Amount          int    `json:"amount"`
+	Status          string `json:"status"`
 }
 
 type RefundResourceRest struct {
