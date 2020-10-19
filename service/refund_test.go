@@ -100,6 +100,10 @@ func TestUnitCreateRefund(t *testing.T) {
 			CreateRefund(paymentResource, refundRequest).
 			Return(response, Success, nil)
 
+		mockDao.EXPECT().
+			PatchPaymentResource(id, gomock.Any()).
+			Return(nil)
+
 		govPayResponse, status, err := service.CreateRefund(req, id, body)
 
 		So(govPayResponse, ShouldNotBeNil)

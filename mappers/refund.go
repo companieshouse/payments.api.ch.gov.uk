@@ -3,19 +3,26 @@ package mappers
 import "github.com/companieshouse/payments.api.ch.gov.uk/models"
 
 func MapToRefundRest(response models.CreateRefundGovPayResponse) models.RefundResourceRest {
-	refundRest := models.RefundResourceRest{
-		RefundId:    response.RefundId,
-		CreatedDate: response.CreatedDate,
-		Amount:      response.Amount,
-		Links:       mapToRefundsLinksRest(response.Links),
-		Status:      response.Status,
+	return models.RefundResourceRest{
+		RefundId:  response.RefundId,
+		CreatedAt: response.CreatedDate,
+		Amount:    response.Amount,
+		Links:     mapToRefundsLinksRest(response.Links),
+		Status:    response.Status,
 	}
+}
 
-	return refundRest
+func MapToRefundResponse(gpResponse models.CreateRefundGovPayResponse) models.CreateRefundResponse {
+	return models.CreateRefundResponse{
+		RefundId:    gpResponse.RefundId,
+		Amount:      gpResponse.Amount,
+		CreatedDate: gpResponse.CreatedDate,
+		Status:      gpResponse.Status,
+	}
 }
 
 func mapToRefundsLinksRest(db models.GovPayRefundLinks) models.RefundLinksRest {
-	refundLinksRest := models.RefundLinksRest{
+	return models.RefundLinksRest{
 		Self: models.RefundSelfRest{
 			HREF:   db.Self.HREF,
 			Method: db.Self.Method,
@@ -25,6 +32,4 @@ func mapToRefundsLinksRest(db models.GovPayRefundLinks) models.RefundLinksRest {
 			Method: db.Payment.Method,
 		},
 	}
-
-	return refundLinksRest
 }

@@ -22,7 +22,7 @@ const (
 )
 
 type RefundService struct {
-	GovPayService ProviderService
+	GovPayService PaymentProviderService
 	DAO           dao.DAO
 	Config        config.Config
 }

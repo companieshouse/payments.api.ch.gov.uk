@@ -11,7 +11,7 @@ import (
 	reflect "reflect"
 )
 
-// MockProviderService is a mock of ProviderService interface
+// MockProviderService is a mock of PaymentProviderService interface
 type MockProviderService struct {
 	ctrl     *gomock.Controller
 	recorder *MockProviderServiceMockRecorder

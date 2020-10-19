@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/companieshouse/chs.go/log"
+	"github.com/companieshouse/payments.api.ch.gov.uk/mappers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/gorilla/mux"
@@ -34,13 +35,6 @@ func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	gp := &service.GovPayService{
-		PaymentService: *paymentService,
-	}
-
-	refundService := &service.RefundService{
-		GovPayService: gp,
-	}
 
 	// once we've read and decoded request body call the payment service handle internal business logic
 	refund, responseType, err := refundService.CreateRefund(req, id, incomingRefundResourceRequest)
@@ -60,11 +54,7 @@ func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	refundResource := models.CreateRefundResponse{}
-	refundResource.Amount = refund.Amount
-	refundResource.CreatedDate = refund.CreatedDate
-	refundResource.RefundId = refund.RefundId
-	refundResource.Status = refund.Status
+	refundResource := mappers.MapToRefundResponse(*refund)
 
 	// response body contains fully decorated REST model
 	w.Header().Set("Content-Type", "application/json")

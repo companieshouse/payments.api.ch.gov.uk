@@ -74,9 +74,9 @@ func getRefundsDB(refunds []models.RefundResourceRest) []models.RefundResourceDB
 
 	for i := 0; i < len(refunds); i++ {
 		refundDB := models.RefundResourceDB{
-			RefundId:    refunds[i].RefundId,
-			CreatedDate: refunds[i].CreatedDate,
-			Amount:      refunds[i].Amount,
+			RefundId:  refunds[i].RefundId,
+			CreatedAt: refunds[i].CreatedAt,
+			Amount:    refunds[i].Amount,
 			Links: models.RefundLinksDB{
 				Self: models.RefundSelfDB{
 					HREF:   refunds[i].Links.Self.HREF,
@@ -100,9 +100,9 @@ func getRefundsRest(refunds []models.RefundResourceDB) []models.RefundResourceRe
 
 	for i := 0; i < len(refunds); i++ {
 		refundRest := models.RefundResourceRest{
-			RefundId:    refunds[i].RefundId,
-			CreatedDate: refunds[i].CreatedDate,
-			Amount:      refunds[i].Amount,
+			RefundId:  refunds[i].RefundId,
+			CreatedAt: refunds[i].CreatedAt,
+			Amount:    refunds[i].Amount,
 			Links: models.RefundLinksRest{
 				Self: models.RefundSelfRest{
 					HREF:   refunds[i].Links.Self.HREF,

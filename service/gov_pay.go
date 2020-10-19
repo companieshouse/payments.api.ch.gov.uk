@@ -15,7 +15,7 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 )
 
-type ProviderService interface {
+type PaymentProviderService interface {
 	CheckProvider(paymentResource *models.PaymentResourceRest) (*models.StatusResponse, ResponseType, error)
 	GenerateNextURLGovPay(req *http.Request, paymentResource *models.PaymentResourceRest) (string, ResponseType, error)
 	GetGovPayPaymentDetails(paymentResource *models.PaymentResourceRest) (*models.PaymentDetails, ResponseType, error)
@@ -156,6 +156,9 @@ func (gp *GovPayService) GetGovPayRefundSummary(req *http.Request, id string) (*
 
 	govPayResponse, err := callGovPay(gp, paymentSession)
 	if err != nil {
+		err = fmt.Errorf("error getting payment information from gov pay: [%v]", err)
+		log.ErrorR(req, err)
+
 		return nil, nil, Error, err
 	}
 

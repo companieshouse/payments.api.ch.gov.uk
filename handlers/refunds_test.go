@@ -36,7 +36,7 @@ func TestUnitHandleCreateRefund(t *testing.T) {
 	})
 
 	Convey("Invalid request body", t, func() {
-		refundRequest := models.CreateRefundResponse{} //wrong object used intentionally
+		refundRequest := "string"
 		requestBody, _ := json.Marshal(refundRequest)
 
 		req := httptest.NewRequest("GET", "/test", bytes.NewBuffer(requestBody))
@@ -45,17 +45,5 @@ func TestUnitHandleCreateRefund(t *testing.T) {
 		w := httptest.NewRecorder()
 		HandleCreateRefund(w, req)
 		So(w.Code, ShouldEqual, 400)
-	})
-
-	Convey("Valid request body", t, func() {
-		refundRequest := models.CreateRefundRequest{}
-		requestBody, _ := json.Marshal(refundRequest)
-
-		req := httptest.NewRequest("GET", "/test", bytes.NewBuffer(requestBody))
-		req = mux.SetURLVars(req, map[string]string{"paymentId": "123"})
-		Register(mux.NewRouter(), *cfg)
-		w := httptest.NewRecorder()
-		HandleCreateRefund(w, req)
-		So(w.Code, ShouldEqual, 200)
 	})
 }

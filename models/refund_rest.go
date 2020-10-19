@@ -12,11 +12,11 @@ type CreateRefundResponse struct {
 }
 
 type RefundResourceRest struct {
-	RefundId    string          `json:"refund_id"`
-	CreatedDate string          `json:"created_date"`
-	Amount      int             `json:"amount"`
-	Links       RefundLinksRest `json:"_links"`
-	Status      string          `json:"status"`
+	RefundId  string          `json:"refund_id"`
+	CreatedAt string          `json:"created_at"`
+	Amount    int             `json:"amount"`
+	Links     RefundLinksRest `json:"_links"`
+	Status    string          `json:"status"`
 }
 
 type RefundLinksRest struct {

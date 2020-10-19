@@ -1,11 +1,11 @@
 package models
 
 type RefundResourceDB struct {
-	RefundId    string        `bson:"refund_id"`
-	CreatedDate string        `bson:"created_date"`
-	Amount      int           `bson:"amount"`
-	Links       RefundLinksDB `bson:"_links"`
-	Status      string        `bson:"status"`
+	RefundId  string        `bson:"refund_id"`
+	CreatedAt string        `bson:"created_at"`
+	Amount    int           `bson:"amount"`
+	Links     RefundLinksDB `bson:"_links"`
+	Status    string        `bson:"status"`
 }
 
 type RefundLinksDB struct {

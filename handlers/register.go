@@ -13,6 +13,7 @@ import (
 )
 
 var paymentService *service.PaymentService
+var refundService *service.RefundService
 
 // Register defines the route mappings for the main router and it's subrouters
 func Register(mainRouter *mux.Router, cfg config.Config) {
@@ -23,6 +24,14 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	paymentService = &service.PaymentService{
 		DAO:    m,
 		Config: cfg,
+	}
+
+	govPayService := &service.GovPayService{PaymentService: *paymentService}
+
+	refundService = &service.RefundService{
+		GovPayService: govPayService,
+		DAO:           m,
+		Config:        cfg,
 	}
 
 	pa := &interceptors.PaymentAuthenticationInterceptor{
