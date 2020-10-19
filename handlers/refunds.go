@@ -11,7 +11,7 @@ import (
 	"net/http"
 )
 
-// HandleGetPaymentDetails retrieves the payment details from the external provider
+// HandleCreateRefund initiates a refund from the external provider
 func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
 	if req.Body == nil {
 		log.ErrorR(req, fmt.Errorf("request body empty"))
@@ -36,7 +36,7 @@ func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// once we've read and decoded request body call the payment service handle internal business logic
+	// once we've read and decoded request body call the refund service handle internal business logic
 	refund, responseType, err := refundService.CreateRefund(req, id, incomingRefundResourceRequest)
 
 	if err != nil {
@@ -56,7 +56,6 @@ func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
 
 	refundResource := mappers.MapToRefundResponse(*refund)
 
-	// response body contains fully decorated REST model
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 

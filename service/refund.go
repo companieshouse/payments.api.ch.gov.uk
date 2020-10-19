@@ -27,6 +27,7 @@ type RefundService struct {
 	Config        config.Config
 }
 
+// CreateRefund creates refund in GovPay and saves refund information to payment object in mongo
 func (service *RefundService) CreateRefund(req *http.Request, id string, createRefundResource models.CreateRefundRequest) (*models.CreateRefundGovPayResponse, ResponseType, error) {
 
 	// Get RefundSummary from GovPay to check the available amount
@@ -55,11 +56,11 @@ func (service *RefundService) CreateRefund(req *http.Request, id string, createR
 		return nil, response, err
 	}
 
-	//Add refund information to payment session
+	// Add refund information to payment session
 	paymentSession.Refunds = append(paymentSession.Refunds, mappers.MapToRefundRest(*refund))
 	paymentResourceUpdate := transformers.PaymentTransformer{}.TransformToDB(*paymentSession)
 
-	//Save refund information to mongoDB
+	// Save refund information to mongoDB
 	err = service.DAO.PatchPaymentResource(id, &paymentResourceUpdate)
 	if err != nil {
 		err = fmt.Errorf("error patching payment session on database: [%v]", err)

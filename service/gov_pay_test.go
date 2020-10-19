@@ -675,7 +675,7 @@ func TestUnitGetGovPayRefundSummary(t *testing.T) {
 		So(err.Error(), ShouldEqual, "cannot refund the payment - the user has not completed the payment")
 	})
 
-	Convey("Refund successful", t, func() {
+	Convey("Refund information successfully returned", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 		mockGovPayService := createMockGovPayService(&mockPaymentService)
@@ -747,7 +747,7 @@ func TestUnitGovPayCreateRefund(t *testing.T) {
 		So(err.Error(), ShouldEqual, "error sending request to GovPay to create a refund: [Post http://external_uri/refunds: error]")
 	})
 
-	Convey("Error sending request to GovPay", t, func() {
+	Convey("Successful request to GovPay", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 		mockGovPayService := createMockGovPayService(&mockPaymentService)

@@ -15,6 +15,7 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 )
 
+// Interface to enable mocking
 type PaymentProviderService interface {
 	CheckProvider(paymentResource *models.PaymentResourceRest) (*models.StatusResponse, ResponseType, error)
 	GenerateNextURLGovPay(req *http.Request, paymentResource *models.PaymentResourceRest) (string, ResponseType, error)
@@ -174,10 +175,11 @@ func (gp *GovPayService) GetGovPayRefundSummary(req *http.Request, id string) (*
 		return nil, nil, InvalidData, err
 	}
 
-	// Return the refund summary
+	// Return the payment session info and refund summary
 	return paymentSession, &govPayResponse.RefundSummary, Success, nil
 }
 
+// CreateRefund creates a refund in GovPay
 func (gp *GovPayService) CreateRefund(paymentResource *models.PaymentResourceRest, refundRequest *models.CreateRefundGovPayRequest) (*models.CreateRefundGovPayResponse, ResponseType, error) {
 	requestBody, err := json.Marshal(refundRequest)
 	if err != nil {
