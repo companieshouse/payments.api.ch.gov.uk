@@ -38,9 +38,9 @@ func TestUnitCreateRefund(t *testing.T) {
 			GetGovPayRefundSummary(req, id).
 			Return(nil, nil, Error, err)
 
-		govPayResponse, status, err := service.CreateRefund(req, id, body)
+		refund, status, err := service.CreateRefund(req, id, body)
 
-		So(govPayResponse, ShouldBeNil)
+		So(refund, ShouldBeNil)
 		So(status, ShouldEqual, Error)
 		So(err.Error(), ShouldEqual, "error getting refund summary from govpay: [error getting payment resource]")
 	})
@@ -53,9 +53,9 @@ func TestUnitCreateRefund(t *testing.T) {
 			GetGovPayRefundSummary(req, id).
 			Return(nil, refundSummary, Success, nil)
 
-		govPayResponse, status, err := service.CreateRefund(req, id, body)
+		refund, status, err := service.CreateRefund(req, id, body)
 
-		So(govPayResponse, ShouldBeNil)
+		So(refund, ShouldBeNil)
 		So(status, ShouldEqual, InvalidData)
 		So(err.Error(), ShouldEqual, "refund amount is higher than available amount")
 	})
@@ -76,9 +76,9 @@ func TestUnitCreateRefund(t *testing.T) {
 			CreateRefund(paymentResource, refundRequest).
 			Return(nil, Error, err)
 
-		govPayResponse, status, err := service.CreateRefund(req, id, body)
+		refund, status, err := service.CreateRefund(req, id, body)
 
-		So(govPayResponse, ShouldBeNil)
+		So(refund, ShouldBeNil)
 		So(status, ShouldEqual, Error)
 		So(err.Error(), ShouldEqual, "error creating refund in govpay: [error reading refund GovPayRequest]")
 	})
@@ -104,9 +104,9 @@ func TestUnitCreateRefund(t *testing.T) {
 			PatchPaymentResource(id, gomock.Any()).
 			Return(nil)
 
-		govPayResponse, status, err := service.CreateRefund(req, id, body)
+		refund, status, err := service.CreateRefund(req, id, body)
 
-		So(govPayResponse, ShouldNotBeNil)
+		So(refund, ShouldNotBeNil)
 		So(status, ShouldEqual, Success)
 		So(err, ShouldBeNil)
 	})

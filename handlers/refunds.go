@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/companieshouse/chs.go/log"
-	"github.com/companieshouse/payments.api.ch.gov.uk/mappers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/gorilla/mux"
@@ -19,8 +18,8 @@ func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	vars := mux.Vars(req)
-	id := vars["paymentId"]
+	id := mux.Vars(req)["paymentId"]
+
 	if id == "" {
 		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
 		w.WriteHeader(http.StatusBadRequest)
@@ -54,12 +53,10 @@ func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	refundResource := mappers.MapToRefundResponse(*refund)
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	err = json.NewEncoder(w).Encode(refundResource)
+	err = json.NewEncoder(w).Encode(refund)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
 		return

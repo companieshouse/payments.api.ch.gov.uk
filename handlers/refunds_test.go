@@ -16,22 +16,21 @@ func TestUnitHandleCreateRefund(t *testing.T) {
 	cfg, _ := config.Get()
 
 	Convey("Request Body Empty", t, func() {
-		req, _ := http.NewRequest("POST", "/test", nil)
+		req, _ := http.NewRequest("POST", "/payments/123/refunds", nil)
 		w := httptest.NewRecorder()
 		HandleCreateRefund(w, req)
-		So(w.Code, ShouldEqual, 400)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
 
 	Convey("No PaymentId", t, func() {
 		refundRequest := models.CreateRefundRequest{}
 		requestBody, _ := json.Marshal(refundRequest)
 
-		req := httptest.NewRequest("GET", "/test", bytes.NewBuffer(requestBody))
-		//req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
+		req := httptest.NewRequest("POST", "/payments/123/refunds", bytes.NewBuffer(requestBody))
 		Register(mux.NewRouter(), *cfg)
 		w := httptest.NewRecorder()
 		HandleCreateRefund(w, req)
-		So(w.Code, ShouldEqual, 400)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		print(w.Body)
 	})
 
@@ -39,11 +38,11 @@ func TestUnitHandleCreateRefund(t *testing.T) {
 		refundRequest := "string"
 		requestBody, _ := json.Marshal(refundRequest)
 
-		req := httptest.NewRequest("GET", "/test", bytes.NewBuffer(requestBody))
+		req := httptest.NewRequest("POST", "/payments/123/refunds", bytes.NewBuffer(requestBody))
 		req = mux.SetURLVars(req, map[string]string{"paymentId": "123"})
 		Register(mux.NewRouter(), *cfg)
 		w := httptest.NewRecorder()
 		HandleCreateRefund(w, req)
-		So(w.Code, ShouldEqual, 400)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
 }

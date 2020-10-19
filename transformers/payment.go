@@ -73,50 +73,56 @@ func getRefundsDB(refunds []models.RefundResourceRest) []models.RefundResourceDB
 	var refundsDB []models.RefundResourceDB
 
 	for i := 0; i < len(refunds); i++ {
-		refundDB := models.RefundResourceDB{
-			RefundId:  refunds[i].RefundId,
-			CreatedAt: refunds[i].CreatedAt,
-			Amount:    refunds[i].Amount,
-			Links: models.RefundLinksDB{
-				Self: models.RefundSelfDB{
-					HREF:   refunds[i].Links.Self.HREF,
-					Method: refunds[i].Links.Self.Method,
-				},
-				Payment: models.RefundPaymentDB{
-					HREF:   refunds[i].Links.Payment.HREF,
-					Method: refunds[i].Links.Payment.Method,
-				},
-			},
-			Status: refunds[i].Status,
-		}
-		refundsDB = append(refundsDB, refundDB)
+		refundsDB = append(refundsDB, getRefundDB(refunds[i]))
 	}
 
 	return refundsDB
+}
+
+func getRefundDB(refund models.RefundResourceRest) models.RefundResourceDB {
+	return models.RefundResourceDB{
+		RefundId:  refund.RefundId,
+		CreatedAt: refund.CreatedAt,
+		Amount:    refund.Amount,
+		Links: models.RefundLinksDB{
+			Self: models.RefundSelfDB{
+				HREF:   refund.Links.Self.HREF,
+				Method: refund.Links.Self.Method,
+			},
+			Payment: models.RefundPaymentDB{
+				HREF:   refund.Links.Payment.HREF,
+				Method: refund.Links.Payment.Method,
+			},
+		},
+		Status: refund.Status,
+	}
 }
 
 func getRefundsRest(refunds []models.RefundResourceDB) []models.RefundResourceRest {
 	var refundsRest []models.RefundResourceRest
 
 	for i := 0; i < len(refunds); i++ {
-		refundRest := models.RefundResourceRest{
-			RefundId:  refunds[i].RefundId,
-			CreatedAt: refunds[i].CreatedAt,
-			Amount:    refunds[i].Amount,
-			Links: models.RefundLinksRest{
-				Self: models.RefundSelfRest{
-					HREF:   refunds[i].Links.Self.HREF,
-					Method: refunds[i].Links.Self.Method,
-				},
-				Payment: models.RefundPaymentRest{
-					HREF:   refunds[i].Links.Payment.HREF,
-					Method: refunds[i].Links.Payment.Method,
-				},
-			},
-			Status: refunds[i].Status,
-		}
-		refundsRest = append(refundsRest, refundRest)
+		refundsRest = append(refundsRest, getRefundRest(refunds[i]))
 	}
 
 	return refundsRest
+}
+
+func getRefundRest(refund models.RefundResourceDB) models.RefundResourceRest {
+	return models.RefundResourceRest{
+		RefundId:  refund.RefundId,
+		CreatedAt: refund.CreatedAt,
+		Amount:    refund.Amount,
+		Links: models.RefundLinksRest{
+			Self: models.RefundSelfRest{
+				HREF:   refund.Links.Self.HREF,
+				Method: refund.Links.Self.Method,
+			},
+			Payment: models.RefundPaymentRest{
+				HREF:   refund.Links.Payment.HREF,
+				Method: refund.Links.Payment.Method,
+			},
+		},
+		Status: refund.Status,
+	}
 }

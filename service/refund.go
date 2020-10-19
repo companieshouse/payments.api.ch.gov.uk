@@ -28,7 +28,7 @@ type RefundService struct {
 }
 
 // CreateRefund creates refund in GovPay and saves refund information to payment object in mongo
-func (service *RefundService) CreateRefund(req *http.Request, id string, createRefundResource models.CreateRefundRequest) (*models.CreateRefundGovPayResponse, ResponseType, error) {
+func (service *RefundService) CreateRefund(req *http.Request, id string, createRefundResource models.CreateRefundRequest) (*models.CreateRefundResponse, ResponseType, error) {
 
 	// Get RefundSummary from GovPay to check the available amount
 	paymentSession, refundSummary, response, err := service.GovPayService.GetGovPayRefundSummary(req, id)
@@ -56,6 +56,8 @@ func (service *RefundService) CreateRefund(req *http.Request, id string, createR
 		return nil, response, err
 	}
 
+	refundResource := mappers.MapToRefundResponse(*refund)
+
 	// Add refund information to payment session
 	paymentSession.Refunds = append(paymentSession.Refunds, mappers.MapToRefundRest(*refund))
 	paymentResourceUpdate := transformers.PaymentTransformer{}.TransformToDB(*paymentSession)
@@ -68,5 +70,5 @@ func (service *RefundService) CreateRefund(req *http.Request, id string, createR
 		return nil, Error, err
 	}
 
-	return refund, Success, nil
+	return &refundResource, Success, nil
 }
