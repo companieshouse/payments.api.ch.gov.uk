@@ -52,20 +52,11 @@ func TestUnitTransformToDB(t *testing.T) {
 			},
 			Refunds: []models.RefundResourceRest{
 				{
-					RefundId:  "123",
-					CreatedAt: now.String(),
-					Amount:    400,
-					Links: models.RefundLinksRest{
-						Self: models.RefundSelfRest{
-							HREF:   "asd",
-							Method: "dsa",
-						},
-						Payment: models.RefundPaymentRest{
-							HREF:   "qwe",
-							Method: "ewq",
-						},
-					},
-					Status: "success",
+					RefundId:          "123",
+					CreatedAt:         now.String(),
+					Amount:            400,
+					Status:            "success",
+					ExternalRefundUrl: "external",
 				},
 			},
 		}
@@ -94,20 +85,11 @@ func TestUnitTransformToDB(t *testing.T) {
 			},
 			Refunds: []models.RefundResourceDB{
 				{
-					RefundId:  "123",
-					CreatedAt: now.String(),
-					Amount:    400,
-					Links: models.RefundLinksDB{
-						Self: models.RefundSelfDB{
-							HREF:   "asd",
-							Method: "dsa",
-						},
-						Payment: models.RefundPaymentDB{
-							HREF:   "qwe",
-							Method: "ewq",
-						},
-					},
-					Status: "success",
+					RefundId:          "123",
+					CreatedAt:         now.String(),
+					Amount:            400,
+					Status:            "success",
+					ExternalRefundUrl: "external",
 				},
 			},
 		}
@@ -143,20 +125,11 @@ func TestUnitTransformToRest(t *testing.T) {
 			},
 			Refunds: []models.RefundResourceDB{
 				{
-					RefundId:  "123",
-					CreatedAt: now.String(),
-					Amount:    400,
-					Links: models.RefundLinksDB{
-						Self: models.RefundSelfDB{
-							HREF:   "asd",
-							Method: "dsa",
-						},
-						Payment: models.RefundPaymentDB{
-							HREF:   "qwe",
-							Method: "ewq",
-						},
-					},
-					Status: "success",
+					RefundId:          "123",
+					CreatedAt:         now.String(),
+					Amount:            400,
+					Status:            "success",
+					ExternalRefundUrl: "external",
 				},
 			},
 		}
@@ -182,20 +155,11 @@ func TestUnitTransformToRest(t *testing.T) {
 			Status:        "pending",
 			Refunds: []models.RefundResourceRest{
 				{
-					RefundId:  "123",
-					CreatedAt: now.String(),
-					Amount:    400,
-					Links: models.RefundLinksRest{
-						Self: models.RefundSelfRest{
-							HREF:   "asd",
-							Method: "dsa",
-						},
-						Payment: models.RefundPaymentRest{
-							HREF:   "qwe",
-							Method: "ewq",
-						},
-					},
-					Status: "success",
+					RefundId:          "123",
+					CreatedAt:         now.String(),
+					Amount:            400,
+					Status:            "success",
+					ExternalRefundUrl: "external",
 				},
 			},
 		}

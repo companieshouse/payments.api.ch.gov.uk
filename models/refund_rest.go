@@ -12,26 +12,9 @@ type CreateRefundResponse struct {
 }
 
 type RefundResourceRest struct {
-	RefundId  string          `json:"refund_id"`
-	CreatedAt string          `json:"created_at"`
-	Amount    int             `json:"amount"`
-	Links     RefundLinksRest `json:"_links"`
-	Status    string          `json:"status"`
-}
-
-type RefundLinksRest struct {
-	Self    RefundSelfRest    `json:"self"`
-	Payment RefundPaymentRest `json:"payment"`
-}
-
-// Self links to the payment
-type RefundSelfRest struct {
-	HREF   string `json:"href"`
-	Method string `json:"method"`
-}
-
-// Payment links to the payment
-type RefundPaymentRest struct {
-	HREF   string `json:"href"`
-	Method string `json:"method"`
+	RefundId          string `json:"refund_id"`
+	CreatedAt         string `json:"created_at"`
+	Amount            int    `json:"amount"`
+	Status            string `json:"status"`
+	ExternalRefundUrl string `json:"external_refund_url"`
 }

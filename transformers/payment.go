@@ -81,20 +81,11 @@ func getRefundsDB(refunds []models.RefundResourceRest) []models.RefundResourceDB
 
 func getRefundDB(refund models.RefundResourceRest) models.RefundResourceDB {
 	return models.RefundResourceDB{
-		RefundId:  refund.RefundId,
-		CreatedAt: refund.CreatedAt,
-		Amount:    refund.Amount,
-		Links: models.RefundLinksDB{
-			Self: models.RefundSelfDB{
-				HREF:   refund.Links.Self.HREF,
-				Method: refund.Links.Self.Method,
-			},
-			Payment: models.RefundPaymentDB{
-				HREF:   refund.Links.Payment.HREF,
-				Method: refund.Links.Payment.Method,
-			},
-		},
-		Status: refund.Status,
+		RefundId:          refund.RefundId,
+		CreatedAt:         refund.CreatedAt,
+		Amount:            refund.Amount,
+		Status:            refund.Status,
+		ExternalRefundUrl: refund.ExternalRefundUrl,
 	}
 }
 
@@ -110,19 +101,10 @@ func getRefundsRest(refunds []models.RefundResourceDB) []models.RefundResourceRe
 
 func getRefundRest(refund models.RefundResourceDB) models.RefundResourceRest {
 	return models.RefundResourceRest{
-		RefundId:  refund.RefundId,
-		CreatedAt: refund.CreatedAt,
-		Amount:    refund.Amount,
-		Links: models.RefundLinksRest{
-			Self: models.RefundSelfRest{
-				HREF:   refund.Links.Self.HREF,
-				Method: refund.Links.Self.Method,
-			},
-			Payment: models.RefundPaymentRest{
-				HREF:   refund.Links.Payment.HREF,
-				Method: refund.Links.Payment.Method,
-			},
-		},
-		Status: refund.Status,
+		RefundId:          refund.RefundId,
+		CreatedAt:         refund.CreatedAt,
+		Amount:            refund.Amount,
+		Status:            refund.Status,
+		ExternalRefundUrl: refund.ExternalRefundUrl,
 	}
 }

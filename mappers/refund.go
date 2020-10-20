@@ -4,11 +4,11 @@ import "github.com/companieshouse/payments.api.ch.gov.uk/models"
 
 func MapToRefundRest(response models.CreateRefundGovPayResponse) models.RefundResourceRest {
 	return models.RefundResourceRest{
-		RefundId:  response.RefundId,
-		CreatedAt: response.CreatedDate,
-		Amount:    response.Amount,
-		Links:     mapToRefundsLinksRest(response.Links),
-		Status:    response.Status,
+		RefundId:          response.RefundId,
+		CreatedAt:         response.CreatedDate,
+		Amount:            response.Amount,
+		Status:            response.Status,
+		ExternalRefundUrl: response.Links.Self.HREF,
 	}
 }
 
@@ -18,18 +18,5 @@ func MapToRefundResponse(gpResponse models.CreateRefundGovPayResponse) models.Cr
 		Amount:          gpResponse.Amount,
 		CreatedDateTime: gpResponse.CreatedDate,
 		Status:          gpResponse.Status,
-	}
-}
-
-func mapToRefundsLinksRest(db models.GovPayRefundLinks) models.RefundLinksRest {
-	return models.RefundLinksRest{
-		Self: models.RefundSelfRest{
-			HREF:   db.Self.HREF,
-			Method: db.Self.Method,
-		},
-		Payment: models.RefundPaymentRest{
-			HREF:   db.Payment.HREF,
-			Method: db.Payment.Method,
-		},
 	}
 }

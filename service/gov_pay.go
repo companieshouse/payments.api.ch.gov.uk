@@ -77,10 +77,11 @@ func (gp *GovPayService) GenerateNextURLGovPay(req *http.Request, paymentResourc
 
 	if paymentResource.Costs[0].ClassOfPayment[0] == "penalty" {
 		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenTreasury)
-	}
-	if paymentResource.Costs[0].ClassOfPayment[0] == "data-maintenance" ||
+	} else if paymentResource.Costs[0].ClassOfPayment[0] == "data-maintenance" ||
 		paymentResource.Costs[0].ClassOfPayment[0] == "orderable-item" {
 		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenChAccount)
+	} else {
+		return "", InvalidData, fmt.Errorf("class of payment not found")
 	}
 
 	request.Header.Add("accept", "application/json")
@@ -193,10 +194,11 @@ func (gp *GovPayService) CreateRefund(paymentResource *models.PaymentResourceRes
 
 	if paymentResource.Costs[0].ClassOfPayment[0] == "penalty" {
 		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenTreasury)
-	}
-	if paymentResource.Costs[0].ClassOfPayment[0] == "data-maintenance" ||
+	} else if paymentResource.Costs[0].ClassOfPayment[0] == "data-maintenance" ||
 		paymentResource.Costs[0].ClassOfPayment[0] == "orderable-item" {
 		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenChAccount)
+	} else {
+		return nil, InvalidData, fmt.Errorf("class of payment not found")
 	}
 
 	request.Header.Add("accept", "application/json")
