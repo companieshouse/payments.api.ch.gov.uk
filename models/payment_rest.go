@@ -27,6 +27,7 @@ type PaymentResourceRest struct {
 	Etag                    string                      `json:"etag"`
 	Kind                    string                      `json:"kind"`
 	MetaData                PaymentResourceMetaDataRest `json:"-"`
+	Refunds                 []RefundResourceRest        `json:"refunds"`
 }
 
 // PaymentResourceMetaDataRest contains all metadata fields that are relevant to the payment resource but not part of the Rest resource

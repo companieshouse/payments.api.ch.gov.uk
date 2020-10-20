@@ -68,6 +68,12 @@ type NextURL struct {
 	Method string `json:"method"`
 }
 
+// Payment links to the payment
+type Payment struct {
+	HREF   string `json:"href"`
+	Method string `json:"method"`
+}
+
 // NextURLPost contains where to navigate the user next as a POST
 type NextURLPost struct {
 	PostType string `json:"type"`
@@ -105,4 +111,23 @@ type PaymentDetails struct {
 	ExternalPaymentID string `json:"external_payment_id"`
 	TransactionDate   string `json:"transaction_date"`
 	PaymentStatus     string `json:"payment_status"`
+}
+
+// GovPayRefund
+type CreateRefundGovPayResponse struct {
+	RefundId    string            `json:"refund_id"`
+	CreatedDate string            `json:"created_date"`
+	Amount      int               `json:"amount"`
+	Links       GovPayRefundLinks `json:"_links"`
+	Status      string            `json:"status"`
+}
+
+type GovPayRefundLinks struct {
+	Self    Self    `json:"self"`
+	Payment Payment `json:"payment"`
+}
+
+type CreateRefundGovPayRequest struct {
+	Amount                int `json:"amount"`
+	RefundAmountAvailable int `json:"refund_amount_available"`
 }

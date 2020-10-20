@@ -33,7 +33,8 @@ func (pt PaymentTransformer) TransformToDB(rest models.PaymentResourceRest) mode
 	paymentResourceData.Links = models.PaymentLinksDB(rest.Links)
 
 	paymentResource := models.PaymentResourceDB{
-		Data: paymentResourceData,
+		Data:    paymentResourceData,
+		Refunds: getRefundsDB(rest.Refunds),
 	}
 
 	return paymentResource
@@ -54,6 +55,7 @@ func (pt PaymentTransformer) TransformToRest(dbResource models.PaymentResourceDB
 		Links:         models.PaymentLinksRest(dbResource.Data.Links),
 		Etag:          dbResource.Data.Etag,
 		Kind:          dbResource.Data.Kind,
+		Refunds:       getRefundsRest(dbResource.Refunds),
 	}
 
 	// One-way transformation of DB metadata: related to, but not part of the payment rest data json spec
@@ -65,4 +67,44 @@ func (pt PaymentTransformer) TransformToRest(dbResource models.PaymentResourceDB
 	}
 
 	return paymentResource
+}
+
+func getRefundsDB(refunds []models.RefundResourceRest) []models.RefundResourceDB {
+	var refundsDB []models.RefundResourceDB
+
+	for i := 0; i < len(refunds); i++ {
+		refundsDB = append(refundsDB, getRefundDB(refunds[i]))
+	}
+
+	return refundsDB
+}
+
+func getRefundDB(refund models.RefundResourceRest) models.RefundResourceDB {
+	return models.RefundResourceDB{
+		RefundId:          refund.RefundId,
+		CreatedAt:         refund.CreatedAt,
+		Amount:            refund.Amount,
+		Status:            refund.Status,
+		ExternalRefundUrl: refund.ExternalRefundUrl,
+	}
+}
+
+func getRefundsRest(refunds []models.RefundResourceDB) []models.RefundResourceRest {
+	var refundsRest []models.RefundResourceRest
+
+	for i := 0; i < len(refunds); i++ {
+		refundsRest = append(refundsRest, getRefundRest(refunds[i]))
+	}
+
+	return refundsRest
+}
+
+func getRefundRest(refund models.RefundResourceDB) models.RefundResourceRest {
+	return models.RefundResourceRest{
+		RefundId:          refund.RefundId,
+		CreatedAt:         refund.CreatedAt,
+		Amount:            refund.Amount,
+		Status:            refund.Status,
+		ExternalRefundUrl: refund.ExternalRefundUrl,
+	}
 }

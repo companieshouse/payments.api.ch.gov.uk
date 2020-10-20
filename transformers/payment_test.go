@@ -50,6 +50,15 @@ func TestUnitTransformToDB(t *testing.T) {
 					DescriptionValues:       map[string]string{"val": "val2"},
 				},
 			},
+			Refunds: []models.RefundResourceRest{
+				{
+					RefundId:          "123",
+					CreatedAt:         now.String(),
+					Amount:            400,
+					Status:            "success",
+					ExternalRefundUrl: "external",
+				},
+			},
 		}
 
 		expectedPaymentResourceDB := models.PaymentResourceDB{
@@ -73,6 +82,15 @@ func TestUnitTransformToDB(t *testing.T) {
 				Reference:     "ref",
 				CompanyNumber: "companyNumber",
 				Status:        "pending",
+			},
+			Refunds: []models.RefundResourceDB{
+				{
+					RefundId:          "123",
+					CreatedAt:         now.String(),
+					Amount:            400,
+					Status:            "success",
+					ExternalRefundUrl: "external",
+				},
 			},
 		}
 		paymentResourceDB := PaymentTransformer{}.TransformToDB(paymentResourceRest)
@@ -105,6 +123,15 @@ func TestUnitTransformToRest(t *testing.T) {
 				CompanyNumber: "companyNumber",
 				Status:        "pending",
 			},
+			Refunds: []models.RefundResourceDB{
+				{
+					RefundId:          "123",
+					CreatedAt:         now.String(),
+					Amount:            400,
+					Status:            "success",
+					ExternalRefundUrl: "external",
+				},
+			},
 		}
 		expectedPaymentResourceRest := models.PaymentResourceRest{
 			Amount:      "123",
@@ -126,6 +153,15 @@ func TestUnitTransformToRest(t *testing.T) {
 			Reference:     "ref",
 			CompanyNumber: "companyNumber",
 			Status:        "pending",
+			Refunds: []models.RefundResourceRest{
+				{
+					RefundId:          "123",
+					CreatedAt:         now.String(),
+					Amount:            400,
+					Status:            "success",
+					ExternalRefundUrl: "external",
+				},
+			},
 		}
 
 		paymentResourceRest := PaymentTransformer{}.TransformToRest(paymentResourceDB)

@@ -2,9 +2,11 @@
 
 !config
 !dao
+!fixtures
 !handlers
 !helpers
 !interceptors
+!mappers
 !models
 !service
 !transformers

@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -13,6 +14,15 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 )
+
+// Interface to enable mocking
+type PaymentProviderService interface {
+	CheckProvider(paymentResource *models.PaymentResourceRest) (*models.StatusResponse, ResponseType, error)
+	GenerateNextURLGovPay(req *http.Request, paymentResource *models.PaymentResourceRest) (string, ResponseType, error)
+	GetGovPayPaymentDetails(paymentResource *models.PaymentResourceRest) (*models.PaymentDetails, ResponseType, error)
+	GetGovPayRefundSummary(req *http.Request, id string) (*models.PaymentResourceRest, *models.RefundSummary, ResponseType, error)
+	CreateRefund(paymentResource *models.PaymentResourceRest, refundRequest *models.CreateRefundGovPayRequest) (*models.CreateRefundGovPayResponse, ResponseType, error)
+}
 
 // GovPayService handles the specific functionality of integrating GovPay provider into Payment Sessions
 type GovPayService struct {
@@ -67,10 +77,11 @@ func (gp *GovPayService) GenerateNextURLGovPay(req *http.Request, paymentResourc
 
 	if paymentResource.Costs[0].ClassOfPayment[0] == "penalty" {
 		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenTreasury)
-	}
-	if paymentResource.Costs[0].ClassOfPayment[0] == "data-maintenance" ||
+	} else if paymentResource.Costs[0].ClassOfPayment[0] == "data-maintenance" ||
 		paymentResource.Costs[0].ClassOfPayment[0] == "orderable-item" {
 		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenChAccount)
+	} else {
+		return "", InvalidData, fmt.Errorf("class of payment not found")
 	}
 
 	request.Header.Add("accept", "application/json")
@@ -133,6 +144,87 @@ func (gp *GovPayService) GetGovPayPaymentDetails(paymentResource *models.Payment
 	}
 
 	return paymentDetails, Success, nil
+}
+
+// GetGovPayRefundSummary gets refund summary of a GovPay payment
+func (gp *GovPayService) GetGovPayRefundSummary(req *http.Request, id string) (*models.PaymentResourceRest, *models.RefundSummary, ResponseType, error) {
+	// Get PaymentSession for the GovPay call
+	paymentSession, response, err := gp.PaymentService.GetPaymentSession(req, id)
+	if err != nil {
+		err = fmt.Errorf("error getting payment resource: [%v]", err)
+		log.ErrorR(req, err)
+		return nil, nil, response, err
+	}
+
+	govPayResponse, err := callGovPay(gp, paymentSession)
+	if err != nil {
+		err = fmt.Errorf("error getting payment information from gov pay: [%v]", err)
+		log.ErrorR(req, err)
+
+		return nil, nil, Error, err
+	}
+
+	switch govPayResponse.RefundSummary.Status {
+	case RefundUnavailable:
+		err = errors.New("cannot refund the payment - check if the payment failed")
+		return nil, nil, InvalidData, err
+	case RefundFull:
+		err = errors.New("cannot refund the payment - the full amount has already been refunded")
+		return nil, nil, InvalidData, err
+	case RefundPending:
+		err = errors.New("cannot refund the payment - the user has not completed the payment")
+		return nil, nil, InvalidData, err
+	}
+
+	// Return the payment session info and refund summary
+	return paymentSession, &govPayResponse.RefundSummary, Success, nil
+}
+
+// CreateRefund creates a refund in GovPay
+func (gp *GovPayService) CreateRefund(paymentResource *models.PaymentResourceRest, refundRequest *models.CreateRefundGovPayRequest) (*models.CreateRefundGovPayResponse, ResponseType, error) {
+	requestBody, err := json.Marshal(refundRequest)
+	if err != nil {
+		return nil, Error, fmt.Errorf("error reading refund GovPayRequest: [%s]", err)
+	}
+
+	request, err := http.NewRequest("POST", paymentResource.MetaData.ExternalPaymentStatusURI+"/refunds", bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, Error, fmt.Errorf("error generating request for GovPay: [%s]", err)
+	}
+
+	if paymentResource.Costs[0].ClassOfPayment[0] == "penalty" {
+		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenTreasury)
+	} else if paymentResource.Costs[0].ClassOfPayment[0] == "data-maintenance" ||
+		paymentResource.Costs[0].ClassOfPayment[0] == "orderable-item" {
+		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenChAccount)
+	} else {
+		return nil, InvalidData, fmt.Errorf("class of payment not found")
+	}
+
+	request.Header.Add("accept", "application/json")
+	request.Header.Add("content-type", "application/json")
+
+	resp, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return nil, Error, fmt.Errorf("error sending request to GovPay to create a refund: [%s]", err)
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, Error, fmt.Errorf("error reading response from GovPay: [%s]", err)
+	}
+
+	govPayResponse := &models.CreateRefundGovPayResponse{}
+	err = json.Unmarshal(body, govPayResponse)
+	if err != nil {
+		return nil, Error, fmt.Errorf("error reading response from GovPay: [%s]", err)
+	}
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
+		return nil, Error, fmt.Errorf("error status [%v] back from GovPay: [%s]", resp.StatusCode, govPayResponse.Status)
+	}
+
+	return govPayResponse, Success, nil
 }
 
 // decimalPayment will always be in the form XX.XX (e.g: 12.00) due to getTotalAmount converting to decimal with 2 fixed places right of decimal point.

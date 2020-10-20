@@ -3,11 +3,11 @@ package service
 import (
 	"errors"
 	"fmt"
+	"github.com/companieshouse/payments.api.ch.gov.uk/fixtures"
+	"github.com/jarcoal/httpmock"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/jarcoal/httpmock"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
@@ -525,6 +525,261 @@ func TestUnitGetGovPayPaymentDetails(t *testing.T) {
 		So(err, ShouldBeNil)
 	})
 
+}
+
+func TestUnitGetGovPayRefundSummary(t *testing.T) {
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	cfg, _ := config.Get()
+
+	Convey("Error getting payment resource from db", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockGovPayService := createMockGovPayService(&mockPaymentService)
+		req := httptest.NewRequest("", "/test", nil)
+		id := "123"
+
+		mock.EXPECT().GetPaymentResource(id).Return(&models.PaymentResourceDB{}, fmt.Errorf("error"))
+
+		paymentResource, refundSummary, responseType, err := mockGovPayService.GetGovPayRefundSummary(req, id)
+
+		So(responseType.String(), ShouldEqual, Error.String())
+		So(paymentResource, ShouldBeNil)
+		So(refundSummary, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "error getting payment resource: [error getting payment resource from db: [error]]")
+	})
+
+	Convey("Error sending request to GovPay", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockGovPayService := createMockGovPayService(&mockPaymentService)
+		req := httptest.NewRequest("", "/test", nil)
+		id := "123"
+
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", ExternalPaymentStatusURI: "http://external_uri", Data: models.PaymentResourceDataDB{Amount: "10.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+
+		govPayResponse := httpmock.NewErrorResponder(errors.New("error"))
+		httpmock.RegisterResponder("GET", "http://external_uri", govPayResponse)
+
+		paymentResource, refundSummary, responseType, err := mockGovPayService.GetGovPayRefundSummary(req, id)
+
+		So(responseType.String(), ShouldEqual, Error.String())
+		So(paymentResource, ShouldBeNil)
+		So(refundSummary, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "error getting payment information from gov pay: [error sending request to GovPay: [Get http://external_uri: error]]")
+	})
+
+	Convey("Refund failed - unavailable", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockGovPayService := createMockGovPayService(&mockPaymentService)
+		req := httptest.NewRequest("", "/test", nil)
+		id := "123"
+
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", ExternalPaymentStatusURI: "http://external_uri", Data: models.PaymentResourceDataDB{Amount: "10.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+
+		govPayState := models.State{Status: "success", Finished: true}
+		incomingGovPayResponse := models.IncomingGovPayResponse{CardBrand: "Visa", PaymentID: "1234", CreatedDate: "2016-01-21T17:15:000Z", State: govPayState, RefundSummary: models.RefundSummary{
+			Status:          "unavailable",
+			AmountAvailable: 0,
+			AmountSubmitted: 0,
+		}}
+
+		govPayResponse, _ := httpmock.NewJsonResponder(http.StatusOK, incomingGovPayResponse)
+		httpmock.RegisterResponder("GET", "http://external_uri", govPayResponse)
+
+		paymentResource, refundSummary, responseType, err := mockGovPayService.GetGovPayRefundSummary(req, id)
+
+		So(responseType.String(), ShouldEqual, InvalidData.String())
+		So(paymentResource, ShouldBeNil)
+		So(refundSummary, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "cannot refund the payment - check if the payment failed")
+	})
+
+	Convey("Refund failed - full", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockGovPayService := createMockGovPayService(&mockPaymentService)
+		req := httptest.NewRequest("", "/test", nil)
+		id := "123"
+
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", ExternalPaymentStatusURI: "http://external_uri", Data: models.PaymentResourceDataDB{Amount: "10.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+
+		govPayState := models.State{Status: "success", Finished: true}
+		incomingGovPayResponse := models.IncomingGovPayResponse{CardBrand: "Visa", PaymentID: "1234", CreatedDate: "2016-01-21T17:15:000Z", State: govPayState, RefundSummary: models.RefundSummary{
+			Status:          "full",
+			AmountAvailable: 0,
+			AmountSubmitted: 0,
+		}}
+
+		govPayResponse, _ := httpmock.NewJsonResponder(http.StatusOK, incomingGovPayResponse)
+		httpmock.RegisterResponder("GET", "http://external_uri", govPayResponse)
+
+		paymentResource, refundSummary, responseType, err := mockGovPayService.GetGovPayRefundSummary(req, id)
+
+		So(responseType.String(), ShouldEqual, InvalidData.String())
+		So(paymentResource, ShouldBeNil)
+		So(refundSummary, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "cannot refund the payment - the full amount has already been refunded")
+	})
+
+	Convey("Refund failed - pending", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockGovPayService := createMockGovPayService(&mockPaymentService)
+		req := httptest.NewRequest("", "/test", nil)
+		id := "123"
+
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", ExternalPaymentStatusURI: "http://external_uri", Data: models.PaymentResourceDataDB{Amount: "10.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+
+		govPayState := models.State{Status: "success", Finished: true}
+		incomingGovPayResponse := models.IncomingGovPayResponse{CardBrand: "Visa", PaymentID: "1234", CreatedDate: "2016-01-21T17:15:000Z", State: govPayState, RefundSummary: models.RefundSummary{
+			Status:          "pending",
+			AmountAvailable: 0,
+			AmountSubmitted: 0,
+		}}
+
+		govPayResponse, _ := httpmock.NewJsonResponder(http.StatusOK, incomingGovPayResponse)
+		httpmock.RegisterResponder("GET", "http://external_uri", govPayResponse)
+
+		paymentResource, refundSummary, responseType, err := mockGovPayService.GetGovPayRefundSummary(req, id)
+
+		So(responseType.String(), ShouldEqual, InvalidData.String())
+		So(paymentResource, ShouldBeNil)
+		So(refundSummary, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "cannot refund the payment - the user has not completed the payment")
+	})
+
+	Convey("Refund information successfully returned", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockGovPayService := createMockGovPayService(&mockPaymentService)
+		req := httptest.NewRequest("", "/test", nil)
+		id := "123"
+
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", ExternalPaymentStatusURI: "http://external_uri", Data: models.PaymentResourceDataDB{Amount: "10.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+
+		govPayState := models.State{Status: "success", Finished: true}
+		incomingGovPayResponse := models.IncomingGovPayResponse{CardBrand: "Visa", PaymentID: "1234", CreatedDate: "2016-01-21T17:15:000Z", State: govPayState, RefundSummary: models.RefundSummary{
+			Status:          "available",
+			AmountAvailable: 0,
+			AmountSubmitted: 800,
+		}}
+
+		govPayResponse, _ := httpmock.NewJsonResponder(http.StatusOK, incomingGovPayResponse)
+		httpmock.RegisterResponder("GET", "http://external_uri", govPayResponse)
+
+		paymentResource, refundSummary, responseType, err := mockGovPayService.GetGovPayRefundSummary(req, id)
+
+		So(responseType.String(), ShouldEqual, Success.String())
+		So(paymentResource, ShouldNotBeNil)
+		So(refundSummary.Status, ShouldEqual, incomingGovPayResponse.RefundSummary.Status)
+		So(refundSummary.AmountAvailable, ShouldEqual, incomingGovPayResponse.RefundSummary.AmountAvailable)
+		So(refundSummary.AmountSubmitted, ShouldEqual, incomingGovPayResponse.RefundSummary.AmountSubmitted)
+		So(err, ShouldBeNil)
+	})
+}
+
+func TestUnitGovPayCreateRefund(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	cfg, _ := config.Get()
+
+	Convey("Error sending request to GovPay", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockGovPayService := createMockGovPayService(&mockPaymentService)
+		refundRequest := fixtures.GetCreateRefundGovPayRequest(800, 800)
+
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
+		paymentResource := &models.PaymentResourceRest{
+			Amount: "250",
+			Costs:  []models.CostResourceRest{costResource},
+			MetaData: models.PaymentResourceMetaDataRest{
+				ExternalPaymentStatusURI: "http://external_uri",
+			},
+		}
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		httpmock.RegisterResponder("POST", "http://external_uri/refunds", httpmock.NewErrorResponder(fmt.Errorf("error")))
+
+		govPayRefundResponse, responseType, err := mockGovPayService.CreateRefund(paymentResource, refundRequest)
+
+		So(responseType.String(), ShouldEqual, Error.String())
+		So(paymentResource, ShouldNotBeNil)
+		So(govPayRefundResponse, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "error sending request to GovPay to create a refund: [Post http://external_uri/refunds: error]")
+	})
+
+	Convey("Successful request to GovPay", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockGovPayService := createMockGovPayService(&mockPaymentService)
+		refundRequest := fixtures.GetCreateRefundGovPayRequest(800, 800)
+
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
+		paymentResource := &models.PaymentResourceRest{
+			Amount: "250",
+			Costs:  []models.CostResourceRest{costResource},
+			MetaData: models.PaymentResourceMetaDataRest{
+				ExternalPaymentStatusURI: "http://external_uri",
+			},
+		}
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		gpResponse := fixtures.GetCreateRefundGovPayResponse()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, gpResponse)
+
+		httpmock.RegisterResponder("POST", "http://external_uri/refunds", jsonResponse)
+
+		govPayRefundResponse, responseType, err := mockGovPayService.CreateRefund(paymentResource, refundRequest)
+
+		So(responseType.String(), ShouldEqual, Success.String())
+		So(govPayRefundResponse.Status, ShouldEqual, gpResponse.Status)
+		So(govPayRefundResponse.Amount, ShouldEqual, gpResponse.Amount)
+		So(govPayRefundResponse.RefundId, ShouldEqual, gpResponse.RefundId)
+		So(err, ShouldBeNil)
+	})
 }
 
 func TestUnitConvertToPenceFromDecimal(t *testing.T) {
