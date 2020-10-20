@@ -40,7 +40,7 @@ Method    | Path                                            | Description
 **GET**   | /healthcheck                                    | Checks the health of the service
 **POST**  | /payments                                       | Create Payment Session
 **GET**   | /payments/{payment_id}                          | Get Payment Session
-**POST**  | /payments/{payment_id}/refunds                 | Create Refund
+**POST**  | /payments/{payment_id}/refunds                  | Create Refund
 **PATCH** | /private/payments/{payment_id}                  | Patch Payment Session
 **POST**  | /private/payments/{payment_id}/external-journey | Returns URL for external Payment Provider
 **GET**   | /callback/payments/govpay/{payment_id}          | [GOV.UK Pay](https://www.payments.service.gov.uk) callback
