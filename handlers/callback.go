@@ -12,7 +12,7 @@ import (
 )
 
 // handleKafkaMessage allows us to mock the call to produceKafkaMessage for unit tests
-var handlePaymentMessage = ProducePaymentMessage
+var handlePaymentMessage = producePaymentMessage
 
 // HandleGovPayCallback handles the callback from Govpay and redirects the user
 func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
@@ -119,7 +119,7 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 
 	err = handlePaymentMessage(paymentSession.MetaData.ID)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error producing kafka message: [%v]", err))
+		log.ErrorR(req, fmt.Errorf("error producing payment kafka message: [%v]", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

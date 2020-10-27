@@ -25,11 +25,11 @@ type paymentProcessed struct {
 	RefundId         string `avro:"refund_id,omitempty"`
 }
 
-func ProducePaymentMessage(paymentID string) error {
+func producePaymentMessage(paymentID string) error {
 	return produceKafkaMessage(paymentID, "")
 }
 
-func ProduceRefundMessage(paymentID string, refundID string) error {
+func produceRefundMessage(paymentID string, refundID string) error {
 	return produceKafkaMessage(paymentID, refundID)
 }
 

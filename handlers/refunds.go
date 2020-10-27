@@ -10,7 +10,7 @@ import (
 	"net/http"
 )
 
-var handleRefundMessage = ProduceRefundMessage
+var handleRefundMessage = produceRefundMessage
 
 // HandleCreateRefund initiates a refund from the external provider
 func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
@@ -68,7 +68,7 @@ func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
 
 	err = handleRefundMessage(paymentResource.MetaData.ID, refund.RefundId)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error producing kafka message: [%v]", err))
+		log.ErrorR(req, fmt.Errorf("error producing refund kafka message: [%v]", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
