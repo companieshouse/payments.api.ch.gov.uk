@@ -28,19 +28,19 @@ type RefundService struct {
 }
 
 // CreateRefund creates refund in GovPay and saves refund information to payment object in mongo
-func (service *RefundService) CreateRefund(req *http.Request, id string, createRefundResource models.CreateRefundRequest) (*models.CreateRefundResponse, ResponseType, error) {
+func (service *RefundService) CreateRefund(req *http.Request, id string, createRefundResource models.CreateRefundRequest) (*models.PaymentResourceRest, *models.CreateRefundResponse, ResponseType, error) {
 
 	// Get RefundSummary from GovPay to check the available amount
 	paymentSession, refundSummary, response, err := service.GovPayService.GetGovPayRefundSummary(req, id)
 	if err != nil {
 		err = fmt.Errorf("error getting refund summary from govpay: [%v]", err)
 		log.ErrorR(req, err)
-		return nil, response, err
+		return nil, nil, response, err
 	}
 
 	if refundSummary.AmountAvailable < createRefundResource.Amount {
 		err = errors.New("refund amount is higher than available amount")
-		return nil, InvalidData, err
+		return nil, nil, InvalidData, err
 	}
 
 	refundRequest := &models.CreateRefundGovPayRequest{
@@ -53,7 +53,7 @@ func (service *RefundService) CreateRefund(req *http.Request, id string, createR
 	if err != nil {
 		err = fmt.Errorf("error creating refund in govpay: [%v]", err)
 		log.ErrorR(req, err)
-		return nil, response, err
+		return nil, nil, response, err
 	}
 
 	refundResource := mappers.MapToRefundResponse(*refund)
@@ -67,8 +67,8 @@ func (service *RefundService) CreateRefund(req *http.Request, id string, createR
 	if err != nil {
 		err = fmt.Errorf("error patching payment session on database: [%v]", err)
 		log.Error(err)
-		return nil, Error, err
+		return nil, nil, Error, err
 	}
 
-	return &refundResource, Success, nil
+	return paymentSession, &refundResource, Success, nil
 }

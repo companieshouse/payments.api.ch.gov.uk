@@ -38,7 +38,7 @@ func TestUnitCreateRefund(t *testing.T) {
 			GetGovPayRefundSummary(req, id).
 			Return(nil, nil, Error, err)
 
-		refund, status, err := service.CreateRefund(req, id, body)
+		_, refund, status, err := service.CreateRefund(req, id, body)
 
 		So(refund, ShouldBeNil)
 		So(status, ShouldEqual, Error)
@@ -53,7 +53,7 @@ func TestUnitCreateRefund(t *testing.T) {
 			GetGovPayRefundSummary(req, id).
 			Return(nil, refundSummary, Success, nil)
 
-		refund, status, err := service.CreateRefund(req, id, body)
+		_, refund, status, err := service.CreateRefund(req, id, body)
 
 		So(refund, ShouldBeNil)
 		So(status, ShouldEqual, InvalidData)
@@ -76,7 +76,7 @@ func TestUnitCreateRefund(t *testing.T) {
 			CreateRefund(paymentResource, refundRequest).
 			Return(nil, Error, err)
 
-		refund, status, err := service.CreateRefund(req, id, body)
+		_, refund, status, err := service.CreateRefund(req, id, body)
 
 		So(refund, ShouldBeNil)
 		So(status, ShouldEqual, Error)
@@ -104,7 +104,7 @@ func TestUnitCreateRefund(t *testing.T) {
 			PatchPaymentResource(id, gomock.Any()).
 			Return(nil)
 
-		refund, status, err := service.CreateRefund(req, id, body)
+		_, refund, status, err := service.CreateRefund(req, id, body)
 
 		So(refund, ShouldNotBeNil)
 		So(status, ShouldEqual, Success)

@@ -22,6 +22,15 @@ const ProducerSchemaName = "payment-processed"
 // paymentProcessed represents the avro schema which can be found in the chs-kafka-schemas repo
 type paymentProcessed struct {
 	PaymentSessionID string `avro:"payment_resource_id"`
+	RefundId         string `avro:"refund_id,omitempty"`
+}
+
+func ProducePaymentMessage(paymentID string) error {
+	return produceKafkaMessage(paymentID, "")
+}
+
+func ProduceRefundMessage(paymentID string, refundID string) error {
+	return produceKafkaMessage(paymentID, refundID)
 }
 
 // redirectUser redirects user to the provided redirect_uri with query params
@@ -46,7 +55,7 @@ func redirectUser(w http.ResponseWriter, r *http.Request, redirectURI string, pa
 
 // produceKafkaMessage handles creating a producer, marshalling the payment id into the correct avro schema and sending
 // the message to the topic defined in ProducerTopic
-func produceKafkaMessage(paymentID string) error {
+func produceKafkaMessage(paymentID string, refundID string) error {
 	cfg, err := config.Get()
 	if err != nil {
 		err = fmt.Errorf("error getting config for kafka message production: [%v]", err)
@@ -69,7 +78,7 @@ func produceKafkaMessage(paymentID string) error {
 	}
 
 	// Prepare a message with the avro schema
-	message, err := prepareKafkaMessage(paymentID, *producerSchema)
+	message, err := prepareKafkaMessage(paymentID, refundID, *producerSchema)
 	if err != nil {
 		err = fmt.Errorf("error preparing kafka message with schema: [%v]", err)
 		return err
@@ -85,8 +94,9 @@ func produceKafkaMessage(paymentID string) error {
 }
 
 // prepareKafkaMessage is pulled out of produceKafkaMessage() to allow unit testing of non-kafka portion of code
-func prepareKafkaMessage(paymentID string, paymentProcessedSchema avro.Schema) (*producer.Message, error) {
-	paymentProcessedMessage := paymentProcessed{PaymentSessionID: paymentID}
+func prepareKafkaMessage(paymentID string, refundID string, paymentProcessedSchema avro.Schema) (*producer.Message, error) {
+	paymentProcessedMessage := paymentProcessed{PaymentSessionID: paymentID, RefundId: refundID}
+
 	messageBytes, err := paymentProcessedSchema.Marshal(paymentProcessedMessage)
 	if err != nil {
 		err = fmt.Errorf("error marshalling payment processed message: [%v]", err)
