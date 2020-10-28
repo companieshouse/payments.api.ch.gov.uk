@@ -10,6 +10,7 @@ import (
 	"net/http"
 )
 
+// handleRefundMessage allows us to mock the call to produceRefundMessage for unit tests
 var handleRefundMessage = produceRefundMessage
 
 // HandleCreateRefund initiates a refund from the external provider

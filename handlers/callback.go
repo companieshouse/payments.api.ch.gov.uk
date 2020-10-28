@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// handleKafkaMessage allows us to mock the call to produceKafkaMessage for unit tests
+// handlePaymentMessage allows us to mock the call to producePaymentMessage for unit tests
 var handlePaymentMessage = producePaymentMessage
 
 // HandleGovPayCallback handles the callback from Govpay and redirects the user
