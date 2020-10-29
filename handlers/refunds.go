@@ -10,6 +10,9 @@ import (
 	"net/http"
 )
 
+// handleRefundMessage allows us to mock the call to produceRefundMessage for unit tests
+var handleRefundMessage = produceRefundMessage
+
 // HandleCreateRefund initiates a refund from the external provider
 func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
 	if req.Body == nil {
@@ -36,7 +39,7 @@ func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// once we've read and decoded request body call the refund service handle internal business logic
-	refund, responseType, err := refundService.CreateRefund(req, id, incomingRefundResourceRequest)
+	paymentResource, refund, responseType, err := refundService.CreateRefund(req, id, incomingRefundResourceRequest)
 
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error creating refund resource: [%v]", err), log.Data{"service_response_type": responseType.String()})
@@ -63,4 +66,11 @@ func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
 	}
 
 	log.InfoR(req, "Successful POST request for new refund", log.Data{"refund_id": refund.RefundId, "status": http.StatusCreated})
+
+	err = handleRefundMessage(paymentResource.MetaData.ID, refund.RefundId)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error producing refund kafka message: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }

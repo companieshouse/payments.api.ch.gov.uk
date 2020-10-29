@@ -11,8 +11,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// handleKafkaMessage allows us to mock the call to produceKafkaMessage for unit tests
-var handleKafkaMessage = produceKafkaMessage
+// handlePaymentMessage allows us to mock the call to producePaymentMessage for unit tests
+var handlePaymentMessage = producePaymentMessage
 
 // HandleGovPayCallback handles the callback from Govpay and redirects the user
 func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
@@ -117,9 +117,9 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 
 	log.InfoR(req, "Successfully Closed payment session", log.Data{"payment_id": id, "status": paymentSession.Status})
 
-	err = handleKafkaMessage(paymentSession.MetaData.ID)
+	err = handlePaymentMessage(paymentSession.MetaData.ID)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error producing kafka message: [%v]", err))
+		log.ErrorR(req, fmt.Errorf("error producing payment kafka message: [%v]", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

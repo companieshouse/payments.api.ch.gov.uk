@@ -48,12 +48,12 @@ func (e CustomError) Error() string {
 }
 
 // Mock function for erroring when preparing and sending kafka message
-func mockProduceKafaMessageError(path string) error {
+func mockProduceKafkaMessageError(path string) error {
 	return CustomError{"hello"}
 }
 
 // Mock function for successful preparing and sending of kafka message
-func mockProduceKafaMessage(path string) error {
+func mockProduceKafkaMessage(path string) error {
 	return nil
 }
 
@@ -257,7 +257,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		govPayJSONResponse, _ := httpmock.NewJsonResponder(200, govPayResponse)
 		httpmock.RegisterResponder("GET", cfg.GovPayURL, govPayJSONResponse)
 
-		handleKafkaMessage = mockProduceKafaMessageError
+		handlePaymentMessage = mockProduceKafkaMessageError
 
 		req := httptest.NewRequest("GET", "/test", nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
@@ -292,7 +292,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		govPayJSONResponse, _ := httpmock.NewJsonResponder(200, govPayResponse)
 		httpmock.RegisterResponder("GET", cfg.GovPayURL, govPayJSONResponse)
 
-		handleKafkaMessage = mockProduceKafaMessage
+		handlePaymentMessage = mockProduceKafkaMessage
 
 		req := httptest.NewRequest("GET", "/test", nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
@@ -304,6 +304,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 
 	Convey("Successful message preparation with prepareKafkaMessage", t, func() {
 		paymentID := "12345"
+		refundID := "54321"
 
 		// This is the schema that is used by the producer
 		schema := `{
@@ -313,6 +314,10 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 			"fields": [
 			{
 				"name": "payment_resource_id",
+				"type": "string"
+			},
+			{
+				"name": "refund_id",
 				"type": "string"
 			}
 			]
@@ -325,17 +330,19 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		// the schema and message (paymentID), prepare the message (which includes marshalling), then unmarshal to
 		// ensure the data being sent to the payments-processed topic has not been modified in any way
 
-		message, pkmError := prepareKafkaMessage(paymentID, *producerSchema)
+		message, pkmError := prepareKafkaMessage(paymentID, refundID, *producerSchema)
 		unmarshalledPaymentProcessed := paymentProcessed{}
 		psError := producerSchema.Unmarshal(message.Value, &unmarshalledPaymentProcessed)
 
 		So(pkmError, ShouldEqual, nil)
 		So(psError, ShouldEqual, nil)
 		So(unmarshalledPaymentProcessed.PaymentSessionID, ShouldEqual, "12345")
+		So(unmarshalledPaymentProcessed.RefundId, ShouldEqual, "54321")
 	})
 
 	Convey("Unsuccessful message preparation with prepareKafkaMessage", t, func() {
 		paymentID := "12345"
+		refundID := "54321"
 
 		// This is the schema that is used by the producer, the type is in the incorrect type, so should error when marshalling
 		schema := `{
@@ -346,6 +353,10 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 			{
 				"name": "payment_resource_id",
 				"type": "int"
+			},
+{
+				"name": "refund_id",
+				"type": "int"
 			}
 			]
 		}`
@@ -354,7 +365,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 			Definition: schema,
 		}
 
-		_, err := prepareKafkaMessage(paymentID, *producerSchema)
+		_, err := prepareKafkaMessage(paymentID, refundID, *producerSchema)
 		So(err, ShouldNotBeEmpty)
 	})
 }
