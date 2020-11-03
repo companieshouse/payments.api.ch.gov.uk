@@ -550,6 +550,23 @@ func TestUnitGetGovPayRefundSummary(t *testing.T) {
 		So(err.Error(), ShouldEqual, "error getting payment resource: [error getting payment resource from db: [error]]")
 	})
 
+	Convey("Payment resource not found in db", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockGovPayService := createMockGovPayService(&mockPaymentService)
+		req := httptest.NewRequest("", "/test", nil)
+		id := "123"
+
+		mock.EXPECT().GetPaymentResource(id).Return(nil, nil)
+
+		paymentResource, refundSummary, responseType, err := mockGovPayService.GetGovPayRefundSummary(req, id)
+
+		So(responseType.String(), ShouldEqual, NotFound.String())
+		So(paymentResource, ShouldBeNil)
+		So(refundSummary, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "error getting payment resource")
+	})
+
 	Convey("Error sending request to GovPay", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)

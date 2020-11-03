@@ -156,6 +156,13 @@ func (gp *GovPayService) GetGovPayRefundSummary(req *http.Request, id string) (*
 		return nil, nil, response, err
 	}
 
+	if response == NotFound {
+		err = fmt.Errorf("error getting payment resource")
+		log.ErrorR(req, err)
+
+		return nil, nil, NotFound, err
+	}
+
 	govPayResponse, err := callGovPay(gp, paymentSession)
 	if err != nil {
 		err = fmt.Errorf("error getting payment information from gov pay: [%v]", err)
