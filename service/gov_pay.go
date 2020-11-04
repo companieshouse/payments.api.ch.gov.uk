@@ -156,6 +156,13 @@ func (gp *GovPayService) GetGovPayRefundSummary(req *http.Request, id string) (*
 		return nil, nil, response, err
 	}
 
+	if response == NotFound {
+		err = fmt.Errorf("error getting payment resource")
+		log.ErrorR(req, err)
+
+		return nil, nil, NotFound, err
+	}
+
 	govPayResponse, err := callGovPay(gp, paymentSession)
 	if err != nil {
 		err = fmt.Errorf("error getting payment information from gov pay: [%v]", err)
@@ -174,10 +181,12 @@ func (gp *GovPayService) GetGovPayRefundSummary(req *http.Request, id string) (*
 	case RefundPending:
 		err = errors.New("cannot refund the payment - the user has not completed the payment")
 		return nil, nil, InvalidData, err
+	case RefundAvailable:
+		return paymentSession, &govPayResponse.RefundSummary, Success, nil
+	default:
+		err = errors.New("cannot refund the payment - payment information not found")
+		return nil, nil, NotFound, err
 	}
-
-	// Return the payment session info and refund summary
-	return paymentSession, &govPayResponse.RefundSummary, Success, nil
 }
 
 // CreateRefund creates a refund in GovPay
