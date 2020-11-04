@@ -181,10 +181,12 @@ func (gp *GovPayService) GetGovPayRefundSummary(req *http.Request, id string) (*
 	case RefundPending:
 		err = errors.New("cannot refund the payment - the user has not completed the payment")
 		return nil, nil, InvalidData, err
+	case RefundAvailable:
+		return paymentSession, &govPayResponse.RefundSummary, Success, nil
+	default:
+		err = errors.New("cannot refund the payment - payment information not found")
+		return nil, nil, NotFound, err
 	}
-
-	// Return the payment session info and refund summary
-	return paymentSession, &govPayResponse.RefundSummary, Success, nil
 }
 
 // CreateRefund creates a refund in GovPay
