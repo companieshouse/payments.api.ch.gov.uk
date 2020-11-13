@@ -68,6 +68,7 @@ func produceKafkaMessage(paymentID string, refundID string) error {
 		err = fmt.Errorf("error creating kafka producer: [%v]", err)
 		return err
 	}
+	defer kafkaProducer.Close()
 	paymentProcessedSchema, err := schema.Get(cfg.SchemaRegistryURL, ProducerSchemaName)
 	if err != nil {
 		err = fmt.Errorf("error getting schema from schema registry: [%v]", err)
