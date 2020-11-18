@@ -101,7 +101,7 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 		Forename: userDetails.Forename,
 		Surname:  userDetails.Surname,
 	}
-	paymentResourceRest.IpAddress = req.Header.Get("ERIC-Client-IP")
+	paymentResourceRest.IPAddress = req.Header.Get("ERIC-Client-IP")
 	paymentResourceRest.Costs = costs.Costs
 	paymentResourceRest.Description = costs.Description
 	paymentResourceRest.CompanyNumber = costs.CompanyNumber
