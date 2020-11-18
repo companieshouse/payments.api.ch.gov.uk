@@ -162,6 +162,9 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 
 		paymentResource := models.PaymentResourceRest{
 			Amount: "250.567",
+			CreatedBy: models.CreatedByRest{
+				Email: "demo@demo.uk",
+			},
 			Costs:  []models.CostResourceRest{costResource},
 		}
 
