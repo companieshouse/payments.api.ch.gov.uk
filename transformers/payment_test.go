@@ -16,6 +16,7 @@ func TestUnitTransformToDB(t *testing.T) {
 			AvailablePaymentMethods: []string{"pay1", "pay2"},
 			CompletedAt:             now,
 			CreatedAt:               now,
+			IpAddress:               "987654321AB",
 			CreatedBy: models.CreatedByRest{
 				Email:    "created_by@companieshouse.gov.uk",
 				Forename: "user_forename",
@@ -72,6 +73,7 @@ func TestUnitTransformToDB(t *testing.T) {
 					ID:       "abc",
 					Surname:  "user_surname",
 				},
+				IpAddress:   "987654321AB",
 				Description: "payment_description",
 				Links: models.PaymentLinksDB{
 					Journey:  "links_journey",
@@ -112,6 +114,7 @@ func TestUnitTransformToRest(t *testing.T) {
 					ID:       "abc",
 					Surname:  "user_surname",
 				},
+				IpAddress:   "987654321AB",
 				Description: "payment_description",
 				Links: models.PaymentLinksDB{
 					Journey:  "links_journey",
@@ -143,6 +146,7 @@ func TestUnitTransformToRest(t *testing.T) {
 				ID:       "abc",
 				Surname:  "user_surname",
 			},
+			IpAddress:   "987654321AB",
 			Description: "payment_description",
 			Links: models.PaymentLinksRest{
 				Journey:  "links_journey",
