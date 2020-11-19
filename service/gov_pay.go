@@ -64,21 +64,6 @@ func (gp *GovPayService) GenerateNextURLGovPay(req *http.Request, paymentResourc
 	govPayRequest.Description = "Companies House Payment" // Hard-coded value for payment screens
 	govPayRequest.Reference = paymentResource.MetaData.ID
 	govPayRequest.ReturnURL = fmt.Sprintf("%s/callback/payments/govpay/%s", gp.PaymentService.Config.PaymentsAPIURL, paymentResource.MetaData.ID)
-
-	// Add metadata fields to send to Gov.UK Pay
-	// https://docs.payments.service.gov.uk/custom_metadata/#add-metadata-to-a-payment
-	govPayRequest.Metadata.IPAddress = paymentResource.IPAddress
-	govPayRequest.Metadata.CompanyNumber = paymentResource.CompanyNumber
-
-	// Product Information is a comma separated string, truncated to 100 characters
-	var productTypes []string
-	for _, cost := range paymentResource.Costs {
-		productTypes = append(productTypes, cost.ProductType)
-	}
-	productInformation := strings.Join(productTypes, ",")
-	productInformation = fmt.Sprintf("%.100s", productInformation)
-	govPayRequest.Metadata.ProductInformation = productInformation
-
 	log.TraceR(req, "performing gov pay request", log.Data{"gov_pay_request_data": govPayRequest})
 
 	requestBody, err := json.Marshal(govPayRequest)
