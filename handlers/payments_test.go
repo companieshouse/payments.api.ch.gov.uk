@@ -37,7 +37,7 @@ func TestUnitHandleCreatePaymentSession(t *testing.T) {
 
 func TestUnitHandleGetPaymentSession(t *testing.T) {
 	cfg, _ := config.Get()
-	cfg.DomainAllowList = "http://dummy-url"
+	cfg.DomainWhitelist = "http://dummy-url"
 	cfg.ExpiryTimeInMinutes = "90"
 	Convey("Invalid PaymentResourceRest", t, func() {
 		req := httptest.NewRequest("GET", "/test", nil)
@@ -65,7 +65,7 @@ func TestUnitHandleGetPaymentSession(t *testing.T) {
 
 func TestUnitHandlePatchPaymentSession(t *testing.T) {
 	cfg, _ := config.Get()
-	cfg.DomainAllowList = "http://dummy-url"
+	cfg.DomainWhitelist = "http://dummy-url"
 	cfg.ExpiryTimeInMinutes = "90"
 	Convey("Request Body empty", t, func() {
 		req := httptest.NewRequest("GET", "/test", nil)

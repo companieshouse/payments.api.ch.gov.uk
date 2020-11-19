@@ -57,7 +57,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
-	cfg.DomainAllowList = "http://dummy-url"
+	cfg.DomainWhitelist = "http://dummy-url"
 	cfg.ExpiryTimeInMinutes = "90"
 
 	Convey("Empty Request Body", t, func() {
@@ -313,7 +313,7 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 		So(err.Error(), ShouldStartWith, "error getting payment resource to patch:")
 	})
 
-	cfg.DomainAllowList = "http://dummy-resource"
+	cfg.DomainWhitelist = "http://dummy-resource"
 
 	Convey("Error Patching Payment Resource", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
@@ -404,7 +404,7 @@ func TestUnitGetPayment(t *testing.T) {
 		So(err.Error(), ShouldEqual, "error getting payment resource: [error getting Cost Resource: [Get : no responder found]]")
 	})
 
-	cfg.DomainAllowList = "http://dummy-resource"
+	cfg.DomainWhitelist = "http://dummy-resource"
 
 	Convey("Invalid cost", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
@@ -590,7 +590,7 @@ func TestUnitGetTotalAmount(t *testing.T) {
 
 func TestUnitGetCosts(t *testing.T) {
 	cfg, _ := config.Get()
-	cfg.DomainAllowList = "http://dummy-resource"
+	cfg.DomainWhitelist = "http://dummy-resource"
 	defer resetConfig()
 
 	Convey("Error getting Cost Resource", t, func() {
@@ -690,7 +690,7 @@ func TestUnitValidateIncomingPayment(t *testing.T) {
 		So(err.Error(), ShouldEqual, "invalid resource domain: http://dummy-resource")
 	})
 
-	cfg.DomainAllowList = "http://dummy-resource"
+	cfg.DomainWhitelist = "http://dummy-resource"
 
 	Convey("Valid Resource Domain", t, func() {
 		request := models.IncomingPaymentResourceRequest{
@@ -768,5 +768,5 @@ func TestUnitIsExpired(t *testing.T) {
 
 func resetConfig() {
 	cfg, _ := config.Get()
-	cfg.DomainAllowList = ""
+	cfg.DomainWhitelist = ""
 }
