@@ -13,5 +13,7 @@ require (
 	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/shopspring/decimal v0.0.0-20191130220710-360f2bc03045
 	github.com/smartystreets/goconvey v0.0.0-20190731233626-505e41936337
+	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/go-playground/validator.v9 v9.30.2
+	gopkg.in/jcmturner/goidentity.v3 v3.0.0 // indirect
 )
