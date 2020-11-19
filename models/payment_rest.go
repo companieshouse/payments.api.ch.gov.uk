@@ -17,6 +17,7 @@ type PaymentResourceRest struct {
 	CompletedAt             time.Time                   `json:"completed_at,omitempty"`
 	CreatedAt               time.Time                   `json:"created_at,omitempty"`
 	CreatedBy               CreatedByRest               `json:"created_by"`
+	IPAddress               string                      `json:"ip_address"`
 	Description             string                      `json:"description"`
 	Links                   PaymentLinksRest            `json:"links"`
 	PaymentMethod           string                      `json:"payment_method,omitempty"`

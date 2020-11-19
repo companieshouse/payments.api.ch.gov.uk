@@ -50,6 +50,9 @@ func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
 		case service.Error:
 			w.WriteHeader(http.StatusInternalServerError)
 			return
+		case service.NotFound:
+			w.WriteHeader(http.StatusNotFound)
+			return
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
 			return

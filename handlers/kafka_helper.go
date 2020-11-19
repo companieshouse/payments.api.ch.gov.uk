@@ -68,6 +68,7 @@ func produceKafkaMessage(paymentID string, refundID string) error {
 		err = fmt.Errorf("error creating kafka producer: [%v]", err)
 		return err
 	}
+	defer closeKafkaProducer(kafkaProducer, paymentID)
 	paymentProcessedSchema, err := schema.Get(cfg.SchemaRegistryURL, ProducerSchemaName)
 	if err != nil {
 		err = fmt.Errorf("error getting schema from schema registry: [%v]", err)
@@ -108,4 +109,12 @@ func prepareKafkaMessage(paymentID string, refundID string, paymentProcessedSche
 		Topic: ProducerTopic,
 	}
 	return producerMessage, nil
+}
+
+// closeKafkaProducer closes the kafkaProducer after the message has been sent
+func closeKafkaProducer(kafkaProducer *producer.Producer, paymentID string) {
+	err := kafkaProducer.Close()
+	if err != nil {
+		log.Error(fmt.Errorf("error closing kafka producer for payment ID [%s]", paymentID))
+	}
 }

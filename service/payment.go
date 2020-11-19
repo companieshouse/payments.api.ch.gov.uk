@@ -101,6 +101,7 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 		Forename: userDetails.Forename,
 		Surname:  userDetails.Surname,
 	}
+	paymentResourceRest.IPAddress = req.Header.Get("ERIC-Client-IP")
 	paymentResourceRest.Costs = costs.Costs
 	paymentResourceRest.Description = costs.Description
 	paymentResourceRest.CompanyNumber = costs.CompanyNumber
@@ -328,9 +329,9 @@ func validateIncomingPayment(incomingPaymentResourceRequest models.IncomingPayme
 	}
 	resourceDomain := strings.Join([]string{parsedURL.Scheme, parsedURL.Host}, "://")
 
-	whitelist := strings.Split(cfg.DomainWhitelist, ",")
+	allowList := strings.Split(cfg.DomainAllowList, ",")
 	matched := false
-	for _, domain := range whitelist {
+	for _, domain := range allowList {
 		if resourceDomain == domain {
 			matched = true
 			break

@@ -2,10 +2,18 @@ package models
 
 // OutgoingGovPayRequest is the request sent to GovPay to initiate a payment session
 type OutgoingGovPayRequest struct {
-	Amount      int    `json:"amount"`
-	Reference   string `json:"reference"`
-	ReturnURL   string `json:"return_url"`
-	Description string `json:"description"`
+	Amount      int      `json:"amount"`
+	Email       string   `json:"email"`
+	Reference   string   `json:"reference"`
+	ReturnURL   string   `json:"return_url"`
+	Description string   `json:"description"`
+	Metadata    Metadata `json:"metadata"`
+}
+
+type Metadata struct {
+	IPAddress          string `json:"ip_address"`
+	CompanyNumber      string `json:"company_number"`
+	ProductInformation string `json:"product_information"`
 }
 
 // IncomingGovPayResponse is the response expected back from GovPay after a payment session has been successfully initiated
