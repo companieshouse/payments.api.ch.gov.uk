@@ -24,7 +24,7 @@ Variable                | Default   | Description
 `MONGODB_URL`           |           | MongoDB URL
 `MONGODB_DATABASE`      | `payments`| MongoDB database name
 `MONGODB_COLLECTION`    | `payments`| MongoDB collection name
-`DOMAIN_ALLOW_LIST`     |           | List of valid domains for the Resource URL
+`DOMAIN_WHITELIST`      |           | List of valid domains for the Resource URL
 `PAYMENTS_WEB_URL`      |           | URL for the [Payments Web](https://github.com/companieshouse/payments.web.ch.gov.uk) service
 `PAYMENTS_API_URL`      |           | URL for the Payments API
 `GOV_PAY_URL`           |           | URL for [GOV.UK Pay](https://www.payments.service.gov.uk)

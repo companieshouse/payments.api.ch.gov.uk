@@ -18,7 +18,7 @@ type Config struct {
 	Collection                 string   `env:"MONGODB_COLLECTION"              flag:"mongodb-collection"                flagDesc:"MongoDB collection for data"`
 	Database                   string   `env:"MONGODB_DATABASE"                flag:"mongodb-database"                  flagDesc:"MongoDB database for data"`
 	MongoDBURL                 string   `env:"MONGODB_URL"                     flag:"mongodb-url"                       flagDesc:"MongoDB server URL"`
-	DomainAllowList            string   `env:"DOMAIN_ALLOW_LIST"                flag:"domain-allow-list"                  flagDesc:"List of Valid Domains"`
+	DomainWhitelist            string   `env:"DOMAIN_WHITELIST"                flag:"domain-whitelist"                  flagDesc:"List of Valid Domains"`
 	PaymentsWebURL             string   `env:"PAYMENTS_WEB_URL"                flag:"payments-web-url"                  flagDesc:"Base URL for the Payment Service Web"`
 	PaymentsAPIURL             string   `env:"PAYMENTS_API_URL"                flag:"payments-api-url"                  flagDesc:"Base URL for the Payment Service API"`
 	GovPayURL                  string   `env:"GOV_PAY_URL"                     flag:"gov-pay-url"                       flagDesc:"URL used to make calls to GovPay"`

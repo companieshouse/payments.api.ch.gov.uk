@@ -328,9 +328,9 @@ func validateIncomingPayment(incomingPaymentResourceRequest models.IncomingPayme
 	}
 	resourceDomain := strings.Join([]string{parsedURL.Scheme, parsedURL.Host}, "://")
 
-	allowList := strings.Split(cfg.DomainAllowList, ",")
+	whitelist := strings.Split(cfg.DomainWhitelist, ",")
 	matched := false
-	for _, domain := range allowList {
+	for _, domain := range whitelist {
 		if resourceDomain == domain {
 			matched = true
 			break

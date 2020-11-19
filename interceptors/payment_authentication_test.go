@@ -67,7 +67,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
-	cfg.DomainAllowList = "http://dummy-resource"
+	cfg.DomainWhitelist = "http://dummy-resource"
 
 	Convey("No payment ID in request", t, func() {
 		path := fmt.Sprintf("/payments/")

@@ -61,7 +61,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
-	cfg.DomainAllowList = "http://dummy-url"
+	cfg.DomainWhitelist = "http://dummy-url"
 	Convey("Payment ID not supplied", t, func() {
 		req := httptest.NewRequest("GET", "/test", nil)
 		w := httptest.NewRecorder()
