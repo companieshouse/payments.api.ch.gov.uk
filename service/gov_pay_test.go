@@ -3,16 +3,16 @@ package service
 import (
 	"errors"
 	"fmt"
+	"github.com/companieshouse/payments.api.ch.gov.uk/fixtures"
+	"github.com/jarcoal/httpmock"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
-	"github.com/companieshouse/payments.api.ch.gov.uk/fixtures"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/golang/mock/gomock"
-	"github.com/jarcoal/httpmock"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -165,7 +165,7 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 			CreatedBy: models.CreatedByRest{
 				Email: "demo@demo.uk",
 			},
-			Costs: []models.CostResourceRest{costResource},
+			Costs:  []models.CostResourceRest{costResource},
 		}
 
 		req := httptest.NewRequest("", "/test", nil)
