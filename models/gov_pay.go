@@ -3,6 +3,7 @@ package models
 // OutgoingGovPayRequest is the request sent to GovPay to initiate a payment session
 type OutgoingGovPayRequest struct {
 	Amount      int    `json:"amount"`
+	Email       string `json:"email"`
 	Reference   string `json:"reference"`
 	ReturnURL   string `json:"return_url"`
 	Description string `json:"description"`
