@@ -60,6 +60,7 @@ func (gp *GovPayService) GenerateNextURLGovPay(req *http.Request, paymentResourc
 	}
 
 	govPayRequest.Amount = amountToPay
+	govPayRequest.Email = paymentResource.CreatedBy.Email
 	govPayRequest.Description = "Companies House Payment" // Hard-coded value for payment screens
 	govPayRequest.Reference = paymentResource.MetaData.ID
 	govPayRequest.ReturnURL = fmt.Sprintf("%s/callback/payments/govpay/%s", gp.PaymentService.Config.PaymentsAPIURL, paymentResource.MetaData.ID)
