@@ -19,6 +19,7 @@ type PaymentResourceDataDB struct {
 	CompletedAt             time.Time      `bson:"completed_at,omitempty"`
 	CreatedAt               time.Time      `bson:"created_at,omitempty"`
 	CreatedBy               CreatedByDB    `bson:"created_by"`
+	IPAddress               string         `bson:"ip_address"`
 	Description             string         `bson:"description"`
 	Links                   PaymentLinksDB `bson:"links"`
 	PaymentMethod           string         `bson:"payment_method"`
