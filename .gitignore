@@ -2,3 +2,5 @@ payments.api.ch.gov.uk
 payments.api.ch.gov.uk-*.zip
 build.log
 .idea/
+
+coverage.out
