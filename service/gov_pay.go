@@ -67,7 +67,7 @@ func (gp *GovPayService) GenerateNextURLGovPay(req *http.Request, paymentResourc
 
 	// Add metadata fields to send to Gov.UK Pay
 	// https://docs.payments.service.gov.uk/custom_metadata/#add-metadata-to-a-payment
-	govPayRequest.Metadata.IPAddress = paymentResource.IPAddress
+	govPayRequest.Metadata.IPAddress = paymentResource.MetaData.IPAddress
 	govPayRequest.Metadata.CompanyNumber = paymentResource.CompanyNumber
 
 	// Product Information is a comma separated string, truncated to 100 characters

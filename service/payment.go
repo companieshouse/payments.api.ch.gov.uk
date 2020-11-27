@@ -101,7 +101,6 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 		Forename: userDetails.Forename,
 		Surname:  userDetails.Surname,
 	}
-	paymentResourceRest.IPAddress = req.Header.Get("ERIC-Client-IP")
 	paymentResourceRest.Costs = costs.Costs
 	paymentResourceRest.Description = costs.Description
 	paymentResourceRest.CompanyNumber = costs.CompanyNumber
@@ -139,6 +138,7 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 	paymentResourceEntity.ID = paymentResourceID
 	paymentResourceEntity.State = createResource.State
 	paymentResourceEntity.RedirectURI = createResource.RedirectURI
+	paymentResourceEntity.IPAddress = req.Header.Get("ERIC-Client-IP")
 
 	err = service.DAO.CreatePaymentResource(&paymentResourceEntity)
 
