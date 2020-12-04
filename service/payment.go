@@ -138,7 +138,6 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 	paymentResourceEntity.ID = paymentResourceID
 	paymentResourceEntity.State = createResource.State
 	paymentResourceEntity.RedirectURI = createResource.RedirectURI
-	paymentResourceEntity.IPAddress = req.Header.Get("ERIC-Client-IP")
 
 	err = service.DAO.CreatePaymentResource(&paymentResourceEntity)
 
