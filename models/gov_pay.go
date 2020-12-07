@@ -11,7 +11,6 @@ type OutgoingGovPayRequest struct {
 }
 
 type Metadata struct {
-	IPAddress          string `json:"ip_address"`
 	CompanyNumber      string `json:"company_number"`
 	ProductInformation string `json:"product_information"`
 }
