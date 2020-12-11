@@ -138,3 +138,7 @@ type CreateRefundGovPayRequest struct {
 	Amount                int `json:"amount"`
 	RefundAmountAvailable int `json:"refund_amount_available"`
 }
+
+type GetRefundStatusGovPayResponse struct {
+	Status string `json:"status"`
+}

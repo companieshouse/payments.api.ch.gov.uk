@@ -12,11 +12,20 @@ func MapToRefundRest(response models.CreateRefundGovPayResponse) models.RefundRe
 	}
 }
 
-func MapToRefundResponse(gpResponse models.CreateRefundGovPayResponse) models.CreateRefundResponse {
-	return models.CreateRefundResponse{
+func MapGovPayToRefundResponse(gpResponse models.CreateRefundGovPayResponse) models.RefundResponse {
+	return models.RefundResponse{
 		RefundId:        gpResponse.RefundId,
 		Amount:          gpResponse.Amount,
 		CreatedDateTime: gpResponse.CreatedDate,
 		Status:          gpResponse.Status,
+	}
+}
+
+func MapRefundToRefundResponse(refund models.RefundResourceRest) models.RefundResponse {
+	return models.RefundResponse{
+		RefundId:        refund.RefundId,
+		Amount:          refund.Amount,
+		CreatedDateTime: refund.CreatedAt,
+		Status:          refund.Status,
 	}
 }
