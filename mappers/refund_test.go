@@ -64,22 +64,3 @@ func TestUnitMapToRefundRest(t *testing.T) {
 		So(refundRest.ExternalRefundUrl, ShouldEqual, govPayResponse.Links.Self.HREF)
 	})
 }
-
-func TestUnitMapRefundToRefundResponse(t *testing.T) {
-
-	Convey("Maps successfully to refund response", t, func() {
-		refund := models.RefundResourceRest{
-			RefundId:  "123",
-			CreatedAt: "321",
-			Amount:    400,
-			Status:    "success",
-		}
-
-		refundResponse := MapRefundToRefundResponse(refund)
-
-		So(refundResponse.RefundId, ShouldEqual, refund.RefundId)
-		So(refundResponse.Amount, ShouldEqual, refund.Amount)
-		So(refundResponse.Status, ShouldEqual, refund.Status)
-		So(refundResponse.CreatedDateTime, ShouldEqual, refund.CreatedAt)
-	})
-}

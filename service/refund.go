@@ -76,7 +76,7 @@ func (service *RefundService) CreateRefund(req *http.Request, id string, createR
 }
 
 // UpdateRefund checks refund status in GovPay and if status is successful saves it to payment object in mongo
-func (service *RefundService) UpdateRefund(req *http.Request, paymentId string, refundId string) (*models.RefundResponse, ResponseType, error) {
+func (service *RefundService) UpdateRefund(req *http.Request, paymentId string, refundId string) (*models.RefundResourceRest, ResponseType, error) {
 	paymentSession, response, err := service.PaymentService.GetPaymentSession(req, paymentId)
 	if err != nil {
 		err = fmt.Errorf("error getting payment resource: [%v]", err)
@@ -119,9 +119,7 @@ func (service *RefundService) UpdateRefund(req *http.Request, paymentId string, 
 		}
 	}
 
-	refundResponse := mappers.MapRefundToRefundResponse(paymentSession.Refunds[index])
-
-	return &refundResponse, Success, nil
+	return &paymentSession.Refunds[index], Success, nil
 }
 
 func getRefundIndex(refunds []models.RefundResourceRest, refundId string) (int, error) {

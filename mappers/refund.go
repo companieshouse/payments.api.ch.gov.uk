@@ -20,12 +20,3 @@ func MapGovPayToRefundResponse(gpResponse models.CreateRefundGovPayResponse) mod
 		Status:          gpResponse.Status,
 	}
 }
-
-func MapRefundToRefundResponse(refund models.RefundResourceRest) models.RefundResponse {
-	return models.RefundResponse{
-		RefundId:        refund.RefundId,
-		Amount:          refund.Amount,
-		CreatedDateTime: refund.CreatedAt,
-		Status:          refund.Status,
-	}
-}
