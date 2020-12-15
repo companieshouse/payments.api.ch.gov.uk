@@ -31,7 +31,6 @@ func TestUnitHandleCreateRefund(t *testing.T) {
 		w := httptest.NewRecorder()
 		HandleCreateRefund(w, req)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		print(w.Body)
 	})
 
 	Convey("Invalid request body", t, func() {
@@ -44,7 +43,6 @@ func TestUnitHandleCreateRefund(t *testing.T) {
 		w := httptest.NewRecorder()
 		HandleCreateRefund(w, req)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		print(w.Body)
 	})
 }
 
@@ -58,7 +56,6 @@ func TestUnitHandleUpdateRefund(t *testing.T) {
 		w := httptest.NewRecorder()
 		HandleCreateRefund(w, req)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		print(w.Body)
 	})
 
 	Convey("No RefundId", t, func() {
@@ -69,6 +66,5 @@ func TestUnitHandleUpdateRefund(t *testing.T) {
 		w := httptest.NewRecorder()
 		HandleCreateRefund(w, req)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		print(w.Body)
 	})
 }

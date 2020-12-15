@@ -105,18 +105,15 @@ func (service *RefundService) UpdateRefund(req *http.Request, paymentId string, 
 		return nil, response, err
 	}
 
-	if govPayStatusResponse.Status == RefundsStatusSuccess {
+	paymentSession.Refunds[index].Status = govPayStatusResponse.Status
 
-		paymentSession.Refunds[index].Status = RefundsStatusSuccess
+	paymentResourceUpdate := transformers.PaymentTransformer{}.TransformToDB(*paymentSession)
 
-		paymentResourceUpdate := transformers.PaymentTransformer{}.TransformToDB(*paymentSession)
-
-		err = service.DAO.PatchPaymentResource(paymentId, &paymentResourceUpdate)
-		if err != nil {
-			err = fmt.Errorf("error patching payment session to database: [%v]", err)
-			log.Error(err)
-			return nil, Error, err
-		}
+	err = service.DAO.PatchPaymentResource(paymentId, &paymentResourceUpdate)
+	if err != nil {
+		err = fmt.Errorf("error patching payment session to database: [%v]", err)
+		log.Error(err)
+		return nil, Error, err
 	}
 
 	return &paymentSession.Refunds[index], Success, nil

@@ -231,44 +231,7 @@ func TestUnitUpdateRefund(t *testing.T) {
 		So(err.Error(), ShouldEqual, "error getting refund status from govpay: [error generating request for GovPay]")
 	})
 
-	Convey("Does not patch resource ", t, func() {
-		now := time.Now()
-		mockGovPayService.EXPECT().GetGovPayRefundStatus(gomock.Any(), refundId).Return(&models.GetRefundStatusGovPayResponse{Status: RefundsStatusSubmitted}, Success, nil)
-		mockDao.EXPECT().PatchPaymentResource(paymentId, gomock.Any()).Times(0)
-		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", ExternalPaymentStatusURI: "http://external_uri", Refunds: []models.RefundResourceDB{
-			{
-				RefundId:          refundId,
-				CreatedAt:         now.String(),
-				Amount:            400,
-				Status:            "submitted",
-				ExternalRefundUrl: "external",
-			},
-		}, Data: models.PaymentResourceDataDB{Amount: "10.00", Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}}, nil)
-
-		httpmock.Activate()
-		defer httpmock.DeactivateAndReset()
-
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
-
-		govPayState := models.State{Status: "success", Finished: true}
-		incomingGovPayResponse := models.IncomingGovPayResponse{CardBrand: "Visa", PaymentID: "1234", CreatedDate: "2016-01-21T17:15:000Z", State: govPayState, RefundSummary: models.RefundSummary{
-			Status:          "full",
-			AmountAvailable: 0,
-			AmountSubmitted: 0,
-		}}
-
-		govPayResponse, _ := httpmock.NewJsonResponder(http.StatusOK, incomingGovPayResponse)
-		httpmock.RegisterResponder("GET", "http://external_uri", govPayResponse)
-
-		refund, status, err := service.UpdateRefund(req, paymentId, refundId)
-
-		So(status, ShouldEqual, Success)
-		So(refund.Status, ShouldEqual, RefundsStatusSubmitted)
-		So(err, ShouldBeNil)
-	})
-
-	FocusConvey("Patches resource ", t, func() {
+	Convey("Patches resource ", t, func() {
 		now := time.Now()
 		var capturedSession *models.PaymentResourceDB
 		mockGovPayService.EXPECT().GetGovPayRefundStatus(gomock.Any(), refundId).Return(&models.GetRefundStatusGovPayResponse{Status: RefundsStatusSuccess}, Success, nil)
