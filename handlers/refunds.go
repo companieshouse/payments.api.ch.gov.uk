@@ -77,3 +77,52 @@ func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 }
+
+// HandleUpdateRefund fetches refund from the external provider and updates the status in Payments MongoDB
+func HandleUpdateRefund(w http.ResponseWriter, req *http.Request) {
+	paymentId := mux.Vars(req)["paymentId"]
+	refundId := mux.Vars(req)["refundId"]
+
+	if paymentId == "" {
+		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if refundId == "" {
+		log.ErrorR(req, fmt.Errorf("refund id not supplied"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	refund, responseType, err := refundService.UpdateRefund(req, paymentId, refundId)
+
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error updating refund resource: [%v]", err), log.Data{"service_response_type": responseType.String()})
+		switch responseType {
+		case service.InvalidData:
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		case service.Error:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		case service.NotFound:
+			w.WriteHeader(http.StatusNotFound)
+			return
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	err = json.NewEncoder(w).Encode(refund)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
+		return
+	}
+
+	log.InfoR(req, "Successful PATCH request for refund", log.Data{"refund_id": refundId, "status": http.StatusOK})
+}

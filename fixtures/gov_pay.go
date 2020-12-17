@@ -18,3 +18,9 @@ func GetCreateRefundGovPayRequest(amount int, amountAvailable int) *models.Creat
 		RefundAmountAvailable: amountAvailable,
 	}
 }
+
+func GetRefundStatusGovPayResponse() *models.GetRefundStatusGovPayResponse {
+	return &models.GetRefundStatusGovPayResponse{
+		Status: "success",
+	}
+}

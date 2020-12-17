@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestUnitMapToRefundResponse(t *testing.T) {
+func TestUnitMapGovPayToRefundResponse(t *testing.T) {
 
 	Convey("Maps successfully to refund response", t, func() {
 		govPayResponse := models.CreateRefundGovPayResponse{
@@ -26,7 +26,7 @@ func TestUnitMapToRefundResponse(t *testing.T) {
 			Status: "success",
 		}
 
-		refundResponse := MapToRefundResponse(govPayResponse)
+		refundResponse := MapGovPayToRefundResponse(govPayResponse)
 
 		So(refundResponse.RefundId, ShouldEqual, govPayResponse.RefundId)
 		So(refundResponse.Amount, ShouldEqual, govPayResponse.Amount)

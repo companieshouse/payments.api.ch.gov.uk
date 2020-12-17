@@ -836,6 +836,73 @@ func TestUnitGovPayCreateRefund(t *testing.T) {
 	})
 }
 
+func TestUnitGetGovPayRefundStatus(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	cfg, _ := config.Get()
+
+	Convey("Error sending request to GovPay", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockGovPayService := createMockGovPayService(&mockPaymentService)
+		refundId := "321"
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
+		paymentResource := &models.PaymentResourceRest{
+			Amount: "250",
+			Costs:  []models.CostResourceRest{costResource},
+			MetaData: models.PaymentResourceMetaDataRest{
+				ExternalPaymentStatusURI: "http://external_uri",
+			},
+		}
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		httpmock.RegisterResponder("GET", "http://external_uri/refunds/321", httpmock.NewErrorResponder(fmt.Errorf("error")))
+
+		govPayStatusResponse, responseType, err := mockGovPayService.GetGovPayRefundStatus(paymentResource, refundId)
+
+		So(responseType.String(), ShouldEqual, Error.String())
+		So(paymentResource, ShouldNotBeNil)
+		So(govPayStatusResponse, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "error sending request to GovPay to get status of a refund: [Get http://external_uri/refunds/321: error]")
+	})
+
+	Convey("Successful request to GovPay", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockGovPayService := createMockGovPayService(&mockPaymentService)
+		refundId := "321"
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
+		paymentResource := &models.PaymentResourceRest{
+			Amount: "250",
+			Costs:  []models.CostResourceRest{costResource},
+			MetaData: models.PaymentResourceMetaDataRest{
+				ExternalPaymentStatusURI: "http://external_uri",
+			},
+		}
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		gpResponse := fixtures.GetRefundStatusGovPayResponse()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, gpResponse)
+
+		httpmock.RegisterResponder("GET", "http://external_uri/refunds/321", jsonResponse)
+
+		govPayStatusResponse, responseType, err := mockGovPayService.GetGovPayRefundStatus(paymentResource, refundId)
+
+		So(responseType.String(), ShouldEqual, Success.String())
+		So(govPayStatusResponse.Status, ShouldEqual, gpResponse.Status)
+		So(err, ShouldBeNil)
+	})
+}
+
 func TestUnitConvertToPenceFromDecimal(t *testing.T) {
 	Convey("Convert decimal payment in pounds to pence", t, func() {
 		amount, err := convertToPenceFromDecimal("116.32")

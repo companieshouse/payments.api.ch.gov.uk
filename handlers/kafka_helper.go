@@ -21,6 +21,7 @@ const ProducerSchemaName = "payment-processed"
 
 // paymentProcessed represents the avro schema which can be found in the chs-kafka-schemas repo
 type paymentProcessed struct {
+	Attempt          int32  `avro:"attempt"`
 	PaymentSessionID string `avro:"payment_resource_id"`
 	RefundId         string `avro:"refund_id,omitempty"`
 }
@@ -96,7 +97,7 @@ func produceKafkaMessage(paymentID string, refundID string) error {
 
 // prepareKafkaMessage is pulled out of produceKafkaMessage() to allow unit testing of non-kafka portion of code
 func prepareKafkaMessage(paymentID string, refundID string, paymentProcessedSchema avro.Schema) (*producer.Message, error) {
-	paymentProcessedMessage := paymentProcessed{PaymentSessionID: paymentID, RefundId: refundID}
+	paymentProcessedMessage := paymentProcessed{Attempt: 0, PaymentSessionID: paymentID, RefundId: refundID}
 
 	messageBytes, err := paymentProcessedSchema.Marshal(paymentProcessedMessage)
 	if err != nil {

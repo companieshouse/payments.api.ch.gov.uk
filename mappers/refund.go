@@ -12,8 +12,8 @@ func MapToRefundRest(response models.CreateRefundGovPayResponse) models.RefundRe
 	}
 }
 
-func MapToRefundResponse(gpResponse models.CreateRefundGovPayResponse) models.CreateRefundResponse {
-	return models.CreateRefundResponse{
+func MapGovPayToRefundResponse(gpResponse models.CreateRefundGovPayResponse) models.RefundResponse {
+	return models.RefundResponse{
 		RefundId:        gpResponse.RefundId,
 		Amount:          gpResponse.Amount,
 		CreatedDateTime: gpResponse.CreatedDate,
