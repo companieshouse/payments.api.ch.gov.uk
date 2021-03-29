@@ -4,7 +4,6 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
