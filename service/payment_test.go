@@ -613,7 +613,7 @@ func TestUnitGetCosts(t *testing.T) {
 		costResourceRest, status, err := getCosts("http://dummy-resource", cfg)
 		So(costResourceRest, ShouldBeNil)
 		So(status, ShouldEqual, InvalidData)
-		So(err.Error(), ShouldEqual, "error getting Cost Resource")
+		So(err.Error(), ShouldEqual, "error getting Cost Resource - status code: [400]")
 	})
 
 	Convey("Error reading Cost Resource", t, func() {
