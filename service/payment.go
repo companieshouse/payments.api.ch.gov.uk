@@ -260,7 +260,7 @@ func getCosts(resource string, cfg *config.Config) (*models.CostsRest, ResponseT
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		err = errors.New("error getting Cost Resource")
+		err = errors.New("error getting Cost Resource - status code: [%v]", resp.StatusCode)
 		log.ErrorR(resourceReq, err)
 		return nil, InvalidData, err
 	}
