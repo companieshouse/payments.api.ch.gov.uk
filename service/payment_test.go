@@ -591,6 +591,7 @@ func TestUnitGetTotalAmount(t *testing.T) {
 func TestUnitGetCosts(t *testing.T) {
 	cfg, _ := config.Get()
 	cfg.DomainAllowList = "http://dummy-resource"
+	cfg.SecureAppCostsRegex = "\\/secure-app-regex-test\\/"
 	defer resetConfig()
 
 	Convey("Error getting Cost Resource", t, func() {
@@ -631,6 +632,30 @@ func TestUnitGetCosts(t *testing.T) {
 		So(costResourceRest, ShouldBeNil)
 		So(status, ShouldEqual, InvalidData)
 		So(err.Error(), ShouldEqual, "Key: 'CostResourceRest.Amount' Error:Field validation for 'Amount' failed on the 'required' tag")
+	})
+
+	Convey("CostsNotFound status when getting Cost Resource", t, func() {
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(404, nil)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+
+		costResourceRest, status, err := getCosts("http://dummy-resource", cfg)
+		So(costResourceRest, ShouldBeNil)
+		So(status, ShouldEqual, CostsNotFound)
+		So(err.Error(), ShouldEqual, "error getting Cost Resource - Not Found: [404]")
+	})
+
+	Convey("CostsGone status when getting Cost Resource", t, func() {
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(404, nil)
+		httpmock.RegisterResponder("GET", "http://dummy-resource/secure-app-regex-test/123456789abc/payment", jsonResponse)
+
+		costResourceRest, status, err := getCosts("http://dummy-resource/secure-app-regex-test/123456789abc/payment", cfg)
+		So(costResourceRest, ShouldBeNil)
+		So(status, ShouldEqual, CostsGone)
+		So(err.Error(), ShouldEqual, "error getting Cost Resource - Gone: [410]")
 	})
 }
 

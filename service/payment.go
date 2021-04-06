@@ -4,6 +4,7 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -257,6 +258,20 @@ func getCosts(resource string, cfg *config.Config) (*models.CostsRest, ResponseT
 		return nil, Error, fmt.Errorf("error getting Cost Resource: [%v]", err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		r := regexp.MustCompile(cfg.SecureAppCostsRegex)
+
+		if r.MatchString(resource) {
+			err = errors.New("error getting Cost Resource - Gone: [410]")
+			log.ErrorR(resourceReq, err)
+			return nil, CostsGone, err
+		}
+
+		err = errors.New("error getting Cost Resource - Not Found: [404]")
+		log.ErrorR(resourceReq, err)
+		return nil, CostsNotFound, err
+	}
 
 	if resp.StatusCode != http.StatusOK {
 		err = fmt.Errorf("error getting Cost Resource - status code: [%v]", resp.StatusCode)

@@ -18,6 +18,12 @@ const (
 
 	// Success response
 	Success
+
+	// Cost Resource Not Found response
+	CostsNotFound
+
+	// Costs Gone response
+	CostsGone
 )
 
 var vals = [...]string{
@@ -26,6 +32,8 @@ var vals = [...]string{
 	"forbidden",
 	"not-found",
 	"success",
+	"costs-not-found",
+	"costs-gone",
 }
 
 // String representation of `ResponseType`

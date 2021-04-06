@@ -65,6 +65,15 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 			case service.Forbidden:
 				w.WriteHeader(http.StatusForbidden)
 				return
+			case service.CostsGone:
+				w.WriteHeader(http.StatusGone)
+				return
+			case service.CostsNotFound:
+				jsonResponse := []byte(`{"error":"Costs Resource Not Found [404]"}`)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write(jsonResponse)
+				return
 			case service.Error:
 				w.WriteHeader(http.StatusInternalServerError)
 				return
