@@ -15,6 +15,7 @@ func TestUnitRegisterRoutes(t *testing.T) {
 	Convey("Register routes", t, func() {
 		router := mux.NewRouter()
 		cfg, _ := config.Get()
+		cfg.SecureAppCostsRegex = "\\/secure-app-regex-test\\/"
 		Register(router, *cfg)
 		So(router.GetRoute("get-healthcheck"), ShouldNotBeNil)
 		So(router.GetRoute("create-payment"), ShouldNotBeNil)

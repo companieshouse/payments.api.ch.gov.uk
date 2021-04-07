@@ -27,8 +27,9 @@ import (
 
 // PaymentService contains the DAO for db access
 type PaymentService struct {
-	DAO    dao.DAO
-	Config config.Config
+	DAO              dao.DAO
+	Config           config.Config
+	SecureCostsRegex *regexp.Regexp
 }
 
 // PaymentStatus Enum Type
@@ -79,7 +80,7 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 		return nil, Error, err
 	}
 
-	costs, costsResponseType, err := getCosts(createResource.Resource, &service.Config)
+	costs, costsResponseType, err := getCosts(createResource.Resource, &service.Config, service.SecureCostsRegex)
 	if err != nil {
 		err = fmt.Errorf("error getting payment resource: [%v]", err)
 		log.ErrorR(req, err)
@@ -201,7 +202,7 @@ func (service *PaymentService) GetPaymentSession(req *http.Request, id string) (
 		return nil, NotFound, nil
 	}
 
-	costs, costsResponseType, err := getCosts(paymentResource.Data.Links.Resource, &service.Config)
+	costs, costsResponseType, err := getCosts(paymentResource.Data.Links.Resource, &service.Config, service.SecureCostsRegex)
 	if err != nil {
 		err = fmt.Errorf("error getting payment resource: [%v]", err)
 		log.ErrorR(req, err)
@@ -243,7 +244,7 @@ func getTotalAmount(costs *[]models.CostResourceRest) (string, error) {
 	return totalAmount.StringFixed(2), nil
 }
 
-func getCosts(resource string, cfg *config.Config) (*models.CostsRest, ResponseType, error) {
+func getCosts(resource string, cfg *config.Config, r *regexp.Regexp) (*models.CostsRest, ResponseType, error) {
 
 	resourceReq, err := http.NewRequest("GET", resource, nil)
 	if err != nil {
@@ -260,8 +261,6 @@ func getCosts(resource string, cfg *config.Config) (*models.CostsRest, ResponseT
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		r := regexp.MustCompile(cfg.SecureAppCostsRegex)
-
 		if r.MatchString(resource) {
 			err = errors.New("error getting Cost Resource - Gone: [410]")
 			log.ErrorR(resourceReq, err)
