@@ -244,7 +244,7 @@ func getTotalAmount(costs *[]models.CostResourceRest) (string, error) {
 	return totalAmount.StringFixed(2), nil
 }
 
-func getCosts(resource string, cfg *config.Config, r *regexp.Regexp) (*models.CostsRest, ResponseType, error) {
+func getCosts(resource string, cfg *config.Config, secAppCostsRegex *regexp.Regexp) (*models.CostsRest, ResponseType, error) {
 
 	resourceReq, err := http.NewRequest("GET", resource, nil)
 	if err != nil {
@@ -261,7 +261,7 @@ func getCosts(resource string, cfg *config.Config, r *regexp.Regexp) (*models.Co
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		if r.MatchString(resource) {
+		if secAppCostsRegex.MatchString(resource) {
 			err = errors.New("error getting Cost Resource - Gone: [410]")
 			log.ErrorR(resourceReq, err)
 			return nil, CostsGone, err
