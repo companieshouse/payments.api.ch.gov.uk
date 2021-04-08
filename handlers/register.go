@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
+	"os"
+	"regexp"
 
 	"github.com/companieshouse/chs.go/authentication"
 	"github.com/companieshouse/chs.go/log"
@@ -21,9 +24,17 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 		URL: cfg.MongoDBURL,
 	}
 
+	r, err := regexp.Compile(cfg.SecureAppCostsRegex)
+	if err != nil {
+		err = errors.New("secure app costs regex failed to compile")
+		log.Error(err)
+		os.Exit(1)
+	}
+
 	paymentService = &service.PaymentService{
-		DAO:    m,
-		Config: cfg,
+		DAO:              m,
+		Config:           cfg,
+		SecureCostsRegex: r,
 	}
 
 	govPayService := &service.GovPayService{PaymentService: *paymentService}

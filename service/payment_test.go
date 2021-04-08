@@ -591,6 +591,8 @@ func TestUnitGetTotalAmount(t *testing.T) {
 func TestUnitGetCosts(t *testing.T) {
 	cfg, _ := config.Get()
 	cfg.DomainAllowList = "http://dummy-resource"
+	cfg.SecureAppCostsRegex = "\\/secure-app-regex-test\\/"
+	r := regexp.MustCompile(cfg.SecureAppCostsRegex)
 	defer resetConfig()
 
 	Convey("Error getting Cost Resource", t, func() {
@@ -598,7 +600,7 @@ func TestUnitGetCosts(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		httpmock.RegisterResponder("GET", "http://dummy-resource", nil)
 
-		costResourceRest, status, err := getCosts("http://dummy-resource", cfg)
+		costResourceRest, status, err := getCosts("http://dummy-resource", cfg, r)
 		So(costResourceRest, ShouldBeNil)
 		So(status, ShouldEqual, Error)
 		So(err.Error(), ShouldEqual, "error getting Cost Resource: [Get http://dummy-resource: no responder found]")
@@ -610,7 +612,7 @@ func TestUnitGetCosts(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(400, nil)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
-		costResourceRest, status, err := getCosts("http://dummy-resource", cfg)
+		costResourceRest, status, err := getCosts("http://dummy-resource", cfg, r)
 		So(costResourceRest, ShouldBeNil)
 		So(status, ShouldEqual, InvalidData)
 		So(err.Error(), ShouldEqual, "error getting Cost Resource - status code: [400]")
@@ -627,10 +629,34 @@ func TestUnitGetCosts(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costs)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
-		costResourceRest, status, err := getCosts("http://dummy-resource", cfg)
+		costResourceRest, status, err := getCosts("http://dummy-resource", cfg, r)
 		So(costResourceRest, ShouldBeNil)
 		So(status, ShouldEqual, InvalidData)
 		So(err.Error(), ShouldEqual, "Key: 'CostResourceRest.Amount' Error:Field validation for 'Amount' failed on the 'required' tag")
+	})
+
+	Convey("CostsNotFound status when getting Cost Resource", t, func() {
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(404, nil)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+
+		costResourceRest, status, err := getCosts("http://dummy-resource", cfg, r)
+		So(costResourceRest, ShouldBeNil)
+		So(status, ShouldEqual, CostsNotFound)
+		So(err.Error(), ShouldEqual, "error getting Cost Resource - Not Found: [404]")
+	})
+
+	Convey("CostsGone status when getting Cost Resource", t, func() {
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(404, nil)
+		httpmock.RegisterResponder("GET", "http://dummy-resource/secure-app-regex-test/123456789abc/payment", jsonResponse)
+
+		costResourceRest, status, err := getCosts("http://dummy-resource/secure-app-regex-test/123456789abc/payment", cfg, r)
+		So(costResourceRest, ShouldBeNil)
+		So(status, ShouldEqual, CostsGone)
+		So(err.Error(), ShouldEqual, "error getting Cost Resource - Gone: [410]")
 	})
 }
 

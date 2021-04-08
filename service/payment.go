@@ -4,6 +4,7 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -26,8 +27,9 @@ import (
 
 // PaymentService contains the DAO for db access
 type PaymentService struct {
-	DAO    dao.DAO
-	Config config.Config
+	DAO              dao.DAO
+	Config           config.Config
+	SecureCostsRegex *regexp.Regexp
 }
 
 // PaymentStatus Enum Type
@@ -78,7 +80,7 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 		return nil, Error, err
 	}
 
-	costs, costsResponseType, err := getCosts(createResource.Resource, &service.Config)
+	costs, costsResponseType, err := getCosts(createResource.Resource, &service.Config, service.SecureCostsRegex)
 	if err != nil {
 		err = fmt.Errorf("error getting payment resource: [%v]", err)
 		log.ErrorR(req, err)
@@ -200,7 +202,7 @@ func (service *PaymentService) GetPaymentSession(req *http.Request, id string) (
 		return nil, NotFound, nil
 	}
 
-	costs, costsResponseType, err := getCosts(paymentResource.Data.Links.Resource, &service.Config)
+	costs, costsResponseType, err := getCosts(paymentResource.Data.Links.Resource, &service.Config, service.SecureCostsRegex)
 	if err != nil {
 		err = fmt.Errorf("error getting payment resource: [%v]", err)
 		log.ErrorR(req, err)
@@ -242,7 +244,7 @@ func getTotalAmount(costs *[]models.CostResourceRest) (string, error) {
 	return totalAmount.StringFixed(2), nil
 }
 
-func getCosts(resource string, cfg *config.Config) (*models.CostsRest, ResponseType, error) {
+func getCosts(resource string, cfg *config.Config, secAppCostsRegex *regexp.Regexp) (*models.CostsRest, ResponseType, error) {
 
 	resourceReq, err := http.NewRequest("GET", resource, nil)
 	if err != nil {
@@ -257,6 +259,18 @@ func getCosts(resource string, cfg *config.Config) (*models.CostsRest, ResponseT
 		return nil, Error, fmt.Errorf("error getting Cost Resource: [%v]", err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		if secAppCostsRegex.MatchString(resource) {
+			err = errors.New("error getting Cost Resource - Gone: [410]")
+			log.ErrorR(resourceReq, err)
+			return nil, CostsGone, err
+		}
+
+		err = errors.New("error getting Cost Resource - Not Found: [404]")
+		log.ErrorR(resourceReq, err)
+		return nil, CostsNotFound, err
+	}
 
 	if resp.StatusCode != http.StatusOK {
 		err = fmt.Errorf("error getting Cost Resource - status code: [%v]", resp.StatusCode)
