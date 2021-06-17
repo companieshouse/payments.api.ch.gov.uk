@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/companieshouse/chs.go/authentication"
 	"github.com/companieshouse/chs.go/log"
@@ -54,6 +55,19 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 				log.Error(fmt.Errorf("PaymentAuthenticationInterceptor unauthorised: no authorised identity"))
 				w.WriteHeader(http.StatusUnauthorized)
 				return
+			}
+		}
+
+		// Check if API user has payment privilege
+		apiKeyHasPaymentPrivileges := false
+		if identityType == authentication.APIKeyIdentityType {
+			privilegeString := r.Header.Get("ERIC-Authorised-Key-Privileges")
+			privileges := strings.Split(privilegeString, ",")
+			for _, p := range privileges {
+				if p == "payment" {
+					apiKeyHasPaymentPrivileges = true
+					break
+				}
 			}
 		}
 
@@ -133,6 +147,9 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as api key elevated user", debugMap)
 			// Call the next handler
 			next.ServeHTTP(w, r.WithContext(ctx))
+		case isApiKeyRequest && apiKeyHasPaymentPrivileges:
+			// 4) API key with payment privileges that we trust
+			log.InfoR(r, "")
 		default:
 			// If none of the above conditions above are met then the request is
 			// unauthorized
