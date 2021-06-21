@@ -50,11 +50,11 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 		Service: *paymentService,
 	}
 	// only oauth2 users can create payment sessions
-	oauth2OnlyInterceptor := &authentication.OAuth2OnlyAuthenticationInterceptor{
-		StrictPaths: map[string][]string{
-			"/payments": []string{http.MethodPost},
-		},
-	}
+	// oauth2OnlyInterceptor := &authentication.OAuth2OnlyAuthenticationInterceptor{
+	// 	StrictPaths: map[string][]string{
+	// 		"/payments": []string{http.MethodPost},
+	// 	},
+	// }
 
 	userAuthInterceptor := &authentication.UserAuthenticationInterceptor{
 		AllowAPIKeyUser:                true,
@@ -98,7 +98,7 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	callbackRouter.HandleFunc("/payments/govpay/{payment_id}", HandleGovPayCallback).Methods("GET").Name("handle-govpay-callback")
 
 	// Set middleware for subrouters
-	rootPaymentRouter.Use(log.Handler, oauth2OnlyInterceptor.OAuth2OnlyAuthenticationIntercept, userAuthInterceptor.UserAuthenticationIntercept)
+	rootPaymentRouter.Use(log.Handler, interceptors.Oauth2OrPaymentPrivilegesIntercept, userAuthInterceptor.UserAuthenticationIntercept)
 	getPaymentRouter.Use(pa.PaymentAuthenticationIntercept)
 	paymentDetailsRouter.Use(log.Handler, authentication.ElevatedPrivilegesInterceptor, pa.PaymentAuthenticationIntercept)
 	createRefundRouter.Use(log.Handler, authentication.ElevatedPrivilegesInterceptor)

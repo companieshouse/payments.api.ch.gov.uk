@@ -34,9 +34,9 @@ func ElevatedOrPaymentPrivilegesIntercept(next http.Handler) http.Handler {
 // payment privilege
 func Oauth2OrPaymentPrivilegesIntercept(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		identityType := authentication.GetAuthorisedIdentity(r)
-		if !(identityType == authentication.Oauth2IdentityType) || !(identityType == authentication.APIKeyIdentityType) {
-			log.Error(fmt.Errorf("elevated privileges interceptor unauthorised: not oauth2 or API key identity type"))
+		identityType := authentication.GetAuthorisedIdentityType(r)
+		if !(identityType == authentication.Oauth2IdentityType || identityType == authentication.APIKeyIdentityType) {
+			log.Error(fmt.Errorf("oauth2 privileges interceptor unauthorised: not oauth2 or API key identity type"))
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -44,10 +44,10 @@ func Oauth2OrPaymentPrivilegesIntercept(next http.Handler) http.Handler {
 		if identityType == authentication.Oauth2IdentityType || authentication.CheckAuthorisedKeyHasPrivilege(r, "payment") {
 			// Call the next handler
 			next.ServeHTTP(w, r)
-		} else {
-			// If the request is not with an elevated privileges API key or Oauth2 authorised then the request is unauthorized
-			w.WriteHeader(http.StatusUnauthorized)
-			log.Error(fmt.Errorf("elevated privileges interceptor unauthorised: not oauth2 or not elevated privileges API key"))
 		}
+
+		// If the request is not with an elevated privileges API key or Oauth2 authorised then the request is unauthorized
+		w.WriteHeader(http.StatusUnauthorized)
+		log.Error(fmt.Errorf("oauth2 privileges interceptor unauthorised: not oauth2 or not payment privileges API key"))
 	})
 }
