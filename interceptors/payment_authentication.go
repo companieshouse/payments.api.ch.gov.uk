@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/companieshouse/chs.go/authentication"
 	"github.com/companieshouse/chs.go/log"
@@ -59,17 +58,7 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 		}
 
 		// Check if API user has payment privilege
-		apiKeyHasPaymentPrivileges := false
-		if identityType == authentication.APIKeyIdentityType {
-			privilegeString := r.Header.Get("ERIC-Authorised-Key-Privileges")
-			privileges := strings.Split(privilegeString, ",")
-			for _, p := range privileges {
-				if p == "payment" {
-					apiKeyHasPaymentPrivileges = true
-					break
-				}
-			}
-		}
+		apiKeyHasPaymentPrivileges := authentication.CheckAuthorisedKeyHasPrivilege(r, "payment")
 
 		// Get the payment session from the ID in request
 		paymentSession, responseType, err := paymentAuthenticationInterceptor.Service.GetPaymentSession(r, id)
