@@ -139,6 +139,8 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 		case isApiKeyRequest && apiKeyHasPaymentPrivileges:
 			// 4) API key with payment privileges that we trust
 			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as api key with payment privilege")
+			// Call the next handler
+			next.ServeHTTP(w, r.WithContext(ctx))
 		default:
 			// If none of the above conditions above are met then the request is
 			// unauthorized
