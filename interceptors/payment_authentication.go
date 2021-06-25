@@ -58,7 +58,7 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 		}
 
 		// Check if API user has payment privilege
-		apiKeyHasPaymentPrivileges := authentication.CheckAuthorisedKeyHasPrivilege(r, "payment")
+		apiKeyHasPaymentPrivileges := authentication.CheckAuthorisedKeyHasPrivilege(r, authentication.APIKeyPaymentPrivilege)
 
 		// Get the payment session from the ID in request
 		paymentSession, responseType, err := paymentAuthenticationInterceptor.Service.GetPaymentSession(r, id)
