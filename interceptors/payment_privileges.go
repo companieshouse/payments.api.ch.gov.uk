@@ -99,16 +99,20 @@ func UserPaymentAuthenticationIntercept(next http.Handler) http.Handler {
 
 			ctx := context.WithValue(r.Context(), authentication.ContextKeyUserDetails, authUserDetails)
 			log.DebugR(r, "UserAuthenticationInterceptor proceeding with OAuth2 user details in context", log.Data{"user_details": authUserDetails})
+
 			// Call the next handler
 			next.ServeHTTP(w, r.WithContext(ctx))
-			return
+		} else if identityType == authentication.APIKeyIdentityType {
+			authUserDetails := authentication.AuthUserDetails{ID: identity}
+			// Checks regarding 1) payment privileges and 2) the api key user being the owner of the
+			// payment resource are handled in payment_authentication.go
+			ctx := context.WithValue(r.Context(), authentication.ContextKeyUserDetails, authUserDetails)
+			log.DebugR(r, "UserAuthenticationInterceptor proceeding with API key user", log.Data{"user_details": authUserDetails})
+
+			// Call the next handler
+			next.ServeHTTP(w, r.WithContext(ctx))
 		}
 
-		// must be api key auth type here due to checks above. Checks regarding 1) payment privileges and 2) the api key user being the owner of the
-		// payment resource are handled in payment_authentication.go
-		log.DebugR(r, "UserAuthenticationInterceptor proceeding with API key user")
-		// Call the next handler
-		next.ServeHTTP(w, r)
 		return
 	})
 }
