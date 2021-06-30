@@ -4,8 +4,8 @@ github.com/Shopify/sarama v1.23.1 h1:XxJBCZEoWJtoWjf/xRbmGUpAmTZGnuuF0ON0EvxxBrs
 github.com/Shopify/sarama v1.23.1/go.mod h1:XLH1GYJnLVE0XCr6KdJGVJRTwY30moWNJ4sERjXX6fs=
 github.com/Shopify/toxiproxy v2.1.4+incompatible h1:TKdv8HiTLgE5wdJuEML90aBgNWsokNbMijUGhmcoBJc=
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=
-github.com/companieshouse/chs.go v1.2.0 h1:wFE5bcaYESyWdYSqJuQ4pquVubSlJS+WCkS0cfC2Arg=
-github.com/companieshouse/chs.go v1.2.0/go.mod h1:fI/z3fegJtQyjOWP2HSj+im96Djn399DbckG3Mi1eAo=
+github.com/companieshouse/chs.go v1.2.5 h1:43/yhS185r/y9gDLPksA93wWA133ZSAX9SeZw0Y+LvI=
+github.com/companieshouse/chs.go v1.2.5/go.mod h1:93vQ2qlzSbZenUOFet+pAJzxHdz+w6BF1IvJ56lvC7c=
 github.com/companieshouse/envconf v0.1.0 h1:6EAyUYqBJsduWZQuz1AR8hxG5OwhPK0r3Y6ppcTDBmQ=
 github.com/companieshouse/envconf v0.1.0/go.mod h1:/gP4p46vTAENnqc2vXW441VOjL91ReJv/uqnYBzlaFo=
 github.com/companieshouse/gofigure v0.1.1 h1:uzkgyKQ825tSlCaGpw61imQKZbqDfv9lP65+SbDFUIs=
@@ -95,6 +95,7 @@ golang.org/x/sys v0.0.0-20190222072716-a9d3bda3a223/go.mod h1:STP8DvDyc/dI5b8T5h
 golang.org/x/sys v0.0.0-20190403152447-81d4e9dc473e h1:nFYrTHrdrAOpShe27kaFHjsqYSEQ0KWqdWLu3xuZJts=
 golang.org/x/sys v0.0.0-20190403152447-81d4e9dc473e/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
+golang.org/x/text v0.3.2 h1:tW2bmiBqwgJj/UpqtC8EpXEZVYOwU0yG4iWbprSVAcs=
 golang.org/x/text v0.3.2/go.mod h1:bEr9sfX3Q8Zfm5fL9x+3itogRgK3+ptLWKqgva+5dAk=
 golang.org/x/tools v0.0.0-20180917221912-90fa682c2a6e/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
 golang.org/x/tools v0.0.0-20190328211700-ab21143f2384/go.mod h1:LCzVGOaR6xXOjkQ3onu1FJEFr0SW1gC7cKk1uF8kGRs=
