@@ -61,7 +61,9 @@ func (gp *GovPayService) GenerateNextURLGovPay(req *http.Request, paymentResourc
 	}
 
 	govPayRequest.Amount = amountToPay
-	govPayRequest.Email = paymentResource.CreatedBy.Email
+	if paymentResource.CreatedBy.Email != "" {
+		govPayRequest.Email = paymentResource.CreatedBy.Email
+	}
 	govPayRequest.Description = "Companies House Payment" // Hard-coded value for payment screens
 	govPayRequest.Reference = paymentResource.MetaData.ID
 	govPayRequest.ReturnURL = fmt.Sprintf("%s/callback/payments/govpay/%s", gp.PaymentService.Config.PaymentsAPIURL, paymentResource.MetaData.ID)
@@ -91,14 +93,18 @@ func (gp *GovPayService) GenerateNextURLGovPay(req *http.Request, paymentResourc
 		return "", Error, fmt.Errorf("error generating request for GovPay: [%s]", err)
 	}
 
-	if paymentResource.Costs[0].ClassOfPayment[0] == "penalty" {
-		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenTreasury)
-	} else if paymentResource.Costs[0].ClassOfPayment[0] == "data-maintenance" ||
-		paymentResource.Costs[0].ClassOfPayment[0] == "orderable-item" {
-		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenChAccount)
-	} else {
+	var token string
+	switch paymentResource.Costs[0].ClassOfPayment[0] {
+	case "penalty":
+		token = gp.PaymentService.Config.GovPayBearerTokenTreasury
+	case "data-maintenance", "orderable-item":
+		token = gp.PaymentService.Config.GovPayBearerTokenChAccount
+	case "legacy":
+		token = gp.PaymentService.Config.GovPayBearerTokenLegacy
+	default:
 		return "", InvalidData, fmt.Errorf("class of payment not found")
 	}
+	request.Header.Add("authorization", "Bearer "+token)
 
 	request.Header.Add("accept", "application/json")
 	request.Header.Add("content-type", "application/json")

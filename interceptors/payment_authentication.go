@@ -39,23 +39,24 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 
 		authorisedUser := ""
 
-		if identityType == authentication.Oauth2IdentityType {
-			// Get user details from context, passed in by UserAuthenticationInterceptor
-			userDetails, ok := r.Context().Value(authentication.ContextKeyUserDetails).(authentication.AuthUserDetails)
-			if !ok {
-				log.ErrorR(r, fmt.Errorf("PaymentAuthenticationInterceptor error: invalid AuthUserDetails from UserAuthenticationInterceptor"))
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			// Get user details from request
-			authorisedUser = userDetails.ID
-			if authorisedUser == "" {
-				log.Error(fmt.Errorf("PaymentAuthenticationInterceptor unauthorised: no authorised identity"))
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
+		// Get user details from context, passed in by UserAuthenticationInterceptor
+		userDetails, ok := r.Context().Value(authentication.ContextKeyUserDetails).(authentication.AuthUserDetails)
+		if !ok {
+			log.ErrorR(r, fmt.Errorf("PaymentAuthenticationInterceptor error: invalid AuthUserDetails from UserAuthenticationInterceptor"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
+
+		// Get user details from request
+		authorisedUser = userDetails.ID
+		if authorisedUser == "" {
+			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor unauthorised: no authorised identity"))
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		// Check if API user has payment privilege
+		apiKeyHasPaymentPrivileges := authentication.CheckAuthorisedKeyHasPrivilege(r, authentication.APIKeyPaymentPrivilege)
 
 		// Get the payment session from the ID in request
 		paymentSession, responseType, err := paymentAuthenticationInterceptor.Service.GetPaymentSession(r, id)

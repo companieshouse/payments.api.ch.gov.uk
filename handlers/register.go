@@ -49,12 +49,6 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	pa := &interceptors.PaymentAuthenticationInterceptor{
 		Service: *paymentService,
 	}
-	// only oauth2 users can create payment sessions
-	oauth2OnlyInterceptor := &authentication.OAuth2OnlyAuthenticationInterceptor{
-		StrictPaths: map[string][]string{
-			"/payments": []string{http.MethodPost},
-		},
-	}
 
 	userAuthInterceptor := &authentication.UserAuthenticationInterceptor{
 		AllowAPIKeyUser:                true,
@@ -98,12 +92,12 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	callbackRouter.HandleFunc("/payments/govpay/{payment_id}", HandleGovPayCallback).Methods("GET").Name("handle-govpay-callback")
 
 	// Set middleware for subrouters
-	rootPaymentRouter.Use(log.Handler, oauth2OnlyInterceptor.OAuth2OnlyAuthenticationIntercept, userAuthInterceptor.UserAuthenticationIntercept)
+	rootPaymentRouter.Use(log.Handler, interceptors.Oauth2OrPaymentPrivilegesIntercept, interceptors.UserPaymentAuthenticationIntercept)
 	getPaymentRouter.Use(pa.PaymentAuthenticationIntercept)
-	paymentDetailsRouter.Use(log.Handler, authentication.ElevatedPrivilegesInterceptor, pa.PaymentAuthenticationIntercept)
+	paymentDetailsRouter.Use(log.Handler, interceptors.InternalOrPaymentPrivilegesIntercept, pa.PaymentAuthenticationIntercept)
 	createRefundRouter.Use(log.Handler, authentication.ElevatedPrivilegesInterceptor)
 	updateRefundRouter.Use(log.Handler, authentication.ElevatedPrivilegesInterceptor)
-	privatePatchRouter.Use(log.Handler, userAuthInterceptor.UserAuthenticationIntercept, pa.PaymentAuthenticationIntercept)
+	privatePatchRouter.Use(log.Handler, interceptors.UserPaymentAuthenticationIntercept, pa.PaymentAuthenticationIntercept)
 	privateJourneyRouter.Use(log.Handler, userAuthInterceptor.UserAuthenticationIntercept, pa.PaymentAuthenticationIntercept)
 	callbackRouter.Use(log.Handler)
 }
