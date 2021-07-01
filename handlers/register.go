@@ -61,11 +61,11 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	// per-subrouter middleware.
 
 	// create-payment endpoint should not be intercepted by the paymentauth interceptor, so needs to be it's own subrouter
-	rootPaymentRouter := mainRouter.PathPrefix("/payments").Subrouter()
-	rootPaymentRouter.HandleFunc("", HandleCreatePaymentSession).Methods("POST").Name("create-payment")
+	createPaymentRouter := mainRouter.PathPrefix("/payments").Subrouter()
+	createPaymentRouter.HandleFunc("", HandleCreatePaymentSession).Methods("POST").Name("create-payment")
 
 	// get-payment endpoint needs payment and user auth, so needs to be it's own subrouter
-	getPaymentRouter := rootPaymentRouter.PathPrefix("/{payment_id}").Subrouter()
+	getPaymentRouter := mainRouter.PathPrefix("/{payment_id}").Subrouter()
 	getPaymentRouter.HandleFunc("", HandleGetPaymentSession).Methods("GET").Name("get-payment")
 
 	// payment-details endpoint needs it's own interceptor
@@ -92,8 +92,8 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	callbackRouter.HandleFunc("/payments/govpay/{payment_id}", HandleGovPayCallback).Methods("GET").Name("handle-govpay-callback")
 
 	// Set middleware for subrouters
-	rootPaymentRouter.Use(log.Handler, interceptors.Oauth2OrPaymentPrivilegesIntercept, interceptors.UserPaymentAuthenticationIntercept)
-	getPaymentRouter.Use(pa.PaymentAuthenticationIntercept)
+	createPaymentRouter.Use(log.Handler, interceptors.Oauth2OrPaymentPrivilegesIntercept, interceptors.UserPaymentAuthenticationIntercept)
+	getPaymentRouter.Use(interceptors.UserPaymentAuthenticationIntercept, pa.PaymentAuthenticationIntercept)
 	paymentDetailsRouter.Use(log.Handler, interceptors.InternalOrPaymentPrivilegesIntercept, pa.PaymentAuthenticationIntercept)
 	createRefundRouter.Use(log.Handler, authentication.ElevatedPrivilegesInterceptor)
 	updateRefundRouter.Use(log.Handler, authentication.ElevatedPrivilegesInterceptor)
