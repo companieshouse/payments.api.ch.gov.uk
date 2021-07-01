@@ -65,7 +65,7 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	createPaymentRouter.HandleFunc("", HandleCreatePaymentSession).Methods("POST").Name("create-payment")
 
 	// get-payment endpoint needs payment and user auth, so needs to be it's own subrouter
-	getPaymentRouter := mainRouter.PathPrefix("/{payment_id}").Subrouter()
+	getPaymentRouter := mainRouter.PathPrefix("/payments/{payment_id}").Subrouter()
 	getPaymentRouter.HandleFunc("", HandleGetPaymentSession).Methods("GET").Name("get-payment")
 
 	// payment-details endpoint needs it's own interceptor
