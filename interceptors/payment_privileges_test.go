@@ -34,7 +34,6 @@ func TestUnitInternalOrPaymentPrivilegesIntercept(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/test", nil)
 		req.Header.Set("ERIC-Identity-Type", authentication.APIKeyIdentityType)
 		req.Header.Set("ERIC-Authorised-Key-Roles", "*")
-		req.Header.Set("ERIC-Identity", "123")
 		w := httptest.NewRecorder()
 
 		test := InternalOrPaymentPrivilegesIntercept(GetTestHandler())
@@ -46,23 +45,11 @@ func TestUnitInternalOrPaymentPrivilegesIntercept(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/test", nil)
 		req.Header.Set("ERIC-Identity-Type", authentication.APIKeyIdentityType)
 		req.Header.Set("ERIC-Authorised-Key-Privileges", "payment")
-		req.Header.Set("ERIC-Identity", "123")
 		w := httptest.NewRecorder()
 
 		test := InternalOrPaymentPrivilegesIntercept(GetTestHandler())
 		test.ServeHTTP(w, req)
 		So(w.Code, ShouldEqual, http.StatusOK)
-	})
-
-	Convey("API Key without Payment Privilege", t, func() {
-		req, _ := http.NewRequest("GET", "/test", nil)
-		req.Header.Set("ERIC-Identity-Type", authentication.APIKeyIdentityType)
-		req.Header.Set("ERIC-Identity", "123")
-		w := httptest.NewRecorder()
-
-		test := InternalOrPaymentPrivilegesIntercept(GetTestHandler())
-		test.ServeHTTP(w, req)
-		So(w.Code, ShouldEqual, http.StatusUnauthorized)
 	})
 }
 
