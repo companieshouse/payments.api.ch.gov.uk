@@ -94,7 +94,7 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	// Set middleware for subrouters
 	createPaymentRouter.Use(log.Handler, interceptors.Oauth2OrPaymentPrivilegesIntercept, interceptors.UserPaymentAuthenticationIntercept)
 	getPaymentRouter.Use(interceptors.UserPaymentAuthenticationIntercept, pa.PaymentAuthenticationIntercept)
-	paymentDetailsRouter.Use(log.Handler, interceptors.InternalOrPaymentPrivilegesIntercept, pa.PaymentAuthenticationIntercept)
+	paymentDetailsRouter.Use(log.Handler, interceptors.UserPaymentAuthenticationIntercept, interceptors.InternalOrPaymentPrivilegesIntercept, pa.PaymentAuthenticationIntercept)
 	createRefundRouter.Use(log.Handler, authentication.ElevatedPrivilegesInterceptor)
 	updateRefundRouter.Use(log.Handler, authentication.ElevatedPrivilegesInterceptor)
 	privatePatchRouter.Use(log.Handler, interceptors.UserPaymentAuthenticationIntercept, pa.PaymentAuthenticationIntercept)
