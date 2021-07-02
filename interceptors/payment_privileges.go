@@ -16,25 +16,14 @@ func InternalOrPaymentPrivilegesIntercept(next http.Handler) http.Handler {
 		// Check headers for identity type and identity
 		identityType := authentication.GetAuthorisedIdentityType(r)
 		if !(identityType == authentication.APIKeyIdentityType) {
-			log.Error(fmt.Errorf("InternalOrPaymentPrivilegesIntercept unauthorised: not API key identity type"))
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		identity := authentication.GetAuthorisedIdentity(r)
-		if identity == "" {
-			log.ErrorR(r, fmt.Errorf("InternalOrPaymentPrivilegesIntercept unauthorised: no authorised identity"))
+			log.Error(fmt.Errorf("internal or payment privileges interceptor unauthorised: not API key identity type"))
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
 		if authentication.IsKeyElevatedPrivilegesAuthorised(r) || authentication.CheckAuthorisedKeyHasPrivilege(r, "payment") {
-			authUserDetails := authentication.AuthUserDetails{ID: identity}
-			ctx := context.WithValue(r.Context(), authentication.ContextKeyUserDetails, authUserDetails)
-			log.DebugR(r, "InternalOrPaymentPrivilegesIntercept proceeding with API key user", log.Data{"user_details": authUserDetails})
-
 			// Call the next handler
-			next.ServeHTTP(w, r.WithContext(ctx))
+			next.ServeHTTP(w, r)
 		} else {
 			// If the request is not with an internal or payment privileges API key then the request is unauthorized
 			w.WriteHeader(http.StatusUnauthorized)

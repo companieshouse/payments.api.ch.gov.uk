@@ -39,10 +39,10 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 
 		authorisedUser := ""
 
-		// Get user details from context, passed in by earlier interceptor
+		// Get user details from context, passed in by UserAuthenticationInterceptor
 		userDetails, ok := r.Context().Value(authentication.ContextKeyUserDetails).(authentication.AuthUserDetails)
 		if !ok {
-			log.ErrorR(r, fmt.Errorf("PaymentAuthenticationInterceptor error: invalid AuthUserDetails"))
+			log.ErrorR(r, fmt.Errorf("PaymentAuthenticationInterceptor error: invalid AuthUserDetails from UserAuthenticationInterceptor"))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
