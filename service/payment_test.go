@@ -287,6 +287,66 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(status, ShouldEqual, Success)
 		So(err, ShouldBeNil)
 	})
+
+	Convey("Valid request - API Key", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mock.EXPECT().CreatePaymentResource(gomock.Any())
+		req := httptest.NewRequest("Get", "/test", nil)
+		req.Header.Set("ERIC-Identity-Type", authentication.APIKeyIdentityType) // Set API Key auth for this test
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		costs := defaultCosts
+		costs.Costs = append(costs.Costs, defaultCost)
+		jsonResponse, _ := httpmock.NewJsonResponder(200, costs)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, defaultUserDetails)
+
+		resource := models.IncomingPaymentResourceRequest{
+			Resource:    "http://dummy-url",
+			Reference:   "ref",
+			RedirectURI: "http://www.companieshouse.gov.uk",
+			State:       "state",
+		}
+
+		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
+
+		So(status, ShouldEqual, Success)
+		So(err, ShouldBeNil)
+
+		So(paymentResourceRest.Amount, ShouldEqual, "20.00")
+		So(paymentResourceRest.AvailablePaymentMethods, ShouldResemble, []string{"GovPay"})
+		So(paymentResourceRest.CompletedAt, ShouldHaveSameTypeAs, time.Now())
+		So(paymentResourceRest.CreatedAt, ShouldHaveSameTypeAs, time.Now())
+		So(paymentResourceRest.CreatedBy, ShouldResemble, models.CreatedByRest{
+			Email:    "email@companieshouse.gov.uk",
+			Forename: "forename",
+			ID:       "id",
+			Surname:  "surname",
+		})
+		So(paymentResourceRest.Description, ShouldEqual, "costs_desc")
+		So(paymentResourceRest.Links.Resource, ShouldEqual, "http://dummy-url")
+		// /api-key must be appended to Journey URL for API Key request
+		regJourney := regexp.MustCompile("https://payments.companieshouse.gov.uk/payments/(.*)/pay/api-key")
+		So(regJourney.MatchString(paymentResourceRest.Links.Journey), ShouldEqual, true)
+		regSelf := regexp.MustCompile("payments/(.*)")
+		So(regSelf.MatchString(paymentResourceRest.Links.Self), ShouldEqual, true)
+		So(paymentResourceRest.PaymentMethod, ShouldBeEmpty)
+		So(paymentResourceRest.Reference, ShouldEqual, "ref")
+		So(paymentResourceRest.CompanyNumber, ShouldEqual, "companyNumber")
+		So(paymentResourceRest.Status, ShouldEqual, "pending")
+		So(paymentResourceRest.Costs, ShouldResemble, []models.CostResourceRest{defaultCost, defaultCost})
+		So(paymentResourceRest.MetaData, ShouldResemble, models.PaymentResourceMetaDataRest{
+			ID:                       "",
+			RedirectURI:              "",
+			State:                    "",
+			ExternalPaymentStatusURI: "",
+		})
+
+		So(status, ShouldEqual, Success)
+		So(err, ShouldBeNil)
+	})
 }
 
 func TestUnitPatchPaymentSession(t *testing.T) {
