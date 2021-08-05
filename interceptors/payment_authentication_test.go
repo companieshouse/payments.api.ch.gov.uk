@@ -19,11 +19,12 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+const resourceURL = "http://dummy-resource"
+
 func GetTestHandler() http.HandlerFunc {
-	fn := func(w http.ResponseWriter, req *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}
-	return http.HandlerFunc(fn)
 }
 
 var defaultCostRest = models.CostResourceRest{
@@ -67,7 +68,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
-	cfg.DomainAllowList = "http://dummy-resource"
+	cfg.DomainAllowList = resourceURL
 
 	Convey("No payment ID in request", t, func() {
 		path := fmt.Sprintf("/payments/")
@@ -155,7 +156,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		costArray := []models.CostResourceRest{defaultCostRest}
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, costArray)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", resourceURL, jsonResponse)
 
 		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
 		test.ServeHTTP(w, req.WithContext(ctx))
@@ -187,7 +188,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 		costArray := []models.CostResourceRest{defaultCostRest}
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, costArray)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", resourceURL, jsonResponse)
 
 		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
 		test.ServeHTTP(w, req.WithContext(ctx))
@@ -218,7 +219,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 				Data: models.PaymentResourceDataDB{
 					Amount:    "20.00",
 					CreatedBy: models.CreatedByDB{ID: "identity"},
-					Links:     models.PaymentLinksDB{Resource: "http://dummy-resource"},
+					Links:     models.PaymentLinksDB{Resource: resourceURL},
 				},
 			},
 			nil,
@@ -228,7 +229,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", resourceURL, jsonResponse)
 
 		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
 		test.ServeHTTP(w, req.WithContext(ctx))
@@ -259,7 +260,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 				Data: models.PaymentResourceDataDB{
 					Amount:    "10.00",
 					CreatedBy: models.CreatedByDB{ID: "identity"},
-					Links:     models.PaymentLinksDB{Resource: "http://dummy-resource"},
+					Links:     models.PaymentLinksDB{Resource: resourceURL},
 				},
 			},
 			nil,
@@ -269,7 +270,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", resourceURL, jsonResponse)
 
 		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
 		test.ServeHTTP(w, req.WithContext(ctx))
@@ -300,7 +301,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 				Data: models.PaymentResourceDataDB{
 					Amount:    "10.00",
 					CreatedBy: models.CreatedByDB{ID: "adminidentity"},
-					Links:     models.PaymentLinksDB{Resource: "http://dummy-resource"},
+					Links:     models.PaymentLinksDB{Resource: resourceURL},
 				},
 			},
 			nil,
@@ -310,7 +311,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", resourceURL, jsonResponse)
 
 		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
 		test.ServeHTTP(w, req.WithContext(ctx))
@@ -341,7 +342,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 				Data: models.PaymentResourceDataDB{
 					Amount:    "10.00",
 					CreatedBy: models.CreatedByDB{ID: "adminidentity"},
-					Links:     models.PaymentLinksDB{Resource: "http://dummy-resource"},
+					Links:     models.PaymentLinksDB{Resource: resourceURL},
 				},
 			},
 			nil,
@@ -351,7 +352,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", resourceURL, jsonResponse)
 
 		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
 		test.ServeHTTP(w, req.WithContext(ctx))
@@ -381,7 +382,7 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 				Data: models.PaymentResourceDataDB{
 					Amount:    "10.00",
 					CreatedBy: models.CreatedByDB{ID: "identity"},
-					Links:     models.PaymentLinksDB{Resource: "http://dummy-resource"},
+					Links:     models.PaymentLinksDB{Resource: resourceURL},
 				},
 			},
 			nil,
@@ -391,7 +392,47 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+		httpmock.RegisterResponder("GET", resourceURL, jsonResponse)
+
+		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
+		test.ServeHTTP(w, req.WithContext(ctx))
+		So(w.Code, ShouldEqual, http.StatusOK)
+	})
+
+	Convey("Happy path where user has payment privileges key accessing a non-creator resource", t, func() {
+		path := fmt.Sprintf("/payments/%s", "1234")
+		req, err := http.NewRequest("GET", path, nil)
+		So(err, ShouldBeNil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
+		req.Header.Set("Eric-Identity", "identity")
+		req.Header.Set("Eric-Identity-Type", "key")
+		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
+		req.Header.Set("ERIC-Authorised-Key-Privileges", "payment")
+		authUserDetails := authentication.AuthUserDetails{
+			ID: "api-key-user",
+		}
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
+		mockDAO := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mockDAO, cfg)
+		paymentAuthenticationInterceptor := createPaymentAuthenticationInterceptorWithMockService(&mockPaymentService)
+
+		mockDAO.EXPECT().GetPaymentResource("1234").Return(
+			&models.PaymentResourceDB{
+				ID: "1234",
+				Data: models.PaymentResourceDataDB{
+					Amount:    "10.00",
+					CreatedBy: models.CreatedByDB{ID: "identity"},
+					Links:     models.PaymentLinksDB{Resource: resourceURL},
+				},
+			},
+			nil,
+		)
+
+		w := httptest.NewRecorder()
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder("GET", resourceURL, jsonResponse)
 
 		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
 		test.ServeHTTP(w, req.WithContext(ctx))
