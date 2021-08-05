@@ -21,7 +21,7 @@ import (
 var defaultCost = models.CostResourceRest{
 	Amount:                  "10",
 	AvailablePaymentMethods: []string{"GovPay"},
-	ClassOfPayment:          []string{"class"},
+	ClassOfPayment:          []string{"data-maintenance"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
 	ProductType:             "productType",
@@ -62,6 +62,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
 	cfg.DomainAllowList = "http://dummy-url"
+
 	Convey("Payment ID not supplied", t, func() {
 		req := httptest.NewRequest("GET", "/test", nil)
 		w := httptest.NewRecorder()

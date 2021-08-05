@@ -20,7 +20,7 @@ import (
 var defaultCost = models.CostResourceRest{
 	Amount:                  "10",
 	AvailablePaymentMethods: []string{"GovPay"},
-	ClassOfPayment:          []string{"class"},
+	ClassOfPayment:          []string{"data-maintenance"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
 	ProductType:             "productType",
@@ -500,7 +500,7 @@ func TestUnitGetPayment(t *testing.T) {
 				{
 					Amount:                  "10",
 					AvailablePaymentMethods: []string{"GovPay"},
-					ClassOfPayment:          []string{"class"},
+					ClassOfPayment:          []string{"data-maintenance"},
 					Description:             "desc",
 					DescriptionIdentifier:   "identifier",
 					ProductType:             "productType",
@@ -548,7 +548,7 @@ func TestUnitGetPayment(t *testing.T) {
 				{
 					Amount:                  "10",
 					AvailablePaymentMethods: []string{"GovPay"},
-					ClassOfPayment:          []string{"class"},
+					ClassOfPayment:          []string{"data-maintenance"},
 					Description:             "desc",
 					DescriptionIdentifier:   "identifier",
 					ProductType:             "productType",
@@ -556,7 +556,7 @@ func TestUnitGetPayment(t *testing.T) {
 				{
 					Amount:                  "10",
 					AvailablePaymentMethods: []string{"GovPay"},
-					ClassOfPayment:          []string{"class"},
+					ClassOfPayment:          []string{"data-maintenance"},
 					Description:             "desc",
 					DescriptionIdentifier:   "identifier",
 					ProductType:             "productType",
