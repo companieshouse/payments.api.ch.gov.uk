@@ -126,6 +126,12 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 	paymentResourceID := generateID()
 
 	journeyURL := service.Config.PaymentsWebURL + "/payments/" + paymentResourceID + "/pay"
+
+	// If auth is API Key, add suffix to journey URL
+	if authentication.GetAuthorisedIdentityType(req) == authentication.APIKeyIdentityType {
+		journeyURL += "/api-key"
+	}
+
 	paymentResourceRest.Links = models.PaymentLinksRest{
 		Journey:  journeyURL,
 		Resource: createResource.Resource,

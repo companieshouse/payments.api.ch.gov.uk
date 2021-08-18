@@ -15,7 +15,7 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 )
 
-// Interface to enable mocking
+// PaymentProviderService is an Interface to enable mocking
 type PaymentProviderService interface {
 	CheckProvider(paymentResource *models.PaymentResourceRest) (*models.StatusResponse, ResponseType, error)
 	GenerateNextURLGovPay(req *http.Request, paymentResource *models.PaymentResourceRest) (string, ResponseType, error)
@@ -93,21 +93,10 @@ func (gp *GovPayService) GenerateNextURLGovPay(req *http.Request, paymentResourc
 		return "", Error, fmt.Errorf("error generating request for GovPay: [%s]", err)
 	}
 
-	var token string
-	switch paymentResource.Costs[0].ClassOfPayment[0] {
-	case "penalty":
-		token = gp.PaymentService.Config.GovPayBearerTokenTreasury
-	case "data-maintenance", "orderable-item":
-		token = gp.PaymentService.Config.GovPayBearerTokenChAccount
-	case "legacy":
-		token = gp.PaymentService.Config.GovPayBearerTokenLegacy
-	default:
-		return "", InvalidData, fmt.Errorf("class of payment not found")
+	err = addGovPayHeaders(req, paymentResource, gp)
+	if err != nil {
+		return "", InvalidData, fmt.Errorf("error adding GovPay headers: [%s]", err)
 	}
-	request.Header.Add("authorization", "Bearer "+token)
-
-	request.Header.Add("accept", "application/json")
-	request.Header.Add("content-type", "application/json")
 
 	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
@@ -223,7 +212,10 @@ func (gp *GovPayService) CreateRefund(paymentResource *models.PaymentResourceRes
 		return nil, Error, fmt.Errorf("error generating request for GovPay: [%s]", err)
 	}
 
-	addGovPayHeaders(request, paymentResource, gp)
+	err = addGovPayHeaders(request, paymentResource, gp)
+	if err != nil {
+		return nil, Error, fmt.Errorf("error adding GovPay headers: [%s]", err)
+	}
 
 	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
@@ -255,7 +247,10 @@ func (gp *GovPayService) GetGovPayRefundStatus(paymentResource *models.PaymentRe
 		return nil, Error, fmt.Errorf("error generating request for GovPay: [%s]", err)
 	}
 
-	addGovPayHeaders(request, paymentResource, gp)
+	err = addGovPayHeaders(request, paymentResource, gp)
+	if err != nil {
+		return nil, Error, fmt.Errorf("error adding GovPay headers: [%s]", err)
+	}
 
 	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
@@ -297,7 +292,10 @@ func callGovPay(gp *GovPayService, paymentResource *models.PaymentResourceRest) 
 		return nil, fmt.Errorf("error generating request for GovPay: [%s]", err)
 	}
 
-	addGovPayHeaders(request, paymentResource, gp)
+	err = addGovPayHeaders(request, paymentResource, gp)
+	if err != nil {
+		return nil, fmt.Errorf("error adding GovPay headers: [%s]", err)
+	}
 
 	// Make call to GovPay
 	resp, err := http.DefaultClient.Do(request)
@@ -319,13 +317,26 @@ func callGovPay(gp *GovPayService, paymentResource *models.PaymentResourceRest) 
 	return govPayResponse, nil
 }
 
-func addGovPayHeaders(request *http.Request, paymentResource *models.PaymentResourceRest, gp *GovPayService) {
-	class := paymentResource.Costs[0].ClassOfPayment[0]
-	if class == "penalty" {
-		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenTreasury)
-	} else if class == "data-maintenance" || class == "orderable-item" {
-		request.Header.Add("authorization", "Bearer "+gp.PaymentService.Config.GovPayBearerTokenChAccount)
+func addGovPayHeaders(request *http.Request, paymentResource *models.PaymentResourceRest, gp *GovPayService) error {
+	treasuryBearer := "Bearer " + gp.PaymentService.Config.GovPayBearerTokenTreasury
+	chBearer := "Bearer " + gp.PaymentService.Config.GovPayBearerTokenChAccount
+	legacyBearer := "Bearer " + gp.PaymentService.Config.GovPayBearerTokenLegacy
+
+	govPayTokens := map[string]string{
+		"penalty":          treasuryBearer,
+		"data-maintenance": chBearer,
+		"orderable-item":   chBearer,
+		"legacy":           legacyBearer,
 	}
+
+	token := govPayTokens[paymentResource.Costs[0].ClassOfPayment[0]]
+	if token == "" {
+		return fmt.Errorf("payment class [%s] not recognised", paymentResource.Costs[0].ClassOfPayment[0])
+	}
+
+	request.Header.Add("authorisation", govPayTokens[token])
 	request.Header.Add("accept", "application/json")
 	request.Header.Add("content-type", "application/json")
+
+	return nil
 }

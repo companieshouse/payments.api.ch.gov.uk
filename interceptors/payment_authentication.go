@@ -101,6 +101,7 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 		authUserHasPaymentLookupRole := authentication.IsRoleAuthorised(r, helpers.AdminPaymentLookupRole)
 		isApiKeyRequest := identityType == authentication.APIKeyIdentityType
 		apiKeyHasElevatedPrivileges := authentication.IsKeyElevatedPrivilegesAuthorised(r)
+		apiKeyHasPaymentPrivileges := authentication.CheckAuthorisedKeyHasPrivilege(r, authentication.APIKeyPaymentPrivilege)
 
 		// Set up debug map for logging at each exit point
 		debugMap := log.Data{
@@ -129,6 +130,11 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 			// 3) Authorized API key with elevated privileges is an internal API key
 			// that we trust
 			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as api key elevated user", debugMap)
+			// Call the next handler
+			next.ServeHTTP(w, r.WithContext(ctx))
+		case isApiKeyRequest && apiKeyHasPaymentPrivileges:
+			// 4) Authorised API key with payment privileges
+			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as api key user with payment privileges", debugMap)
 			// Call the next handler
 			next.ServeHTTP(w, r.WithContext(ctx))
 		default:
