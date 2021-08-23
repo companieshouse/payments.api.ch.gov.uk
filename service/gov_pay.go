@@ -334,7 +334,7 @@ func addGovPayHeaders(request *http.Request, paymentResource *models.PaymentReso
 		return fmt.Errorf("payment class [%s] not recognised", paymentResource.Costs[0].ClassOfPayment[0])
 	}
 
-	request.Header.Add("authorisation", govPayTokens[token])
+	request.Header.Add("authorization", govPayTokens[token])
 	request.Header.Add("accept", "application/json")
 	request.Header.Add("content-type", "application/json")
 
