@@ -93,7 +93,7 @@ func (gp *GovPayService) GenerateNextURLGovPay(req *http.Request, paymentResourc
 		return "", Error, fmt.Errorf("error generating request for GovPay: [%s]", err)
 	}
 
-	err = addGovPayHeaders(req, paymentResource, gp)
+	err = addGovPayHeaders(request, paymentResource, gp)
 	if err != nil {
 		return "", InvalidData, fmt.Errorf("error adding GovPay headers: [%s]", err)
 	}
@@ -334,7 +334,7 @@ func addGovPayHeaders(request *http.Request, paymentResource *models.PaymentReso
 		return fmt.Errorf("payment class [%s] not recognised", paymentResource.Costs[0].ClassOfPayment[0])
 	}
 
-	request.Header.Add("authorisation", govPayTokens[token])
+	request.Header.Add("authorization", token)
 	request.Header.Add("accept", "application/json")
 	request.Header.Add("content-type", "application/json")
 

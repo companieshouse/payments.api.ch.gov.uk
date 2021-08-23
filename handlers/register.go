@@ -50,11 +50,6 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 		Service: *paymentService,
 	}
 
-	userAuthInterceptor := &authentication.UserAuthenticationInterceptor{
-		AllowAPIKeyUser:                true,
-		RequireElevatedAPIKeyPrivilege: true,
-	}
-
 	mainRouter.HandleFunc("/healthcheck", healthCheck).Methods("GET").Name("get-healthcheck")
 
 	// Create subrouters. All routes except /callback need auth middleware, so router needs to be split up. This allows
@@ -98,7 +93,7 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	createRefundRouter.Use(log.Handler, authentication.ElevatedPrivilegesInterceptor)
 	updateRefundRouter.Use(log.Handler, authentication.ElevatedPrivilegesInterceptor)
 	privatePatchRouter.Use(log.Handler, interceptors.UserPaymentAuthenticationIntercept, pa.PaymentAuthenticationIntercept)
-	privateJourneyRouter.Use(log.Handler, userAuthInterceptor.UserAuthenticationIntercept, pa.PaymentAuthenticationIntercept)
+	privateJourneyRouter.Use(log.Handler, interceptors.UserPaymentAuthenticationIntercept, pa.PaymentAuthenticationIntercept)
 	callbackRouter.Use(log.Handler)
 }
 
