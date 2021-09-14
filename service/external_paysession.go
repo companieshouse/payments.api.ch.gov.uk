@@ -6,6 +6,7 @@ import (
 
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/davecgh/go-spew/spew"
 )
 
 // CreateExternalPaymentJourney creates an external payment session with a Payment Provider that is given, e.g: GovPay
@@ -16,7 +17,7 @@ func (service *PaymentService) CreateExternalPaymentJourney(req *http.Request, p
 		return nil, InvalidData, err
 	}
 
-	//Check that class of payment of each Cost Resource is equal else error
+	// Check that class of payment of each Cost Resource is equal else error
 	err := validateClassOfPayment(&paymentSession.Costs)
 	if err != nil {
 		log.ErrorR(req, err)
@@ -43,6 +44,20 @@ func (service *PaymentService) CreateExternalPaymentJourney(req *http.Request, p
 		paymentJourney.NextURL = nextURL
 
 		return paymentJourney, responseType, nil
+
+	case "PayPal":
+		// TODO
+		// paymentJourney := &models.ExternalPaymentJourney{}
+
+		pp := &PayPalService{PaymentService: *service}
+
+		// TODO get bearer token
+		accessToken, err := pp.GetBearerToken()
+		if err != nil {
+			return nil, Error, err // TODO
+		}
+		spew.Dump(accessToken)
+		return nil, Success, nil // TODO
 
 	default:
 		err := fmt.Errorf("payment method [%s] for resource [%s] not recognised", paymentSession.PaymentMethod, paymentSession.Links.Self)
