@@ -30,6 +30,9 @@ type Config struct {
 	SchemaRegistryURL          string   `env:"SCHEMA_REGISTRY_URL"             flag:"schema-registry-url"               flagDesc:"Schema registry url"`
 	ChsAPIKey                  string   `env:"CHS_API_KEY"                     flag:"chs-api-key"                       flagDesc:"API access key"`
 	SecureAppCostsRegex        string   `env:"SECURE_APP_COSTS_REGEX"          flag:"secure-app-costs-regex"            flagDesc:"Regex to match secure app costs resource"`
+	PaypalEnv                  string   `env:"PAYPAL_ENV"                      flag:"paypal-env"                        flagDesc:"live or test"`
+	PaypalClientID             string   `env:"PAYPAL_CLIENT_ID"                flag:"paypal-client-id"                  flagDesc:"PayPal Client ID"`
+	PaypalSecret               string   `env:"PAYPAL_SECRET"                   flag:"paypal-secret"                     flagDesc:"PayPal Secret"`
 }
 
 // DefaultConfig returns a pointer to a Config instance that has been populated
