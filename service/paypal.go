@@ -3,11 +3,10 @@ package service
 import (
 	"context"
 	"fmt"
-	"os"
+
+	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 
 	"github.com/companieshouse/chs.go/log"
-	"github.com/companieshouse/payments.api.ch.gov.uk/config"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/plutov/paypal/v4"
 )
 
@@ -16,34 +15,57 @@ type PayPalService struct {
 	PaymentService PaymentService
 }
 
-func (pp PayPalService) GetBearerToken() (*paypal.TokenResponse, error) {
-	cfg, err := config.Get()
-	if err != nil {
-		return nil, fmt.Errorf("error getting config: %s", err)
-	}
+// CreateOrder creates a PayPal order to accept a payment
+func (pp PayPalService) CreateOrder(paymentResource *models.PaymentResourceRest) (string, ResponseType, error) {
+	cfg := pp.PaymentService.Config
 	paypalAPIBase := getPaypalAPIBase(cfg.PaypalEnv)
 	if paypalAPIBase == "" {
-		return nil, fmt.Errorf("invalid paypal env in config: %s", cfg.PaypalEnv)
+		return "", Error, fmt.Errorf("invalid paypal env in config: %s", cfg.PaypalEnv)
 	}
 
 	c, err := paypal.NewClient(cfg.PaypalClientID, cfg.PaypalSecret, paypalAPIBase)
 	if err != nil {
-		log.Error(fmt.Errorf("error creating new paypal client: %v", err))
-		// TODO
-		return nil, err
+		return "", Error, fmt.Errorf("error creating paypal client: [%v]", err)
 	}
-
-	spew.Dump(c)
-
-	c.SetLog(os.Stdout) // Set log to terminal stdout
-
-	accessToken, err := c.GetAccessToken(context.Background())
+	_, err = c.GetAccessToken(context.Background())
 	if err != nil {
-		log.Error(fmt.Errorf("error getting access token: %v", err))
-		return nil, err // TODO
+		return "", Error, fmt.Errorf("error getting access token: [%v]", err)
 	}
-	return accessToken, nil
 
+	order, err := c.CreateOrder(
+		context.Background(),
+		paypal.OrderIntentCapture,
+		[]paypal.PurchaseUnitRequest{
+			{
+				Amount: &paypal.PurchaseUnitAmount{
+					Value:    paymentResource.Amount,
+					Currency: "GBP",
+				},
+			},
+		},
+		nil,
+		&paypal.ApplicationContext{
+			ReturnURL: fmt.Sprintf("%s/callback/payments/paypal/orders/%s",
+				pp.PaymentService.Config.PaymentsAPIURL, paymentResource.MetaData.ID),
+		},
+	)
+	if err != nil {
+		return "", Error, fmt.Errorf("error creating order: [%v]", err)
+	}
+
+	if order.Status != paypal.OrderStatusCreated {
+		log.Debug(fmt.Sprintf("paypal order response status: %s", order.Status))
+		return "", Error, fmt.Errorf("failed to correctly create paypal order")
+	}
+
+	var nextURL string
+	for _, link := range order.Links {
+		if link.Rel == "approve" {
+			nextURL = link.Href
+		}
+	}
+
+	return nextURL, Success, nil
 }
 
 func getPaypalAPIBase(env string) string {
