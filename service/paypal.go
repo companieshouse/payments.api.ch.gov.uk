@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 
 	"github.com/companieshouse/chs.go/log"
@@ -13,26 +14,31 @@ import (
 // PayPalService handles the specific functionality of integrating PayPal into Payment Sessions
 type PayPalService struct {
 	PaymentService PaymentService
+	PayPalClient   *paypal.Client
 }
 
-// CreateOrder creates a PayPal order to accept a payment
-func (pp PayPalService) CreateOrder(paymentResource *models.PaymentResourceRest) (string, ResponseType, error) {
-	cfg := pp.PaymentService.Config
+func NewPayPalService(cfg *config.Config) (*PayPalService, error) {
+
 	paypalAPIBase := getPaypalAPIBase(cfg.PaypalEnv)
 	if paypalAPIBase == "" {
-		return "", Error, fmt.Errorf("invalid paypal env in config: %s", cfg.PaypalEnv)
+		return nil, fmt.Errorf("invalid paypal env in config: %s", cfg.PaypalEnv)
 	}
 
 	c, err := paypal.NewClient(cfg.PaypalClientID, cfg.PaypalSecret, paypalAPIBase)
 	if err != nil {
-		return "", Error, fmt.Errorf("error creating paypal client: [%v]", err)
+		return nil, fmt.Errorf("error creating paypal client: [%v]", err)
 	}
 	_, err = c.GetAccessToken(context.Background())
 	if err != nil {
-		return "", Error, fmt.Errorf("error getting access token: [%v]", err)
+		return nil, fmt.Errorf("error getting access token: [%v]", err)
 	}
+	return &PayPalService{PayPalClient: c}, nil
+}
 
-	order, err := c.CreateOrder(
+// CreateOrder creates a PayPal order to accept a payment
+func (pp PayPalService) CreateOrder(paymentResource *models.PaymentResourceRest) (string, ResponseType, error) {
+
+	order, err := pp.PayPalClient.CreateOrder(
 		context.Background(),
 		paypal.OrderIntentCapture,
 		[]paypal.PurchaseUnitRequest{

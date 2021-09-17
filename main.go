@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/companieshouse/chs.go/log"
+	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/handlers"
@@ -24,7 +25,9 @@ func main() {
 	// Create router
 	mainRouter := mux.NewRouter()
 
-	handlers.Register(mainRouter, *cfg)
+	payPalSvc, err := service.NewPayPalService(cfg)
+
+	handlers.Register(mainRouter, *cfg, payPalSvc)
 
 	log.Info("Starting " + namespace)
 	err = http.ListenAndServe(cfg.BindAddr, mainRouter)

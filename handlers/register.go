@@ -19,7 +19,7 @@ var paymentService *service.PaymentService
 var refundService *service.RefundService
 
 // Register defines the route mappings for the main router and it's subrouters
-func Register(mainRouter *mux.Router, cfg config.Config) {
+func Register(mainRouter *mux.Router, cfg config.Config, paypalSvc *service.PayPalService) {
 	m := &dao.Mongo{
 		URL: cfg.MongoDBURL,
 	}
@@ -80,7 +80,7 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	privatePatchRouter.HandleFunc("", HandlePatchPaymentSession).Methods("PATCH").Name("patch-payment")
 
 	privateJourneyRouter := mainRouter.PathPrefix("/private/payments/{payment_id}/external-journey").Subrouter()
-	privateJourneyRouter.HandleFunc("", HandleCreateExternalPaymentJourney).Methods("POST").Name("create-external-payment-journey")
+	privateJourneyRouter.Handle("", HandleCreateExternalPaymentJourney(paypalSvc)).Methods("POST").Name("create-external-payment-journey")
 
 	// callback endpoints should not be intercepted by the paymentauth or userauth interceptors, so needs to be it's own subrouter
 	callbackRouter := mainRouter.PathPrefix("/callback").Subrouter()
