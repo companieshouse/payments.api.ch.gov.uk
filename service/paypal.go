@@ -11,10 +11,16 @@ import (
 	"github.com/plutov/paypal/v4"
 )
 
+// PaypalPaymentProviderService is an Interface to enable mocking
+type PaypalPaymentProviderService interface {
+	CreateOrder(paymentResource *models.PaymentResourceRest) (string, ResponseType, error)
+}
+
 // PayPalService handles the specific functionality of integrating PayPal into Payment Sessions
 type PayPalService struct {
-	PaymentService PaymentService
-	PayPalClient   *paypal.Client
+	PaypalPaymentProviderService PaypalPaymentProviderService
+	PaymentService               PaymentService
+	PayPalClient                 *paypal.Client
 }
 
 func NewPayPalService(cfg *config.Config) (*PayPalService, error) {
