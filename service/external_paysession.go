@@ -9,7 +9,7 @@ import (
 )
 
 // CreateExternalPaymentJourney creates an external payment session with a Payment Provider that is given, e.g: GovPay
-func (service *PaymentService) CreateExternalPaymentJourney(req *http.Request, paymentSession *models.PaymentResourceRest, paypalService *PayPalService) (*models.ExternalPaymentJourney, ResponseType, error) {
+func (service *PaymentService) CreateExternalPaymentJourney(req *http.Request, paymentSession *models.PaymentResourceRest, paypalService PaypalPaymentProvider) (*models.ExternalPaymentJourney, ResponseType, error) {
 	if paymentSession.Status != InProgress.String() {
 		err := fmt.Errorf("payment session is not in progress")
 		log.ErrorR(req, err)
@@ -45,9 +45,7 @@ func (service *PaymentService) CreateExternalPaymentJourney(req *http.Request, p
 		}
 
 	case "PayPal":
-		paypalService.PaymentService = *service
-
-		nextURL, responseType, err = paypalService.CreateOrder(paymentSession)
+		nextURL, responseType, err = paypalService.CreatePaypalOrder(paymentSession)
 		if err != nil {
 			err = fmt.Errorf("error communicating with PayPal API: [%v]", err)
 			log.ErrorR(req, err)

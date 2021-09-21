@@ -11,19 +11,12 @@ import (
 	"github.com/plutov/paypal/v4"
 )
 
-// PaypalPaymentProviderService is an Interface to enable mocking
-type PaypalPaymentProviderService interface {
-	CreateOrder(paymentResource *models.PaymentResourceRest) (string, ResponseType, error)
-}
+var client *paypal.Client
 
-// PayPalService handles the specific functionality of integrating PayPal into Payment Sessions
-type PayPalService struct {
-	PaypalPaymentProviderService PaypalPaymentProviderService
-	PaymentService               PaymentService
-	PayPalClient                 *paypal.Client
-}
-
-func NewPayPalService(cfg *config.Config) (*PayPalService, error) {
+func getPaypalClient(cfg config.Config) (*paypal.Client, error) {
+	if client != nil {
+		return client, nil
+	}
 
 	paypalAPIBase := getPaypalAPIBase(cfg.PaypalEnv)
 	if paypalAPIBase == "" {
@@ -38,13 +31,38 @@ func NewPayPalService(cfg *config.Config) (*PayPalService, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error getting access token: [%v]", err)
 	}
-	return &PayPalService{PayPalClient: c}, nil
+
+	return c, nil
 }
 
-// CreateOrder creates a PayPal order to accept a payment
-func (pp PayPalService) CreateOrder(paymentResource *models.PaymentResourceRest) (string, ResponseType, error) {
+// PaypalPaymentProviderService is an Interface to enable mocking
+type PaypalSDK interface {
+	GetAccessToken(ctx context.Context) (*paypal.TokenResponse, error)
+	CreateOrder(ctx context.Context, intent string, purchaseUnits []paypal.PurchaseUnitRequest, payer *paypal.CreateOrderPayer, appContext *paypal.ApplicationContext) (*paypal.Order, error)
+}
 
-	order, err := pp.PayPalClient.CreateOrder(
+type PaypalPaymentProvider interface {
+	CreatePaypalOrder(paymentResource *models.PaymentResourceRest) (string, ResponseType, error)
+}
+
+// PayPalService handles the specific functionality of integrating PayPal into Payment Sessions
+type PaypalService struct {
+	Client         PaypalSDK
+	PaymentService PaymentService
+}
+
+func NewPayPalService(cfg config.Config, paymentSvc PaymentService) (*PaypalService, error) {
+	c, err := getPaypalClient(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &PaypalService{Client: c, PaymentService: paymentSvc}, nil
+}
+
+// CreatePaypalOrder creates a PayPal order to accept a payment
+func (pp PaypalService) CreatePaypalOrder(paymentResource *models.PaymentResourceRest) (string, ResponseType, error) {
+
+	order, err := pp.Client.CreateOrder(
 		context.Background(),
 		paypal.OrderIntentCapture,
 		[]paypal.PurchaseUnitRequest{

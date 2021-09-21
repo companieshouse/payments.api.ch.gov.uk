@@ -6,12 +6,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gorilla/mux"
+	"github.com/jarcoal/httpmock"
+
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/golang/mock/gomock"
-	"github.com/gorilla/mux"
-	"github.com/jarcoal/httpmock"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -20,6 +21,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
 	cfg.GovPayURL = "http://dummy-govpay-url"
+	mockPayPalPaymentProvider := NewMockPaypalPaymentProvider(mockCtrl)
 
 	Convey("Payment session not in progress", t, func() {
 		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
@@ -34,7 +36,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		costArray := []models.CostResourceRest{defaultCost}
 		jsonResponse, _ := httpmock.NewJsonResponder(200, costArray)
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
-		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &models.PaymentResourceRest{})
+		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &models.PaymentResourceRest{}, mockPayPalPaymentProvider)
 
 		So(externalPaymentJourney, ShouldBeNil)
 		So(responseType.String(), ShouldEqual, InvalidData.String())
@@ -61,7 +63,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 			Costs:         []models.CostResourceRest{costResource},
 		}
 
-		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
+		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession, mockPayPalPaymentProvider)
 		So(externalPaymentJourney, ShouldBeNil)
 		So(responseType.String(), ShouldEqual, InvalidData.String())
 		So(err.Error(), ShouldEqual, fmt.Sprintf("Two or more class of payments are different on the same cost resource: [%v] ", costResource.Description))
@@ -92,7 +94,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 			Costs:         []models.CostResourceRest{costResource1, costResource2},
 		}
 
-		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
+		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession, mockPayPalPaymentProvider)
 		So(externalPaymentJourney, ShouldBeNil)
 		So(responseType.String(), ShouldEqual, InvalidData.String())
 		So(err.Error(), ShouldEqual, fmt.Sprintf("Two or more class of payments are different on the same transaction: [%v] and [%v] ",
@@ -112,7 +114,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 			Status:        InProgress.String(),
 		}
 
-		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
+		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession, mockPayPalPaymentProvider)
 		So(externalPaymentJourney, ShouldBeNil)
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(err.Error(), ShouldEqual, `error communicating with GovPay: [error converting amount to pay to pence: [strconv.Atoi: parsing "": invalid syntax]]`)
@@ -141,7 +143,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 			Costs:         []models.CostResourceRest{costResource},
 		}
 
-		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
+		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession, mockPayPalPaymentProvider)
 		So(externalPaymentJourney, ShouldBeNil)
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(err.Error(), ShouldEqual, "no NextURL returned from GovPay")
@@ -176,7 +178,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 			Costs:         []models.CostResourceRest{costResource},
 		}
 
-		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
+		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession, mockPayPalPaymentProvider)
 		So(err, ShouldBeNil)
 		So(responseType.String(), ShouldEqual, Success.String())
 		So(externalPaymentJourney.NextURL, ShouldEqual, "response_url")
@@ -211,7 +213,32 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 			Costs:         []models.CostResourceRest{costResource},
 		}
 
-		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
+		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession, mockPayPalPaymentProvider)
+		So(err, ShouldBeNil)
+		So(responseType.String(), ShouldEqual, Success.String())
+		So(externalPaymentJourney.NextURL, ShouldEqual, "response_url")
+	})
+
+	Convey("Create External Payment Journey for orderable-item - success", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+
+		req := httptest.NewRequest("", "/test", nil)
+
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"orderable-item"},
+		}
+
+		paymentSession := models.PaymentResourceRest{
+			PaymentMethod: "PayPal",
+			Amount:        "3",
+			Status:        InProgress.String(),
+			Costs:         []models.CostResourceRest{costResource},
+		}
+
+		mockPayPalPaymentProvider.EXPECT().CreatePaypalOrder(&paymentSession).Return("response_url", Success, nil)
+
+		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession, mockPayPalPaymentProvider)
 		So(err, ShouldBeNil)
 		So(responseType.String(), ShouldEqual, Success.String())
 		So(externalPaymentJourney.NextURL, ShouldEqual, "response_url")
@@ -225,7 +252,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 			Status:        InProgress.String(),
 		}
 
-		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession)
+		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession, mockPayPalPaymentProvider)
 		So(externalPaymentJourney, ShouldBeNil)
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(err.Error(), ShouldEqual, "payment method [invalid] for resource [] not recognised")

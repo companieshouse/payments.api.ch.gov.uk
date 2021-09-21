@@ -4,44 +4,96 @@
 package service
 
 import (
+	context "context"
+	reflect "reflect"
+
 	models "github.com/companieshouse/payments.api.ch.gov.uk/models"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
+	v4 "github.com/plutov/paypal/v4"
 )
 
-// MockPaypalPaymentProviderService is a mock of PaypalPaymentProviderService interface
-type MockPaypalPaymentProviderService struct {
+// MockPaypalSDK is a mock of PaypalSDK interface
+type MockPaypalSDK struct {
 	ctrl     *gomock.Controller
-	recorder *MockPaypalPaymentProviderServiceMockRecorder
+	recorder *MockPaypalSDKMockRecorder
 }
 
-// MockPaypalPaymentProviderServiceMockRecorder is the mock recorder for MockPaypalPaymentProviderService
-type MockPaypalPaymentProviderServiceMockRecorder struct {
-	mock *MockPaypalPaymentProviderService
+// MockPaypalSDKMockRecorder is the mock recorder for MockPaypalSDK
+type MockPaypalSDKMockRecorder struct {
+	mock *MockPaypalSDK
 }
 
-// NewMockPaypalPaymentProviderService creates a new mock instance
-func NewMockPaypalPaymentProviderService(ctrl *gomock.Controller) *MockPaypalPaymentProviderService {
-	mock := &MockPaypalPaymentProviderService{ctrl: ctrl}
-	mock.recorder = &MockPaypalPaymentProviderServiceMockRecorder{mock}
+// NewMockPaypalSDK creates a new mock instance
+func NewMockPaypalSDK(ctrl *gomock.Controller) *MockPaypalSDK {
+	mock := &MockPaypalSDK{ctrl: ctrl}
+	mock.recorder = &MockPaypalSDKMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockPaypalPaymentProviderService) EXPECT() *MockPaypalPaymentProviderServiceMockRecorder {
+func (m *MockPaypalSDK) EXPECT() *MockPaypalSDKMockRecorder {
 	return m.recorder
 }
 
+// GetAccessToken mocks base method
+func (m *MockPaypalSDK) GetAccessToken(ctx context.Context) (*v4.TokenResponse, error) {
+	ret := m.ctrl.Call(m, "GetAccessToken", ctx)
+	ret0, _ := ret[0].(*v4.TokenResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAccessToken indicates an expected call of GetAccessToken
+func (mr *MockPaypalSDKMockRecorder) GetAccessToken(ctx interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccessToken", reflect.TypeOf((*MockPaypalSDK)(nil).GetAccessToken), ctx)
+}
+
 // CreateOrder mocks base method
-func (m *MockPaypalPaymentProviderService) CreateOrder(paymentResource *models.PaymentResourceRest) (string, ResponseType, error) {
-	ret := m.ctrl.Call(m, "CreateOrder", paymentResource)
+func (m *MockPaypalSDK) CreateOrder(ctx context.Context, intent string, purchaseUnits []v4.PurchaseUnitRequest, payer *v4.CreateOrderPayer, appContext *v4.ApplicationContext) (*v4.Order, error) {
+	ret := m.ctrl.Call(m, "CreateOrder", ctx, intent, purchaseUnits, payer, appContext)
+	ret0, _ := ret[0].(*v4.Order)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateOrder indicates an expected call of CreateOrder
+func (mr *MockPaypalSDKMockRecorder) CreateOrder(ctx, intent, purchaseUnits, payer, appContext interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrder", reflect.TypeOf((*MockPaypalSDK)(nil).CreateOrder), ctx, intent, purchaseUnits, payer, appContext)
+}
+
+// MockPaypalPaymentProvider is a mock of PaypalPaymentProvider interface
+type MockPaypalPaymentProvider struct {
+	ctrl     *gomock.Controller
+	recorder *MockPaypalPaymentProviderMockRecorder
+}
+
+// MockPaypalPaymentProviderMockRecorder is the mock recorder for MockPaypalPaymentProvider
+type MockPaypalPaymentProviderMockRecorder struct {
+	mock *MockPaypalPaymentProvider
+}
+
+// NewMockPaypalPaymentProvider creates a new mock instance
+func NewMockPaypalPaymentProvider(ctrl *gomock.Controller) *MockPaypalPaymentProvider {
+	mock := &MockPaypalPaymentProvider{ctrl: ctrl}
+	mock.recorder = &MockPaypalPaymentProviderMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockPaypalPaymentProvider) EXPECT() *MockPaypalPaymentProviderMockRecorder {
+	return m.recorder
+}
+
+// CreatePaypalOrder mocks base method
+func (m *MockPaypalPaymentProvider) CreatePaypalOrder(paymentResource *models.PaymentResourceRest) (string, ResponseType, error) {
+	ret := m.ctrl.Call(m, "CreatePaypalOrder", paymentResource)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(ResponseType)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
-// CreateOrder indicates an expected call of CreateOrder
-func (mr *MockPaypalPaymentProviderServiceMockRecorder) CreateOrder(paymentResource interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrder", reflect.TypeOf((*MockPaypalPaymentProviderService)(nil).CreateOrder), paymentResource)
+// CreatePaypalOrder indicates an expected call of CreatePaypalOrder
+func (mr *MockPaypalPaymentProviderMockRecorder) CreatePaypalOrder(paymentResource interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePaypalOrder", reflect.TypeOf((*MockPaypalPaymentProvider)(nil).CreatePaypalOrder), paymentResource)
 }

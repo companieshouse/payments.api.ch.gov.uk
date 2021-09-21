@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"regexp"
@@ -19,7 +20,7 @@ var paymentService *service.PaymentService
 var refundService *service.RefundService
 
 // Register defines the route mappings for the main router and it's subrouters
-func Register(mainRouter *mux.Router, cfg config.Config, paypalSvc *service.PayPalService) {
+func Register(mainRouter *mux.Router, cfg config.Config) {
 	m := &dao.Mongo{
 		URL: cfg.MongoDBURL,
 	}
@@ -38,6 +39,11 @@ func Register(mainRouter *mux.Router, cfg config.Config, paypalSvc *service.PayP
 	}
 
 	govPayService := &service.GovPayService{PaymentService: *paymentService}
+
+	paypalSvc, err := service.NewPayPalService(cfg, *paymentService)
+	if err != nil {
+		log.Error(fmt.Errorf("error creating paypal service: [%v]", err))
+	}
 
 	refundService = &service.RefundService{
 		GovPayService:  govPayService,
