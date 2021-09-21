@@ -219,6 +219,57 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		So(externalPaymentJourney.NextURL, ShouldEqual, "response_url")
 	})
 
+	Convey("Error communicating with Paypal", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+
+		req := httptest.NewRequest("", "/test", nil)
+
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"orderable-item"},
+		}
+
+		paymentSession := models.PaymentResourceRest{
+			PaymentMethod: "PayPal",
+			Amount:        "3",
+			Status:        InProgress.String(),
+			Costs:         []models.CostResourceRest{costResource},
+		}
+
+		mockPayPalPaymentProvider.EXPECT().CreatePaypalOrder(&paymentSession).Return("", Error, fmt.Errorf("error"))
+
+		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession, mockPayPalPaymentProvider)
+		So(externalPaymentJourney, ShouldBeNil)
+		So(responseType.String(), ShouldEqual, Error.String())
+		So(err.Error(), ShouldEqual, "error communicating with PayPal API: [error]")
+
+	})
+
+	Convey("No NextURL received from Paypal", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+
+		req := httptest.NewRequest("", "/test", nil)
+
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"orderable-item"},
+		}
+
+		paymentSession := models.PaymentResourceRest{
+			PaymentMethod: "PayPal",
+			Amount:        "3",
+			Status:        InProgress.String(),
+			Costs:         []models.CostResourceRest{costResource},
+		}
+
+		mockPayPalPaymentProvider.EXPECT().CreatePaypalOrder(&paymentSession).Return("", Success, nil)
+
+		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession, mockPayPalPaymentProvider)
+		So(externalPaymentJourney, ShouldBeNil)
+		So(responseType.String(), ShouldEqual, Error.String())
+		So(err.Error(), ShouldEqual, "approve link not returned in paypal order response")
+	})
+
 	Convey("Create an External PayPal Payment Journey for orderable-item - success", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
