@@ -219,7 +219,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		So(externalPaymentJourney.NextURL, ShouldEqual, "response_url")
 	})
 
-	Convey("Create External Payment Journey for orderable-item - success", t, func() {
+	Convey("Create an External PayPal Payment Journey for orderable-item - success", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 
