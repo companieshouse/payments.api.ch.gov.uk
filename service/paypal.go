@@ -13,12 +13,12 @@ import (
 
 var client *paypal.Client
 
-func getPaypalClient(cfg config.Config) (*paypal.Client, error) {
+func getPayPalClient(cfg config.Config) (*paypal.Client, error) {
 	if client != nil {
 		return client, nil
 	}
 
-	paypalAPIBase := getPaypalAPIBase(cfg.PaypalEnv)
+	paypalAPIBase := getPayPalAPIBase(cfg.PaypalEnv)
 	if paypalAPIBase == "" {
 		return nil, fmt.Errorf("invalid paypal env in config: %s", cfg.PaypalEnv)
 	}
@@ -35,32 +35,34 @@ func getPaypalClient(cfg config.Config) (*paypal.Client, error) {
 	return c, nil
 }
 
-// PaypalPaymentProviderService is an Interface to enable mocking
-type PaypalSDK interface {
+// PayPalSDK is an interface for all the PayPal client methods that will be used
+// in this service
+type PayPalSDK interface {
 	GetAccessToken(ctx context.Context) (*paypal.TokenResponse, error)
 	CreateOrder(ctx context.Context, intent string, purchaseUnits []paypal.PurchaseUnitRequest, payer *paypal.CreateOrderPayer, appContext *paypal.ApplicationContext) (*paypal.Order, error)
 }
 
-type PaypalPaymentProvider interface {
-	CreatePaypalOrder(paymentResource *models.PaymentResourceRest) (string, ResponseType, error)
+// PayPalPaymentProvider is an interface to enable mocking
+type PayPalPaymentProvider interface {
+	CreatePayPalOrder(paymentResource *models.PaymentResourceRest) (string, ResponseType, error)
 }
 
 // PayPalService handles the specific functionality of integrating PayPal into Payment Sessions
-type PaypalService struct {
-	Client         PaypalSDK
+type PayPalService struct {
+	Client         PayPalSDK
 	PaymentService PaymentService
 }
 
-func NewPayPalService(cfg config.Config, paymentSvc PaymentService) (*PaypalService, error) {
-	c, err := getPaypalClient(cfg)
+func NewPayPalService(cfg config.Config, paymentSvc PaymentService) (*PayPalService, error) {
+	c, err := getPayPalClient(cfg)
 	if err != nil {
 		return nil, err
 	}
-	return &PaypalService{Client: c, PaymentService: paymentSvc}, nil
+	return &PayPalService{Client: c, PaymentService: paymentSvc}, nil
 }
 
-// CreatePaypalOrder creates a PayPal order to accept a payment
-func (pp PaypalService) CreatePaypalOrder(paymentResource *models.PaymentResourceRest) (string, ResponseType, error) {
+// CreatePayPalOrder creates a PayPal order to accept a payment
+func (pp PayPalService) CreatePayPalOrder(paymentResource *models.PaymentResourceRest) (string, ResponseType, error) {
 
 	order, err := pp.Client.CreateOrder(
 		context.Background(),
@@ -85,7 +87,7 @@ func (pp PaypalService) CreatePaypalOrder(paymentResource *models.PaymentResourc
 
 	if order.Status != paypal.OrderStatusCreated {
 		log.Debug(fmt.Sprintf("paypal order response status: %s", order.Status))
-		return "", Error, fmt.Errorf("failed to correctly create paypal order")
+		return "", Error, fmt.Errorf("failed to correctly create paypal order - status is not CREATED")
 	}
 
 	var nextURL string
@@ -98,7 +100,7 @@ func (pp PaypalService) CreatePaypalOrder(paymentResource *models.PaymentResourc
 	return nextURL, Success, nil
 }
 
-func getPaypalAPIBase(env string) string {
+func getPayPalAPIBase(env string) string {
 	switch env {
 	case "live":
 		return paypal.APIBaseLive

@@ -12,7 +12,7 @@ import (
 	v4 "github.com/plutov/paypal/v4"
 )
 
-// MockPaypalSDK is a mock of PaypalSDK interface
+// MockPaypalSDK is a mock of PayPalSDK interface
 type MockPaypalSDK struct {
 	ctrl     *gomock.Controller
 	recorder *MockPaypalSDKMockRecorder
@@ -61,7 +61,7 @@ func (mr *MockPaypalSDKMockRecorder) CreateOrder(ctx, intent, purchaseUnits, pay
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrder", reflect.TypeOf((*MockPaypalSDK)(nil).CreateOrder), ctx, intent, purchaseUnits, payer, appContext)
 }
 
-// MockPaypalPaymentProvider is a mock of PaypalPaymentProvider interface
+// MockPaypalPaymentProvider is a mock of PayPalPaymentProvider interface
 type MockPaypalPaymentProvider struct {
 	ctrl     *gomock.Controller
 	recorder *MockPaypalPaymentProviderMockRecorder
@@ -84,16 +84,16 @@ func (m *MockPaypalPaymentProvider) EXPECT() *MockPaypalPaymentProviderMockRecor
 	return m.recorder
 }
 
-// CreatePaypalOrder mocks base method
-func (m *MockPaypalPaymentProvider) CreatePaypalOrder(paymentResource *models.PaymentResourceRest) (string, ResponseType, error) {
-	ret := m.ctrl.Call(m, "CreatePaypalOrder", paymentResource)
+// CreatePayPalOrder mocks base method
+func (m *MockPaypalPaymentProvider) CreatePayPalOrder(paymentResource *models.PaymentResourceRest) (string, ResponseType, error) {
+	ret := m.ctrl.Call(m, "CreatePayPalOrder", paymentResource)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(ResponseType)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
-// CreatePaypalOrder indicates an expected call of CreatePaypalOrder
+// CreatePayPalOrder indicates an expected call of CreatePayPalOrder
 func (mr *MockPaypalPaymentProviderMockRecorder) CreatePaypalOrder(paymentResource interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePaypalOrder", reflect.TypeOf((*MockPaypalPaymentProvider)(nil).CreatePaypalOrder), paymentResource)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePayPalOrder", reflect.TypeOf((*MockPaypalPaymentProvider)(nil).CreatePayPalOrder), paymentResource)
 }

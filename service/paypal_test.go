@@ -14,8 +14,8 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func createMockPaypalService(sdk PaypalSDK, service *PaymentService) PaypalService {
-	return PaypalService{
+func createMockPaypalService(sdk PayPalSDK, service *PaymentService) PayPalService {
+	return PayPalService{
 		Client:         sdk,
 		PaymentService: *service,
 	}
@@ -43,7 +43,7 @@ func TestUnitCreateOrder(t *testing.T) {
 
 		mockPayPalSDK.EXPECT().CreateOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("error"))
 
-		url, resType, err := mockPaypalService.CreatePaypalOrder(&paymentSession)
+		url, resType, err := mockPaypalService.CreatePayPalOrder(&paymentSession)
 
 		So(url, ShouldBeEmpty)
 		So(resType, ShouldEqual, Error)
@@ -69,7 +69,7 @@ func TestUnitCreateOrder(t *testing.T) {
 
 		mockPayPalSDK.EXPECT().CreateOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&order, nil)
 
-		url, resType, err := mockPaypalService.CreatePaypalOrder(&paymentSession)
+		url, resType, err := mockPaypalService.CreatePayPalOrder(&paymentSession)
 
 		So(url, ShouldBeEmpty)
 		So(resType, ShouldEqual, Error)
@@ -109,7 +109,7 @@ func TestUnitCreateOrder(t *testing.T) {
 
 		mockPayPalSDK.EXPECT().CreateOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&order, nil)
 
-		url, resType, err := mockPaypalService.CreatePaypalOrder(&paymentSession)
+		url, resType, err := mockPaypalService.CreatePayPalOrder(&paymentSession)
 
 		So(url, ShouldEqual, "return_url")
 		So(resType, ShouldEqual, Success)
