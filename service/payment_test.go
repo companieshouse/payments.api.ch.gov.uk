@@ -91,7 +91,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		httpmock.RegisterResponder("GET", "http://dummy-resource", nil)
+		httpmock.RegisterResponder("GET", `http://dummy-resource`, nil)
 
 		authUserDetails := authentication.AuthUserDetails{
 			ID: "identity",
@@ -108,7 +108,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
 		So(paymentResourceRest, ShouldBeNil)
 		So(status, ShouldEqual, Error)
-		So(err.Error(), ShouldEqual, "error getting payment resource: [error getting Cost Resource: [Get http://dummy-url: no responder found]]")
+		So(err.Error(), ShouldEqual, "error getting payment resource: [error getting Cost Resource: [Get \"http://dummy-url\": no responder found]]")
 	})
 
 	Convey("Error getting total amount from costs", t, func() {
@@ -461,7 +461,7 @@ func TestUnitGetPayment(t *testing.T) {
 		paymentResourceRest, status, err := mockPaymentService.GetPaymentSession(req, "1234")
 		So(paymentResourceRest, ShouldBeNil)
 		So(status, ShouldEqual, Error)
-		So(err.Error(), ShouldEqual, "error getting payment resource: [error getting Cost Resource: [Get : no responder found]]")
+		So(err.Error(), ShouldEqual, "error getting payment resource: [error getting Cost Resource: [Get \"\": no responder found]]")
 	})
 
 	cfg.DomainAllowList = "http://dummy-resource"
@@ -663,7 +663,7 @@ func TestUnitGetCosts(t *testing.T) {
 		costResourceRest, status, err := getCosts("http://dummy-resource", cfg, r)
 		So(costResourceRest, ShouldBeNil)
 		So(status, ShouldEqual, Error)
-		So(err.Error(), ShouldEqual, "error getting Cost Resource: [Get http://dummy-resource: no responder found]")
+		So(err.Error(), ShouldEqual, "error getting Cost Resource: [Get \"http://dummy-resource\": no responder found]")
 	})
 
 	Convey("Failure status when getting Cost Resource", t, func() {

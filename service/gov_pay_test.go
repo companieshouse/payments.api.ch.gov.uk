@@ -50,7 +50,7 @@ func TestUnitCheckProvider(t *testing.T) {
 		statusResponse, responseType, err := mockGovPayService.CheckProvider(&paymentResourceRest)
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(statusResponse, ShouldBeNil)
-		So(err.Error(), ShouldEqual, "error getting state of GovPay payment: [error sending request to GovPay: [Get external_uri: error]]")
+		So(err.Error(), ShouldEqual, "error getting state of GovPay payment: [error sending request to GovPay: [Get \"external_uri\": error]]")
 	})
 
 	Convey("Status - success", t, func() {
@@ -502,7 +502,7 @@ func TestUnitGetGovPayPaymentState(t *testing.T) {
 		govPayResponse, responseType, err := mockGovPayService.getGovPayPaymentState(&paymentResourceRest, cfg)
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(govPayResponse, ShouldBeNil)
-		So(err.Error(), ShouldEqual, "error sending request to GovPay: [Get external_uri: error]")
+		So(err.Error(), ShouldEqual, "error sending request to GovPay: [Get \"external_uri\": error]")
 	})
 
 	Convey("Valid GET request to GovPay and return status", t, func() {
@@ -565,7 +565,7 @@ func TestUnitGetGovPayPaymentDetails(t *testing.T) {
 		govPayResponse, responseType, err := mockGovPayService.GetGovPayPaymentDetails(&paymentResourceRest)
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(govPayResponse, ShouldBeNil)
-		So(err.Error(), ShouldEqual, "error sending request to GovPay: [Get external_uri: error]")
+		So(err.Error(), ShouldEqual, "error sending request to GovPay: [Get \"external_uri\": error]")
 	})
 
 	Convey("Valid GET request to GovPay and return payment details", t, func() {
@@ -663,7 +663,7 @@ func TestUnitGetGovPayRefundSummary(t *testing.T) {
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(paymentResource, ShouldBeNil)
 		So(refundSummary, ShouldBeNil)
-		So(err.Error(), ShouldEqual, "error getting payment information from gov pay: [error sending request to GovPay: [Get http://external_uri: error]]")
+		So(err.Error(), ShouldEqual, "error getting payment information from gov pay: [error sending request to GovPay: [Get \"http://external_uri\": error]]")
 	})
 
 	Convey("Refund failed - unavailable", t, func() {
@@ -899,7 +899,7 @@ func TestUnitGovPayCreateRefund(t *testing.T) {
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(paymentResource, ShouldNotBeNil)
 		So(govPayRefundResponse, ShouldBeNil)
-		So(err.Error(), ShouldEqual, "error sending request to GovPay to create a refund: [Post http://external_uri/refunds: error]")
+		So(err.Error(), ShouldEqual, "error sending request to GovPay to create a refund: [Post \"http://external_uri/refunds\": error]")
 	})
 
 	Convey("Successful request to GovPay", t, func() {
@@ -999,7 +999,7 @@ func TestUnitGetGovPayRefundStatus(t *testing.T) {
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(paymentResource, ShouldNotBeNil)
 		So(govPayStatusResponse, ShouldBeNil)
-		So(err.Error(), ShouldEqual, "error sending request to GovPay to get status of a refund: [Get http://external_uri/refunds/321: error]")
+		So(err.Error(), ShouldEqual, "error sending request to GovPay to get status of a refund: [Get \"http://external_uri/refunds/321\": error]")
 	})
 
 	Convey("Successful request to GovPay", t, func() {
@@ -1067,7 +1067,7 @@ func TestUnitCallToGovPay(t *testing.T) {
 		}
 		response, err := callGovPay(nil, resource)
 		So(response, ShouldBeNil)
-		So(err.Error(), ShouldEqual, "error generating request for GovPay: [parse \n: net/url: invalid control character in URL]")
+		So(err.Error(), ShouldEqual, "error generating request for GovPay: [parse "+`"\n"`+": net/url: invalid control character in URL]")
 	})
 
 	Convey("Error adding GovPay headers", t, func() {
