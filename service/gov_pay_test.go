@@ -16,7 +16,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func createMockGovPayService(service *PaymentService) GovPayService {
+func CreateMockGovPayService(service *PaymentService) GovPayService {
 	return GovPayService{
 		PaymentService: *service,
 	}
@@ -30,7 +30,7 @@ func TestUnitCheckProvider(t *testing.T) {
 	Convey("Error getting state of GovPay payment", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
+		mockGovPayService := CreateMockGovPayService(&mockPaymentService)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()

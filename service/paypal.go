@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
@@ -13,7 +14,7 @@ import (
 
 var client *paypal.Client
 
-func getPayPalClient(cfg config.Config) (*paypal.Client, error) {
+func GetPayPalClient(cfg config.Config) (*paypal.Client, error) {
 	if client != nil {
 		return client, nil
 	}
@@ -42,27 +43,24 @@ type PayPalSDK interface {
 	CreateOrder(ctx context.Context, intent string, purchaseUnits []paypal.PurchaseUnitRequest, payer *paypal.CreateOrderPayer, appContext *paypal.ApplicationContext) (*paypal.Order, error)
 }
 
-// PayPalPaymentProvider is an interface to enable mocking
-type PayPalPaymentProvider interface {
-	CreatePayPalOrder(paymentResource *models.PaymentResourceRest) (string, ResponseType, error)
-}
-
 // PayPalService handles the specific functionality of integrating PayPal into Payment Sessions
 type PayPalService struct {
 	Client         PayPalSDK
 	PaymentService PaymentService
 }
 
-func NewPayPalService(cfg config.Config, paymentSvc PaymentService) (*PayPalService, error) {
-	c, err := getPayPalClient(cfg)
-	if err != nil {
-		return nil, err
-	}
-	return &PayPalService{Client: c, PaymentService: paymentSvc}, nil
+// CheckProvider checks the status of the payment with PayPal
+func (pp *PayPalService) CheckPaymentProviderStatus(_ *models.PaymentResourceRest) (*models.StatusResponse, ResponseType, error) {
+
+	//TODO: Check the payment status with PayPal
+
+	return nil, Success, nil
 }
 
-// CreatePayPalOrder creates a PayPal order to accept a payment
-func (pp PayPalService) CreatePayPalOrder(paymentResource *models.PaymentResourceRest) (string, ResponseType, error) {
+// CreatePaymentAndGenerateNextURL creates a PayPal session linked to the given payment session
+func (pp *PayPalService) CreatePaymentAndGenerateNextURL(req *http.Request, paymentResource *models.PaymentResourceRest) (string, ResponseType, error) {
+
+	log.TraceR(req, "performing PayPal request", log.Data{"company_number": paymentResource.CompanyNumber})
 
 	order, err := pp.Client.CreateOrder(
 		context.Background(),
@@ -98,6 +96,38 @@ func (pp PayPalService) CreatePayPalOrder(paymentResource *models.PaymentResourc
 	}
 
 	return nextURL, Success, nil
+}
+
+// GetPaymentDetails gets the details of a PayPal payment
+func (pp *PayPalService) GetPaymentDetails(_ *models.PaymentResourceRest) (*models.PaymentDetails, ResponseType, error) {
+
+	//TODO: Check the payment details with PayPal
+
+	return nil, Success, nil
+}
+
+// GetRefundSummary gets refund summary of a PayPal payment
+func (pp *PayPalService) GetRefundSummary(_ *http.Request, _ string) (*models.PaymentResourceRest, *models.RefundSummary, ResponseType, error) {
+
+	//TODO: Get refund summary with PayPal
+
+	return nil, nil, Success, nil
+}
+
+// CreateRefund creates a refund in PayPal
+func (pp *PayPalService) CreateRefund(_ *models.PaymentResourceRest, _ *models.CreateRefundGovPayRequest) (*models.CreateRefundGovPayResponse, ResponseType, error) {
+
+	//TODO: Create a refund with PayPal
+
+	return nil, Success, nil
+}
+
+// GetRefundStatus gets refund status from PayPal
+func (pp *PayPalService) GetRefundStatus(_ *models.PaymentResourceRest, _ string) (*models.GetRefundStatusGovPayResponse, ResponseType, error) {
+
+	//TODO: Get refund status
+
+	return nil, Success, nil
 }
 
 func getPayPalAPIBase(env string) string {

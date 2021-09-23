@@ -14,7 +14,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func createMockPaypalService(sdk PayPalSDK, service *PaymentService) PayPalService {
+func CreateMockPayPalService(sdk PayPalSDK, service *PaymentService) PayPalService {
 	return PayPalService{
 		Client:         sdk,
 		PaymentService: *service,
@@ -27,7 +27,8 @@ func TestUnitCreateOrder(t *testing.T) {
 	cfg, _ := config.Get()
 	mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
 	mockPayPalSDK := NewMockPaypalSDK(mockCtrl)
-	mockPaypalService := createMockPaypalService(mockPayPalSDK, &mockPaymentService)
+	mockPayPalService := CreateMockPayPalService(mockPayPalSDK, &mockPaymentService)
+	mockGovPayService := CreateMockGovPayService(&mockPaymentService)
 
 	Convey("Error when creating an order resource in PayPal", t, func() {
 		costResource := models.CostResourceRest{
@@ -43,7 +44,7 @@ func TestUnitCreateOrder(t *testing.T) {
 
 		mockPayPalSDK.EXPECT().CreateOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("error"))
 
-		url, resType, err := mockPaypalService.CreatePayPalOrder(&paymentSession)
+		url, resType, err := mockPayPalService.CreatePayPalOrder(&paymentSession)
 
 		So(url, ShouldBeEmpty)
 		So(resType, ShouldEqual, Error)

@@ -12,7 +12,7 @@ import (
 )
 
 // HandleCreateExternalPaymentJourney creates an external payment session with a Payment Provider that is given, e.g. GOV.UK Pay
-func HandleCreateExternalPaymentJourney(paypalService *service.PayPalService) http.Handler {
+func HandleCreateExternalPaymentJourney(externalPaymentProvidersService *service.ExternalPaymentProvidersService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		// get payment resource from context, put there by PaymentAuthenticationInterceptor
 		paymentSession, ok := req.Context().Value(helpers.ContextKeyPaymentSession).(*models.PaymentResourceRest)
@@ -22,7 +22,7 @@ func HandleCreateExternalPaymentJourney(paypalService *service.PayPalService) ht
 			return
 		}
 
-		externalPaymentJourney, responseType, err := paymentService.CreateExternalPaymentJourney(req, paymentSession, paypalService)
+		externalPaymentJourney, responseType, err := paymentService.CreateExternalPaymentJourney(req, paymentSession, *externalPaymentProvidersService)
 		if err != nil {
 			log.ErrorR(req, fmt.Errorf("error creating external payment journey: [%v]", err), log.Data{"service_response_type": responseType.String()})
 			switch responseType {

@@ -7,19 +7,19 @@ import (
 	"testing"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
+	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/golang/mock/gomock"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
-	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	. "github.com/companieshouse/payments.api.ch.gov.uk/service"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func serveHandleCreateExternalPaymentJourney(paypalSvc PayPalService, req *http.Request) *httptest.ResponseRecorder {
-	handler := HandleCreateExternalPaymentJourney(&paypalSvc)
+func serveHandleCreateExternalPaymentJourney(mockExternalProviderService ExternalPaymentProvidersService, req *http.Request) *httptest.ResponseRecorder {
+	handler := HandleCreateExternalPaymentJourney(&mockExternalProviderService)
 
 	res := httptest.NewRecorder()
 
@@ -28,10 +28,10 @@ func serveHandleCreateExternalPaymentJourney(paypalSvc PayPalService, req *http.
 	return res
 }
 
-func createMockPaypalService(sdk PayPalSDK, service *PaymentService) PayPalService {
-	return PayPalService{
-		Client:         sdk,
-		PaymentService: *service,
+func CreateMockExternalPaymentProvidersService(mockPayPalService PayPalService, mockGovPayService GovPayService) ExternalPaymentProvidersService {
+	return ExternalPaymentProvidersService{
+		GovPayService: mockGovPayService,
+		PayPalService: mockPayPalService,
 	}
 }
 
@@ -41,11 +41,20 @@ func TestUnitHandleCreateExternalPaymentJourney(t *testing.T) {
 	cfg, _ := config.Get()
 	mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
 	mockPayPalSDK := NewMockPaypalSDK(mockCtrl)
-	mockPaypalService := createMockPaypalService(mockPayPalSDK, mockPaymentService)
+
+	// Generate a mock external provider service using mocks for both PayPal and GovPay
+	mockExternalProviderService := CreateMockExternalPaymentProvidersService(
+		PayPalService{
+			Client:         mockPayPalSDK,
+			PaymentService: *mockPaymentService,
+		},
+		GovPayService{
+			PaymentService: *mockPaymentService,
+		})
 
 	Convey("Invalid PaymentResourceRest in Request", t, func() {
 		req := httptest.NewRequest("GET", "/test", nil)
-		res := serveHandleCreateExternalPaymentJourney(mockPaypalService, req)
+		res := serveHandleCreateExternalPaymentJourney(mockExternalProviderService, req)
 		So(res.Code, ShouldEqual, http.StatusBadRequest)
 	})
 

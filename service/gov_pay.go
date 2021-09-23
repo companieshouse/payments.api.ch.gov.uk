@@ -15,23 +15,13 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 )
 
-// PaymentProviderService is an Interface to enable mocking
-type PaymentProviderService interface {
-	CheckProvider(paymentResource *models.PaymentResourceRest) (*models.StatusResponse, ResponseType, error)
-	GenerateNextURLGovPay(req *http.Request, paymentResource *models.PaymentResourceRest) (string, ResponseType, error)
-	GetGovPayPaymentDetails(paymentResource *models.PaymentResourceRest) (*models.PaymentDetails, ResponseType, error)
-	GetGovPayRefundSummary(req *http.Request, id string) (*models.PaymentResourceRest, *models.RefundSummary, ResponseType, error)
-	GetGovPayRefundStatus(paymentResource *models.PaymentResourceRest, refundId string) (*models.GetRefundStatusGovPayResponse, ResponseType, error)
-	CreateRefund(paymentResource *models.PaymentResourceRest, refundRequest *models.CreateRefundGovPayRequest) (*models.CreateRefundGovPayResponse, ResponseType, error)
-}
-
 // GovPayService handles the specific functionality of integrating GovPay provider into Payment Sessions
 type GovPayService struct {
 	PaymentService PaymentService
 }
 
-// CheckProvider checks the status of the payment with GovPay provider
-func (gp GovPayService) CheckProvider(paymentResource *models.PaymentResourceRest) (*models.StatusResponse, ResponseType, error) {
+// CheckProvider checks the status of the payment with GovPay
+func (gp GovPayService) CheckPaymentProviderStatus(paymentResource *models.PaymentResourceRest) (*models.StatusResponse, ResponseType, error) {
 	// Call the getGovPayPaymentState method down below to get state
 	cfg, err := config.Get()
 	if err != nil {
@@ -52,7 +42,7 @@ func (gp GovPayService) CheckProvider(paymentResource *models.PaymentResourceRes
 }
 
 // GenerateNextURLGovPay creates a gov pay session linked to the given payment session and stores the required details on the payment session
-func (gp *GovPayService) GenerateNextURLGovPay(req *http.Request, paymentResource *models.PaymentResourceRest) (string, ResponseType, error) {
+func (gp *GovPayService) CreatePaymentAndGenerateNextURL(req *http.Request, paymentResource *models.PaymentResourceRest) (string, ResponseType, error) {
 	var govPayRequest models.OutgoingGovPayRequest
 
 	amountToPay, err := convertToPenceFromDecimal(paymentResource.Amount)
@@ -139,7 +129,7 @@ func (gp *GovPayService) getGovPayPaymentState(paymentResource *models.PaymentRe
 }
 
 // GetGovPayPaymentDetails gets the details of a GovPay payment
-func (gp *GovPayService) GetGovPayPaymentDetails(paymentResource *models.PaymentResourceRest) (*models.PaymentDetails, ResponseType, error) {
+func (gp *GovPayService) GetPaymentDetails(paymentResource *models.PaymentResourceRest) (*models.PaymentDetails, ResponseType, error) {
 
 	govPayResponse, err := callGovPay(gp, paymentResource)
 	if err != nil {
@@ -158,7 +148,7 @@ func (gp *GovPayService) GetGovPayPaymentDetails(paymentResource *models.Payment
 }
 
 // GetGovPayRefundSummary gets refund summary of a GovPay payment
-func (gp *GovPayService) GetGovPayRefundSummary(req *http.Request, id string) (*models.PaymentResourceRest, *models.RefundSummary, ResponseType, error) {
+func (gp *GovPayService) GetRefundSummary(req *http.Request, id string) (*models.PaymentResourceRest, *models.RefundSummary, ResponseType, error) {
 	// Get PaymentSession for the GovPay call
 	paymentSession, response, err := gp.PaymentService.GetPaymentSession(req, id)
 	if err != nil {
@@ -241,7 +231,7 @@ func (gp *GovPayService) CreateRefund(paymentResource *models.PaymentResourceRes
 }
 
 // GetGovPayRefundStatus gets refund status from GovPay
-func (gp *GovPayService) GetGovPayRefundStatus(paymentResource *models.PaymentResourceRest, refundId string) (*models.GetRefundStatusGovPayResponse, ResponseType, error) {
+func (gp *GovPayService) GetRefundStatus(paymentResource *models.PaymentResourceRest, refundId string) (*models.GetRefundStatusGovPayResponse, ResponseType, error) {
 	request, err := http.NewRequest("GET", paymentResource.MetaData.ExternalPaymentStatusURI+"/refunds/"+refundId, nil)
 	if err != nil {
 		return nil, Error, fmt.Errorf("error generating request for GovPay: [%s]", err)

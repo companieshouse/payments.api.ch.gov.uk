@@ -8,8 +8,24 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 )
 
+// ExternalPaymentProvidersService contains the different external services which can be used to make a payment
+type ExternalPaymentProvidersService struct {
+	GovPayService GovPayService
+	PayPalService PayPalService
+}
+
+// PaymentProviderService is an Interface for all of the requests done to external payment providers
+type PaymentProviderService interface {
+	CheckPaymentProviderStatus(paymentResource *models.PaymentResourceRest) (*models.StatusResponse, ResponseType, error)
+	CreatePaymentAndGenerateNextURL(req *http.Request, paymentResource *models.PaymentResourceRest) (string, ResponseType, error)
+	GetPaymentDetails(paymentResource *models.PaymentResourceRest) (*models.PaymentDetails, ResponseType, error)
+	GetRefundSummary(req *http.Request, id string) (*models.PaymentResourceRest, *models.RefundSummary, ResponseType, error)
+	GetRefundStatus(paymentResource *models.PaymentResourceRest, refundId string) (*models.GetRefundStatusGovPayResponse, ResponseType, error)
+	CreateRefund(paymentResource *models.PaymentResourceRest, refundRequest *models.CreateRefundGovPayRequest) (*models.CreateRefundGovPayResponse, ResponseType, error)
+}
+
 // CreateExternalPaymentJourney creates an external payment session with a Payment Provider that is given, e.g: GovPay
-func (service *PaymentService) CreateExternalPaymentJourney(req *http.Request, paymentSession *models.PaymentResourceRest, paypalService PayPalPaymentProvider) (*models.ExternalPaymentJourney, ResponseType, error) {
+func (service *PaymentService) CreateExternalPaymentJourney(req *http.Request, paymentSession *models.PaymentResourceRest, providersService ExternalPaymentProvidersService) (*models.ExternalPaymentJourney, ResponseType, error) {
 	if paymentSession.Status != InProgress.String() {
 		err := fmt.Errorf("payment session is not in progress")
 		log.ErrorR(req, err)
@@ -29,10 +45,7 @@ func (service *PaymentService) CreateExternalPaymentJourney(req *http.Request, p
 
 	switch paymentSession.PaymentMethod {
 	case "GovPay":
-
-		gp := &GovPayService{PaymentService: *service}
-
-		nextURL, responseType, err = gp.GenerateNextURLGovPay(req, paymentSession)
+		nextURL, responseType, err = providersService.GovPayService.CreatePaymentAndGenerateNextURL(req, paymentSession)
 		if err != nil {
 			err = fmt.Errorf("error communicating with GovPay: [%s]", err)
 			log.ErrorR(req, err)
@@ -45,7 +58,7 @@ func (service *PaymentService) CreateExternalPaymentJourney(req *http.Request, p
 		}
 
 	case "PayPal":
-		nextURL, responseType, err = paypalService.CreatePayPalOrder(paymentSession)
+		nextURL, responseType, err = providersService.PayPalService.CreatePaymentAndGenerateNextURL(req, paymentSession)
 		if err != nil {
 			err = fmt.Errorf("error communicating with PayPal API: [%v]", err)
 			log.ErrorR(req, err)
