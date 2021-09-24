@@ -24,7 +24,7 @@ func (service *PaymentService) CreateExternalPaymentJourney(req *http.Request, p
 	}
 
 	switch paymentSession.PaymentMethod {
-	case "GovPay":
+	case "credit-card":
 		paymentJourney := &models.ExternalPaymentJourney{}
 
 		gp := &GovPayService{PaymentService: *service}

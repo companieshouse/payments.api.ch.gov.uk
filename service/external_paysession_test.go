@@ -55,7 +55,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		}
 
 		paymentSession := models.PaymentResourceRest{
-			PaymentMethod: "GovPay",
+			PaymentMethod: "credit-card",
 			Amount:        "3",
 			Status:        InProgress.String(),
 			Costs:         []models.CostResourceRest{costResource},
@@ -86,7 +86,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		}
 
 		paymentSession := models.PaymentResourceRest{
-			PaymentMethod: "GovPay",
+			PaymentMethod: "credit-card",
 			Amount:        "3",
 			Status:        InProgress.String(),
 			Costs:         []models.CostResourceRest{costResource1, costResource2},
@@ -108,7 +108,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 
 		paymentSession := models.PaymentResourceRest{
-			PaymentMethod: "GovPay",
+			PaymentMethod: "credit-card",
 			Status:        InProgress.String(),
 		}
 
@@ -135,7 +135,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		}
 
 		paymentSession := models.PaymentResourceRest{
-			PaymentMethod: "GovPay",
+			PaymentMethod: "credit-card",
 			Amount:        "3",
 			Status:        InProgress.String(),
 			Costs:         []models.CostResourceRest{costResource},
@@ -170,7 +170,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		}
 
 		paymentSession := models.PaymentResourceRest{
-			PaymentMethod: "GovPay",
+			PaymentMethod: "credit-card",
 			Amount:        "4",
 			Status:        InProgress.String(),
 			Costs:         []models.CostResourceRest{costResource},
@@ -205,7 +205,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		}
 
 		paymentSession := models.PaymentResourceRest{
-			PaymentMethod: "GovPay",
+			PaymentMethod: "credit-card",
 			Amount:        "3",
 			Status:        InProgress.String(),
 			Costs:         []models.CostResourceRest{costResource},
