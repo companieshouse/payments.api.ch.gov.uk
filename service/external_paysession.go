@@ -44,17 +44,8 @@ func (service *PaymentService) CreateExternalPaymentJourney(req *http.Request, p
 	var nextURL string
 
 	switch paymentSession.PaymentMethod {
-<<<<<<< HEAD
-	case "GovPay":
-		nextURL, responseType, err = providersService.GovPayService.CreatePaymentAndGenerateNextURL(req, paymentSession)
-=======
 	case "credit-card":
-		paymentJourney := &models.ExternalPaymentJourney{}
-
-		gp := &GovPayService{PaymentService: *service}
-
-		nextURL, responseType, err := gp.GenerateNextURLGovPay(req, paymentSession)
->>>>>>> 6dbe12d13f034b56f6314dcd385091fef4791749
+		nextURL, responseType, err = providersService.GovPayService.CreatePaymentAndGenerateNextURL(req, paymentSession)
 		if err != nil {
 			err = fmt.Errorf("error communicating with GovPay: [%s]", err)
 			log.ErrorR(req, err)
