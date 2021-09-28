@@ -20,7 +20,7 @@ import (
 
 var defaultCost = models.CostResourceRest{
 	Amount:                  "10",
-	AvailablePaymentMethods: []string{"GovPay"},
+	AvailablePaymentMethods: []string{"credit-card"},
 	ClassOfPayment:          []string{"data-maintenance"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
@@ -176,13 +176,13 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusPreconditionFailed)
 	})
 
-	Convey("Error getting payment status from GovPay", t, func() {
+	Convey("Error getting payment status from credit-card", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		paymentService = createMockPaymentService(mock, cfg)
 		paymentSession := models.PaymentResourceDB{
 			Data: models.PaymentResourceDataDB{
 				Amount:        "10.00",
-				PaymentMethod: "GovPay",
+				PaymentMethod: "credit-card",
 				Links: models.PaymentLinksDB{
 					Resource: "http://dummy-url",
 				},
@@ -209,7 +209,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		paymentSession := models.PaymentResourceDB{
 			Data: models.PaymentResourceDataDB{
 				Amount:        "10.00",
-				PaymentMethod: "GovPay",
+				PaymentMethod: "credit-card",
 				Links: models.PaymentLinksDB{
 					Resource: "http://dummy-url",
 				},
@@ -240,7 +240,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		paymentSession := models.PaymentResourceDB{
 			Data: models.PaymentResourceDataDB{
 				Amount:        "10.00",
-				PaymentMethod: "GovPay",
+				PaymentMethod: "credit-card",
 				Links: models.PaymentLinksDB{
 					Resource: "http://dummy-url",
 				},
@@ -273,7 +273,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		paymentSession := models.PaymentResourceDB{
 			Data: models.PaymentResourceDataDB{
 				Amount:        "10.00",
-				PaymentMethod: "GovPay",
+				PaymentMethod: "credit-card",
 				Links: models.PaymentLinksDB{
 					Resource: "http://dummy-url",
 				},

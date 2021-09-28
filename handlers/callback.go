@@ -67,7 +67,7 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Ensure payment method matches endpoint
-	if paymentSession.PaymentMethod != "GovPay" {
+	if paymentSession.PaymentMethod != "credit-card" {
 		log.ErrorR(req, fmt.Errorf("payment method, [%s], for resource [%s] not recognised", paymentSession.PaymentMethod, id))
 		w.WriteHeader(http.StatusPreconditionFailed)
 		return

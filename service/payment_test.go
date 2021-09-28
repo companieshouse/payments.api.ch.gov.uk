@@ -19,7 +19,7 @@ import (
 
 var defaultCost = models.CostResourceRest{
 	Amount:                  "10",
-	AvailablePaymentMethods: []string{"GovPay"},
+	AvailablePaymentMethods: []string{"credit-card"},
 	ClassOfPayment:          []string{"data-maintenance"},
 	Description:             "desc",
 	DescriptionIdentifier:   "identifier",
@@ -199,7 +199,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(status, ShouldEqual, Success)
 
 		So(paymentResourceRest.Amount, ShouldEqual, "10.00")
-		So(paymentResourceRest.AvailablePaymentMethods, ShouldResemble, []string{"GovPay"})
+		So(paymentResourceRest.AvailablePaymentMethods, ShouldResemble, []string{"credit-card"})
 		So(paymentResourceRest.CompletedAt, ShouldHaveSameTypeAs, time.Now())
 		So(paymentResourceRest.CreatedAt, ShouldHaveSameTypeAs, time.Now())
 		So(paymentResourceRest.CreatedBy, ShouldResemble, models.CreatedByRest{
@@ -257,7 +257,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		So(paymentResourceRest.Amount, ShouldEqual, "20.00")
-		So(paymentResourceRest.AvailablePaymentMethods, ShouldResemble, []string{"GovPay"})
+		So(paymentResourceRest.AvailablePaymentMethods, ShouldResemble, []string{"credit-card"})
 		So(paymentResourceRest.CompletedAt, ShouldHaveSameTypeAs, time.Now())
 		So(paymentResourceRest.CreatedAt, ShouldHaveSameTypeAs, time.Now())
 		So(paymentResourceRest.CreatedBy, ShouldResemble, models.CreatedByRest{
@@ -316,7 +316,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		So(paymentResourceRest.Amount, ShouldEqual, "20.00")
-		So(paymentResourceRest.AvailablePaymentMethods, ShouldResemble, []string{"GovPay"})
+		So(paymentResourceRest.AvailablePaymentMethods, ShouldResemble, []string{"credit-card"})
 		So(paymentResourceRest.CompletedAt, ShouldHaveSameTypeAs, time.Now())
 		So(paymentResourceRest.CreatedAt, ShouldHaveSameTypeAs, time.Now())
 		So(paymentResourceRest.CreatedBy, ShouldResemble, models.CreatedByRest{
@@ -406,7 +406,7 @@ func TestUnitPatchPaymentSession(t *testing.T) {
 		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
 		resource := models.PaymentResourceRest{
-			PaymentMethod: "GovPay",
+			PaymentMethod: "credit-card",
 		}
 
 		responseType, err := mockPaymentService.PatchPaymentSession(req, "1234", resource)
@@ -559,7 +559,7 @@ func TestUnitGetPayment(t *testing.T) {
 			Costs: []models.CostResourceRest{
 				{
 					Amount:                  "10",
-					AvailablePaymentMethods: []string{"GovPay"},
+					AvailablePaymentMethods: []string{"credit-card"},
 					ClassOfPayment:          []string{"data-maintenance"},
 					Description:             "desc",
 					DescriptionIdentifier:   "identifier",
@@ -607,7 +607,7 @@ func TestUnitGetPayment(t *testing.T) {
 			Costs: []models.CostResourceRest{
 				{
 					Amount:                  "10",
-					AvailablePaymentMethods: []string{"GovPay"},
+					AvailablePaymentMethods: []string{"credit-card"},
 					ClassOfPayment:          []string{"data-maintenance"},
 					Description:             "desc",
 					DescriptionIdentifier:   "identifier",
@@ -615,7 +615,7 @@ func TestUnitGetPayment(t *testing.T) {
 				},
 				{
 					Amount:                  "10",
-					AvailablePaymentMethods: []string{"GovPay"},
+					AvailablePaymentMethods: []string{"credit-card"},
 					ClassOfPayment:          []string{"data-maintenance"},
 					Description:             "desc",
 					DescriptionIdentifier:   "identifier",
