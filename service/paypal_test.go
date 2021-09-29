@@ -72,70 +72,74 @@ func TestUnitCreateOrder(t *testing.T) {
 		So(resType, ShouldEqual, Error)
 		So(err.Error(), ShouldContainSubstring, "error creating order: [error]")
 	})
-	//
-	//	Convey("Order status is not created - unsuccessful", t, func() {
-	//		costResource := models.CostResourceRest{
-	//			ClassOfPayment: []string{"penalty"},
-	//		}
-	//
-	//		paymentSession := models.PaymentResourceRest{
-	//			PaymentMethod: "PayPal",
-	//			Amount:        "3",
-	//			Status:        InProgress.String(),
-	//			Costs:         []models.CostResourceRest{costResource},
-	//		}
-	//
-	//		order := paypal.Order{
-	//			ID:     "123",
-	//			Status: paypal.OrderStatusVoided,
-	//		}
-	//
-	//		mockPayPalSDK.EXPECT().CreateOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&order, nil)
-	//
-	//		url, resType, err := mockPaypalService.CreatePayPalOrder(&paymentSession)
-	//
-	//		So(url, ShouldBeEmpty)
-	//		So(resType, ShouldEqual, Error)
-	//		So(err.Error(), ShouldContainSubstring, "failed to correctly create paypal order")
-	//	})
-	//
-	//	Convey("Successfully create paypal order", t, func() {
-	//		costResource := models.CostResourceRest{
-	//			ClassOfPayment: []string{"penalty"},
-	//		}
-	//
-	//		paymentSession := models.PaymentResourceRest{
-	//			PaymentMethod: "PayPal",
-	//			Amount:        "3",
-	//			Status:        InProgress.String(),
-	//			Costs:         []models.CostResourceRest{costResource},
-	//		}
-	//
-	//		order := paypal.Order{
-	//			ID:            "123",
-	//			Status:        paypal.OrderStatusCreated,
-	//			Intent:        "",
-	//			Payer:         nil,
-	//			PurchaseUnits: nil,
-	//			Links: []paypal.Link{
-	//				{
-	//					Href:        "return_url",
-	//					Rel:         "approve",
-	//					Method:      "GET",
-	//					Description: "Approve an order",
-	//					Enctype:     "1",
-	//				},
-	//			},
-	//			CreateTime: nil,
-	//			UpdateTime: nil,
-	//		}
-	//
-	//		mockPayPalSDK.EXPECT().CreateOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&order, nil)
-	//
-	//		url, resType, err := mockPaypalService.CreatePayPalOrder(&paymentSession)
-	//
-	//		So(url, ShouldEqual, "return_url")
-	//		So(resType, ShouldEqual, Success)
-	//		So(err, ShouldBeNil)
-	//	})
+
+	Convey("Order status is not created - unsuccessful", t, func() {
+		req := httptest.NewRequest("", "/test", nil)
+
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
+		paymentSession := models.PaymentResourceRest{
+			PaymentMethod: "PayPal",
+			Amount:        "3",
+			Status:        InProgress.String(),
+			Costs:         []models.CostResourceRest{costResource},
+		}
+
+		order := paypal.Order{
+			ID:     "123",
+			Status: paypal.OrderStatusVoided,
+		}
+
+		mockPayPalSDK.EXPECT().CreateOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&order, nil)
+
+		url, resType, err := mockPayPalService.CreatePaymentAndGenerateNextURL(req, &paymentSession)
+
+		So(url, ShouldBeEmpty)
+		So(resType, ShouldEqual, Error)
+		So(err.Error(), ShouldContainSubstring, "failed to correctly create paypal order")
+	})
+
+	Convey("Successfully create paypal order", t, func() {
+		req := httptest.NewRequest("", "/test", nil)
+
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
+		paymentSession := models.PaymentResourceRest{
+			PaymentMethod: "PayPal",
+			Amount:        "3",
+			Status:        InProgress.String(),
+			Costs:         []models.CostResourceRest{costResource},
+		}
+
+		order := paypal.Order{
+			ID:            "123",
+			Status:        paypal.OrderStatusCreated,
+			Intent:        "",
+			Payer:         nil,
+			PurchaseUnits: nil,
+			Links: []paypal.Link{
+				{
+					Href:        "return_url",
+					Rel:         "approve",
+					Method:      "GET",
+					Description: "Approve an order",
+					Enctype:     "1",
+				},
+			},
+			CreateTime: nil,
+			UpdateTime: nil,
+		}
+
+		mockPayPalSDK.EXPECT().CreateOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&order, nil)
+
+		url, resType, err := mockPayPalService.CreatePaymentAndGenerateNextURL(req, &paymentSession)
+
+		So(url, ShouldEqual, "return_url")
+		So(resType, ShouldEqual, Success)
+		So(err, ShouldBeNil)
+	})
 }

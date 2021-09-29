@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
-
-	"github.com/companieshouse/chs.go/log"
 	"github.com/plutov/paypal/v4"
 )
 
@@ -49,7 +48,7 @@ type PayPalService struct {
 	PaymentService PaymentService
 }
 
-// CheckProvider checks the status of the payment with PayPal
+// CheckPaymentProviderStatus checks the status of the payment with PayPal
 func (pp *PayPalService) CheckPaymentProviderStatus(_ *models.PaymentResourceRest) (*models.StatusResponse, ResponseType, error) {
 
 	//TODO: Check the payment status with PayPal
