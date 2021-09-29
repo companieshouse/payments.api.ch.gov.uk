@@ -17,6 +17,7 @@ import (
 
 var paymentService *service.PaymentService
 var refundService *service.RefundService
+var externalPaymentService *service.ExternalPaymentProvidersService
 
 // Register defines the route mappings for the main router and it's subrouters
 func Register(mainRouter *mux.Router, cfg config.Config) {
@@ -38,6 +39,20 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	}
 
 	govPayService := &service.GovPayService{PaymentService: *paymentService}
+
+	payPalClient, err := service.GetPayPalClient(cfg)
+	if err != nil {
+		err = errors.New("error creating PayPal client")
+		log.Error(err)
+		os.Exit(1)
+	}
+
+	payPalService := &service.PayPalService{Client: payPalClient, PaymentService: *paymentService}
+
+	externalPaymentService = &service.ExternalPaymentProvidersService{
+		GovPayService: *govPayService,
+		PayPalService: *payPalService,
+	}
 
 	refundService = &service.RefundService{
 		GovPayService:  govPayService,
@@ -80,7 +95,7 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	privatePatchRouter.HandleFunc("", HandlePatchPaymentSession).Methods("PATCH").Name("patch-payment")
 
 	privateJourneyRouter := mainRouter.PathPrefix("/private/payments/{payment_id}/external-journey").Subrouter()
-	privateJourneyRouter.HandleFunc("", HandleCreateExternalPaymentJourney).Methods("POST").Name("create-external-payment-journey")
+	privateJourneyRouter.Handle("", HandleCreateExternalPaymentJourney(externalPaymentService)).Methods("POST").Name("create-external-payment-journey")
 
 	// callback endpoints should not be intercepted by the paymentauth or userauth interceptors, so needs to be it's own subrouter
 	callbackRouter := mainRouter.PathPrefix("/callback").Subrouter()

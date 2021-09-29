@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/companieshouse/chs.go/log"
-
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/handlers"
 	"github.com/gorilla/mux"

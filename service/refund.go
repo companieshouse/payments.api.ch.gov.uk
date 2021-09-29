@@ -3,13 +3,14 @@ package service
 import (
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/mappers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/transformers"
-	"net/http"
 )
 
 const (
@@ -33,7 +34,7 @@ type RefundService struct {
 func (service *RefundService) CreateRefund(req *http.Request, id string, createRefundResource models.CreateRefundRequest) (*models.PaymentResourceRest, *models.RefundResponse, ResponseType, error) {
 
 	// Get RefundSummary from GovPay to check the available amount
-	paymentSession, refundSummary, response, err := service.GovPayService.GetGovPayRefundSummary(req, id)
+	paymentSession, refundSummary, response, err := service.GovPayService.GetRefundSummary(req, id)
 	if err != nil {
 		err = fmt.Errorf("error getting refund summary from govpay: [%v]", err)
 		log.ErrorR(req, err)
@@ -98,7 +99,7 @@ func (service *RefundService) UpdateRefund(req *http.Request, paymentId string, 
 		return nil, NotFound, err
 	}
 	// Get RefundStatus from GovPay to check the status of the refund
-	govPayStatusResponse, response, err := service.GovPayService.GetGovPayRefundStatus(paymentSession, refundId)
+	govPayStatusResponse, response, err := service.GovPayService.GetRefundStatus(paymentSession, refundId)
 	if err != nil {
 		err = fmt.Errorf("error getting refund status from govpay: [%v]", err)
 		log.ErrorR(req, err)

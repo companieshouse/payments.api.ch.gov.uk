@@ -16,7 +16,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func createMockGovPayService(service *PaymentService) GovPayService {
+func CreateMockGovPayService(service *PaymentService) GovPayService {
 	return GovPayService{
 		PaymentService: *service,
 	}
@@ -26,11 +26,11 @@ func TestUnitCheckProvider(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
+	mock := dao.NewMockDAO(mockCtrl)
+	mockPaymentService := createMockPaymentService(mock, cfg)
+	mockGovPayService := CreateMockGovPayService(&mockPaymentService)
 
 	Convey("Error getting state of GovPay payment", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
@@ -47,16 +47,13 @@ func TestUnitCheckProvider(t *testing.T) {
 			Costs: []models.CostResourceRest{costResource},
 		}
 
-		statusResponse, responseType, err := mockGovPayService.CheckProvider(&paymentResourceRest)
+		statusResponse, responseType, err := mockGovPayService.CheckPaymentProviderStatus(&paymentResourceRest)
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(statusResponse, ShouldBeNil)
-		So(err.Error(), ShouldEqual, "error getting state of GovPay payment: [error sending request to GovPay: [Get external_uri: error]]")
+		So(err.Error(), ShouldEqual, "error getting state of GovPay payment: [error sending request to GovPay: [Get \"external_uri\": error]]")
 	})
 
 	Convey("Status - success", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
@@ -76,16 +73,13 @@ func TestUnitCheckProvider(t *testing.T) {
 			Costs: []models.CostResourceRest{costResource},
 		}
 
-		statusResponse, responseType, err := mockGovPayService.CheckProvider(&paymentResourceRest)
+		statusResponse, responseType, err := mockGovPayService.CheckPaymentProviderStatus(&paymentResourceRest)
 		So(responseType.String(), ShouldEqual, Success.String())
 		So(statusResponse.Status, ShouldEqual, "paid")
 		So(err, ShouldBeNil)
 	})
 
 	Convey("Status - failure", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
@@ -105,16 +99,13 @@ func TestUnitCheckProvider(t *testing.T) {
 			Costs: []models.CostResourceRest{costResource},
 		}
 
-		statusResponse, responseType, err := mockGovPayService.CheckProvider(&paymentResourceRest)
+		statusResponse, responseType, err := mockGovPayService.CheckPaymentProviderStatus(&paymentResourceRest)
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(statusResponse.Status, ShouldEqual, "failed")
 		So(err, ShouldBeNil)
 	})
 
 	Convey("Status - cancelled", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
@@ -134,7 +125,7 @@ func TestUnitCheckProvider(t *testing.T) {
 			Costs: []models.CostResourceRest{costResource},
 		}
 
-		statusResponse, responseType, err := mockGovPayService.CheckProvider(&paymentResourceRest)
+		statusResponse, responseType, err := mockGovPayService.CheckPaymentProviderStatus(&paymentResourceRest)
 		So(responseType.String(), ShouldEqual, Success.String())
 		So(statusResponse.Status, ShouldEqual, "cancelled")
 		So(err, ShouldBeNil)
@@ -146,11 +137,11 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
 	cfg.GovPayURL = "http://dummy-govpay-url"
+	mock := dao.NewMockDAO(mockCtrl)
+	mockPaymentService := createMockPaymentService(mock, cfg)
+	mockGovPayService := CreateMockGovPayService(&mockPaymentService)
 
 	Convey("Error converting amount to pence", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
@@ -169,7 +160,7 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		}
 
 		req := httptest.NewRequest("", "/test", nil)
-		govPayResponse, responseType, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
+		govPayResponse, responseType, err := mockGovPayService.CreatePaymentAndGenerateNextURL(req, &paymentResource)
 
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(govPayResponse, ShouldEqual, "")
@@ -177,9 +168,6 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 	})
 
 	Convey("Invalid class of payment", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
@@ -203,7 +191,7 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		}
 
 		req := httptest.NewRequest("", "/test", nil)
-		govPayResponse, responseType, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
+		govPayResponse, responseType, err := mockGovPayService.CreatePaymentAndGenerateNextURL(req, &paymentResource)
 
 		So(govPayResponse, ShouldEqual, "")
 		So(responseType.String(), ShouldEqual, InvalidData.String())
@@ -211,9 +199,6 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 	})
 
 	Convey("Error sending request to GovPay", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
@@ -229,7 +214,7 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		}
 
 		req := httptest.NewRequest("", "/test", nil)
-		govPayResponse, responseType, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
+		govPayResponse, responseType, err := mockGovPayService.CreatePaymentAndGenerateNextURL(req, &paymentResource)
 
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(govPayResponse, ShouldEqual, "")
@@ -237,9 +222,6 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 	})
 
 	Convey("Error reading response from GovPay", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
@@ -257,7 +239,7 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		}
 
 		req := httptest.NewRequest("", "/test", nil)
-		govPayResponse, responseType, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
+		govPayResponse, responseType, err := mockGovPayService.CreatePaymentAndGenerateNextURL(req, &paymentResource)
 
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(govPayResponse, ShouldEqual, "")
@@ -265,9 +247,6 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 	})
 
 	Convey("Status code not 201", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
@@ -286,7 +265,7 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		}
 
 		req := httptest.NewRequest("", "/test", nil)
-		govPayResponse, responseType, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
+		govPayResponse, responseType, err := mockGovPayService.CreatePaymentAndGenerateNextURL(req, &paymentResource)
 
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(govPayResponse, ShouldEqual, "")
@@ -294,9 +273,6 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 	})
 
 	Convey("Error storing ExternalPaymentStatusURI", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 
 		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(errors.New("error"))
 
@@ -322,15 +298,12 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		}
 
 		req := httptest.NewRequest("", "/test", nil)
-		_, _, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
+		_, _, err := mockGovPayService.CreatePaymentAndGenerateNextURL(req, &paymentResource)
 
 		So(err.Error(), ShouldEqual, "error storing ExternalPaymentStatusURI for payment session: [error storing ExternalPaymentStatusURI on payment session: [error]]")
 	})
 
 	Convey("Valid request to GovPay and returned NextURL for penalty", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 
 		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
 
@@ -356,7 +329,7 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		}
 
 		req := httptest.NewRequest("", "/test", nil)
-		govPayResponse, responseType, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
+		govPayResponse, responseType, err := mockGovPayService.CreatePaymentAndGenerateNextURL(req, &paymentResource)
 
 		So(responseType.String(), ShouldEqual, Success.String())
 		So(govPayResponse, ShouldEqual, journeyURL)
@@ -364,9 +337,6 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 	})
 
 	Convey("Valid request to GovPay and returned NextURL for orderable-item", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 
 		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
 
@@ -392,7 +362,7 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		}
 
 		req := httptest.NewRequest("", "/test", nil)
-		govPayResponse, responseType, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
+		govPayResponse, responseType, err := mockGovPayService.CreatePaymentAndGenerateNextURL(req, &paymentResource)
 
 		So(responseType.String(), ShouldEqual, Success.String())
 		So(govPayResponse, ShouldEqual, journeyURL)
@@ -400,9 +370,6 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 	})
 
 	Convey("Valid request to GovPay and returned NextURL for data maintenance", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 
 		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
 
@@ -428,7 +395,7 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		}
 
 		req := httptest.NewRequest("", "/test", nil)
-		govPayResponse, responseType, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
+		govPayResponse, responseType, err := mockGovPayService.CreatePaymentAndGenerateNextURL(req, &paymentResource)
 
 		So(responseType.String(), ShouldEqual, Success.String())
 		So(govPayResponse, ShouldEqual, journeyURL)
@@ -436,9 +403,6 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 	})
 
 	Convey("Valid request to GovPay and returned NextURL for legacy service", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 
 		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
 
@@ -464,7 +428,7 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		}
 
 		req := httptest.NewRequest("", "/test", nil)
-		govPayResponse, responseType, err := mockGovPayService.GenerateNextURLGovPay(req, &paymentResource)
+		govPayResponse, responseType, err := mockGovPayService.CreatePaymentAndGenerateNextURL(req, &paymentResource)
 
 		So(responseType.String(), ShouldEqual, Success.String())
 		So(govPayResponse, ShouldEqual, journeyURL)
@@ -474,15 +438,14 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 }
 
 func TestUnitGetGovPayPaymentState(t *testing.T) {
-
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
+	mock := dao.NewMockDAO(mockCtrl)
+	mockPaymentService := createMockPaymentService(mock, cfg)
+	mockGovPayService := CreateMockGovPayService(&mockPaymentService)
 
 	Convey("Error sending request to GOV.UK Pay", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
@@ -502,13 +465,10 @@ func TestUnitGetGovPayPaymentState(t *testing.T) {
 		govPayResponse, responseType, err := mockGovPayService.getGovPayPaymentState(&paymentResourceRest, cfg)
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(govPayResponse, ShouldBeNil)
-		So(err.Error(), ShouldEqual, "error sending request to GovPay: [Get external_uri: error]")
+		So(err.Error(), ShouldEqual, "error sending request to GovPay: [Get \"external_uri\": error]")
 	})
 
 	Convey("Valid GET request to GovPay and return status", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
@@ -537,15 +497,14 @@ func TestUnitGetGovPayPaymentState(t *testing.T) {
 }
 
 func TestUnitGetGovPayPaymentDetails(t *testing.T) {
-
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
+	mock := dao.NewMockDAO(mockCtrl)
+	mockPaymentService := createMockPaymentService(mock, cfg)
+	mockGovPayService := CreateMockGovPayService(&mockPaymentService)
 
 	Convey("Error sending request to GOV.UK Pay", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
@@ -562,16 +521,13 @@ func TestUnitGetGovPayPaymentDetails(t *testing.T) {
 			},
 			Costs: []models.CostResourceRest{costResource},
 		}
-		govPayResponse, responseType, err := mockGovPayService.GetGovPayPaymentDetails(&paymentResourceRest)
+		govPayResponse, responseType, err := mockGovPayService.GetPaymentDetails(&paymentResourceRest)
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(govPayResponse, ShouldBeNil)
-		So(err.Error(), ShouldEqual, "error sending request to GovPay: [Get external_uri: error]")
+		So(err.Error(), ShouldEqual, "error sending request to GovPay: [Get \"external_uri\": error]")
 	})
 
 	Convey("Valid GET request to GovPay and return payment details", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
@@ -591,7 +547,7 @@ func TestUnitGetGovPayPaymentDetails(t *testing.T) {
 			},
 			Costs: []models.CostResourceRest{costResource},
 		}
-		govPayResponse, responseType, err := mockGovPayService.GetGovPayPaymentDetails(&paymentResource)
+		govPayResponse, responseType, err := mockGovPayService.GetPaymentDetails(&paymentResource)
 
 		So(responseType.String(), ShouldEqual, Success.String())
 		So(govPayResponse, ShouldResemble, &govPayPaymentDetails)
@@ -601,21 +557,20 @@ func TestUnitGetGovPayPaymentDetails(t *testing.T) {
 }
 
 func TestUnitGetGovPayRefundSummary(t *testing.T) {
-
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
+	mock := dao.NewMockDAO(mockCtrl)
+	mockPaymentService := createMockPaymentService(mock, cfg)
+	mockGovPayService := CreateMockGovPayService(&mockPaymentService)
 
 	Convey("Error getting payment resource from db", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 		req := httptest.NewRequest("", "/test", nil)
 		id := "123"
 
 		mock.EXPECT().GetPaymentResource(id).Return(&models.PaymentResourceDB{}, fmt.Errorf("error"))
 
-		paymentResource, refundSummary, responseType, err := mockGovPayService.GetGovPayRefundSummary(req, id)
+		paymentResource, refundSummary, responseType, err := mockGovPayService.GetRefundSummary(req, id)
 
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(paymentResource, ShouldBeNil)
@@ -624,15 +579,12 @@ func TestUnitGetGovPayRefundSummary(t *testing.T) {
 	})
 
 	Convey("Payment resource not found in db", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 		req := httptest.NewRequest("", "/test", nil)
 		id := "123"
 
 		mock.EXPECT().GetPaymentResource(id).Return(nil, nil)
 
-		paymentResource, refundSummary, responseType, err := mockGovPayService.GetGovPayRefundSummary(req, id)
+		paymentResource, refundSummary, responseType, err := mockGovPayService.GetRefundSummary(req, id)
 
 		So(responseType.String(), ShouldEqual, NotFound.String())
 		So(paymentResource, ShouldBeNil)
@@ -641,9 +593,6 @@ func TestUnitGetGovPayRefundSummary(t *testing.T) {
 	})
 
 	Convey("Error sending request to GovPay", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 		req := httptest.NewRequest("", "/test", nil)
 		id := "123"
 
@@ -658,18 +607,15 @@ func TestUnitGetGovPayRefundSummary(t *testing.T) {
 		govPayResponse := httpmock.NewErrorResponder(errors.New("error"))
 		httpmock.RegisterResponder("GET", "http://external_uri", govPayResponse)
 
-		paymentResource, refundSummary, responseType, err := mockGovPayService.GetGovPayRefundSummary(req, id)
+		paymentResource, refundSummary, responseType, err := mockGovPayService.GetRefundSummary(req, id)
 
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(paymentResource, ShouldBeNil)
 		So(refundSummary, ShouldBeNil)
-		So(err.Error(), ShouldEqual, "error getting payment information from gov pay: [error sending request to GovPay: [Get http://external_uri: error]]")
+		So(err.Error(), ShouldEqual, "error getting payment information from gov pay: [error sending request to GovPay: [Get \"http://external_uri\": error]]")
 	})
 
 	Convey("Refund failed - unavailable", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 		req := httptest.NewRequest("", "/test", nil)
 		id := "123"
 
@@ -691,7 +637,7 @@ func TestUnitGetGovPayRefundSummary(t *testing.T) {
 		govPayResponse, _ := httpmock.NewJsonResponder(http.StatusOK, incomingGovPayResponse)
 		httpmock.RegisterResponder("GET", "http://external_uri", govPayResponse)
 
-		paymentResource, refundSummary, responseType, err := mockGovPayService.GetGovPayRefundSummary(req, id)
+		paymentResource, refundSummary, responseType, err := mockGovPayService.GetRefundSummary(req, id)
 
 		So(responseType.String(), ShouldEqual, InvalidData.String())
 		So(paymentResource, ShouldBeNil)
@@ -700,9 +646,6 @@ func TestUnitGetGovPayRefundSummary(t *testing.T) {
 	})
 
 	Convey("Refund failed - full", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 		req := httptest.NewRequest("", "/test", nil)
 		id := "123"
 
@@ -724,7 +667,7 @@ func TestUnitGetGovPayRefundSummary(t *testing.T) {
 		govPayResponse, _ := httpmock.NewJsonResponder(http.StatusOK, incomingGovPayResponse)
 		httpmock.RegisterResponder("GET", "http://external_uri", govPayResponse)
 
-		paymentResource, refundSummary, responseType, err := mockGovPayService.GetGovPayRefundSummary(req, id)
+		paymentResource, refundSummary, responseType, err := mockGovPayService.GetRefundSummary(req, id)
 
 		So(responseType.String(), ShouldEqual, InvalidData.String())
 		So(paymentResource, ShouldBeNil)
@@ -733,9 +676,6 @@ func TestUnitGetGovPayRefundSummary(t *testing.T) {
 	})
 
 	Convey("Refund failed - pending", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 		req := httptest.NewRequest("", "/test", nil)
 		id := "123"
 
@@ -757,7 +697,7 @@ func TestUnitGetGovPayRefundSummary(t *testing.T) {
 		govPayResponse, _ := httpmock.NewJsonResponder(http.StatusOK, incomingGovPayResponse)
 		httpmock.RegisterResponder("GET", "http://external_uri", govPayResponse)
 
-		paymentResource, refundSummary, responseType, err := mockGovPayService.GetGovPayRefundSummary(req, id)
+		paymentResource, refundSummary, responseType, err := mockGovPayService.GetRefundSummary(req, id)
 
 		So(responseType.String(), ShouldEqual, InvalidData.String())
 		So(paymentResource, ShouldBeNil)
@@ -766,9 +706,6 @@ func TestUnitGetGovPayRefundSummary(t *testing.T) {
 	})
 
 	Convey("Refund information successfully returned", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 		req := httptest.NewRequest("", "/test", nil)
 		id := "123"
 
@@ -790,7 +727,7 @@ func TestUnitGetGovPayRefundSummary(t *testing.T) {
 		govPayResponse, _ := httpmock.NewJsonResponder(http.StatusOK, incomingGovPayResponse)
 		httpmock.RegisterResponder("GET", "http://external_uri", govPayResponse)
 
-		paymentResource, refundSummary, responseType, err := mockGovPayService.GetGovPayRefundSummary(req, id)
+		paymentResource, refundSummary, responseType, err := mockGovPayService.GetRefundSummary(req, id)
 
 		So(responseType.String(), ShouldEqual, Success.String())
 		So(paymentResource, ShouldNotBeNil)
@@ -801,9 +738,6 @@ func TestUnitGetGovPayRefundSummary(t *testing.T) {
 	})
 
 	Convey("Refund information has no status", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 		req := httptest.NewRequest("", "/test", nil)
 		id := "123"
 
@@ -825,7 +759,7 @@ func TestUnitGetGovPayRefundSummary(t *testing.T) {
 		govPayResponse, _ := httpmock.NewJsonResponder(http.StatusOK, incomingGovPayResponse)
 		httpmock.RegisterResponder("GET", "http://external_uri", govPayResponse)
 
-		paymentResource, refundSummary, responseType, err := mockGovPayService.GetGovPayRefundSummary(req, id)
+		paymentResource, refundSummary, responseType, err := mockGovPayService.GetRefundSummary(req, id)
 
 		So(responseType.String(), ShouldEqual, NotFound.String())
 		So(paymentResource, ShouldBeNil)
@@ -839,11 +773,11 @@ func TestUnitGovPayCreateRefund(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
+	mock := dao.NewMockDAO(mockCtrl)
+	mockPaymentService := createMockPaymentService(mock, cfg)
+	mockGovPayService := CreateMockGovPayService(&mockPaymentService)
 
 	Convey("Invalid class of payment", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 		refundRequest := fixtures.GetCreateRefundGovPayRequest(800, 800)
 
 		costResource := models.CostResourceRest{
@@ -872,9 +806,6 @@ func TestUnitGovPayCreateRefund(t *testing.T) {
 	})
 
 	Convey("Error sending request to GovPay", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 		refundRequest := fixtures.GetCreateRefundGovPayRequest(800, 800)
 
 		costResource := models.CostResourceRest{
@@ -899,13 +830,10 @@ func TestUnitGovPayCreateRefund(t *testing.T) {
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(paymentResource, ShouldNotBeNil)
 		So(govPayRefundResponse, ShouldBeNil)
-		So(err.Error(), ShouldEqual, "error sending request to GovPay to create a refund: [Post http://external_uri/refunds: error]")
+		So(err.Error(), ShouldEqual, "error sending request to GovPay to create a refund: [Post \"http://external_uri/refunds\": error]")
 	})
 
 	Convey("Successful request to GovPay", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 		refundRequest := fixtures.GetCreateRefundGovPayRequest(800, 800)
 
 		costResource := models.CostResourceRest{
@@ -941,11 +869,11 @@ func TestUnitGetGovPayRefundStatus(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
+	mock := dao.NewMockDAO(mockCtrl)
+	mockPaymentService := createMockPaymentService(mock, cfg)
+	mockGovPayService := CreateMockGovPayService(&mockPaymentService)
 
 	Convey("Error adding GovPay headers", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 		refundId := "321"
 		costResource := models.CostResourceRest{
 			ClassOfPayment: []string{"invalid"},
@@ -964,7 +892,7 @@ func TestUnitGetGovPayRefundStatus(t *testing.T) {
 
 		httpmock.RegisterResponder("GET", "http://external_uri/refunds/321", httpmock.NewErrorResponder(fmt.Errorf("error")))
 
-		govPayStatusResponse, responseType, err := mockGovPayService.GetGovPayRefundStatus(paymentResource, refundId)
+		govPayStatusResponse, responseType, err := mockGovPayService.GetRefundStatus(paymentResource, refundId)
 
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(paymentResource, ShouldNotBeNil)
@@ -973,9 +901,6 @@ func TestUnitGetGovPayRefundStatus(t *testing.T) {
 	})
 
 	Convey("Error sending request to GovPay", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 		refundId := "321"
 		costResource := models.CostResourceRest{
 			ClassOfPayment: []string{"penalty"},
@@ -994,18 +919,15 @@ func TestUnitGetGovPayRefundStatus(t *testing.T) {
 
 		httpmock.RegisterResponder("GET", "http://external_uri/refunds/321", httpmock.NewErrorResponder(fmt.Errorf("error")))
 
-		govPayStatusResponse, responseType, err := mockGovPayService.GetGovPayRefundStatus(paymentResource, refundId)
+		govPayStatusResponse, responseType, err := mockGovPayService.GetRefundStatus(paymentResource, refundId)
 
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(paymentResource, ShouldNotBeNil)
 		So(govPayStatusResponse, ShouldBeNil)
-		So(err.Error(), ShouldEqual, "error sending request to GovPay to get status of a refund: [Get http://external_uri/refunds/321: error]")
+		So(err.Error(), ShouldEqual, "error sending request to GovPay to get status of a refund: [Get \"http://external_uri/refunds/321\": error]")
 	})
 
 	Convey("Successful request to GovPay", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
 		refundID := "321"
 		costResource := models.CostResourceRest{
 			ClassOfPayment: []string{"penalty"},
@@ -1026,7 +948,7 @@ func TestUnitGetGovPayRefundStatus(t *testing.T) {
 
 		httpmock.RegisterResponder("GET", "http://external_uri/refunds/321", jsonResponse)
 
-		govPayStatusResponse, responseType, err := mockGovPayService.GetGovPayRefundStatus(paymentResource, refundID)
+		govPayStatusResponse, responseType, err := mockGovPayService.GetRefundStatus(paymentResource, refundID)
 
 		So(responseType.String(), ShouldEqual, Success.String())
 		So(govPayStatusResponse.Status, ShouldEqual, gpResponse.Status)
@@ -1067,7 +989,7 @@ func TestUnitCallToGovPay(t *testing.T) {
 		}
 		response, err := callGovPay(nil, resource)
 		So(response, ShouldBeNil)
-		So(err.Error(), ShouldEqual, "error generating request for GovPay: [parse \n: net/url: invalid control character in URL]")
+		So(err.Error(), ShouldEqual, "error generating request for GovPay: [parse "+`"\n"`+": net/url: invalid control character in URL]")
 	})
 
 	Convey("Error adding GovPay headers", t, func() {
@@ -1082,7 +1004,7 @@ func TestUnitCallToGovPay(t *testing.T) {
 
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
+		mockGovPayService := CreateMockGovPayService(&mockPaymentService)
 
 		response, err := callGovPay(&mockGovPayService, resource)
 		So(response, ShouldBeNil)
@@ -1108,7 +1030,7 @@ func TestUnitCallToGovPay(t *testing.T) {
 
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := createMockGovPayService(&mockPaymentService)
+		mockGovPayService := CreateMockGovPayService(&mockPaymentService)
 		mockGovPayService.PaymentService.Config.GovPayBearerTokenLegacy = "legacy"
 
 		response, err := callGovPay(&mockGovPayService, resource)

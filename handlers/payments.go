@@ -179,7 +179,7 @@ func HandleGetPaymentDetails(w http.ResponseWriter, req *http.Request) {
 		PaymentService: *paymentService,
 	}
 
-	statusResponse, responseType, err := gp.GetGovPayPaymentDetails(paymentSession)
+	statusResponse, responseType, err := gp.GetPaymentDetails(paymentSession)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error getting payment status from govpay: [%v]", err), log.Data{"service_response_type": responseType.String()})
 		switch responseType {

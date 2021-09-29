@@ -30,6 +30,7 @@ type PaymentService struct {
 	DAO              dao.DAO
 	Config           config.Config
 	SecureCostsRegex *regexp.Regexp
+	Client           PayPalSDK
 }
 
 // PaymentStatus Enum Type
