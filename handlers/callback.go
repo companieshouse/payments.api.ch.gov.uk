@@ -197,8 +197,52 @@ func HandlePayPalCallback(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	pp.CapturePayment(orderID)
+	response, err := pp.CapturePayment(orderID)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error capturing payment: %v", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	captureStatus := response.PurchaseUnits[0].Payments.Captures[0].Status
+	if strings.ToLower(captureStatus) != "completed" {
+		log.ErrorR(req, fmt.Errorf("error - paypal payment status not completed, status is: [%s]", captureStatus))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	// TODO handle unsuccessful capture statuses
 
+	// Set the status of the payment
+	paymentSession.Status = captureStatus
 	// To match the format time is saved to mongo, e.g. "2018-11-22T08:39:16.782Z", truncate the time
 	paymentSession.CompletedAt = time.Now().Truncate(time.Millisecond)
+
+	responseType, err := paymentService.PatchPaymentSession(req, paymentID, *paymentSession)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error setting payment status: [%v]", err), log.Data{"service_response_type": responseType.String()})
+		switch responseType {
+		case service.Error:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Prepare parameters needed for redirecting
+	params := models.RedirectParams{
+		State:  paymentSession.MetaData.State,
+		Ref:    paymentSession.Reference,
+		Status: paymentSession.Status,
+	}
+
+	log.InfoR(req, "Successfully Closed payment session", log.Data{"payment_id": paymentID, "status": paymentSession.Status})
+
+	err = handlePaymentMessage(paymentSession.MetaData.ID)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error producing payment kafka message: [%v]", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	redirectUser(w, req, paymentSession.MetaData.RedirectURI, params)
 }

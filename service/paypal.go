@@ -149,9 +149,6 @@ func (pp *PayPalService) CapturePayment(orderId string) (*paypal.CaptureOrderRes
 		orderId,
 		paypal.CaptureOrderRequest{},
 	)
-	if err != nil {
-		log.Error(fmt.Errorf("error capturing paypal payment: [%v]", err))
-	}
 	return res, err
 }
 
