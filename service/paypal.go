@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
@@ -31,7 +32,6 @@ func GetPayPalClient(cfg config.Config) (*paypal.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error getting access token: [%v]", err)
 	}
-
 	return c, nil
 }
 
@@ -40,6 +40,8 @@ func GetPayPalClient(cfg config.Config) (*paypal.Client, error) {
 type PayPalSDK interface {
 	GetAccessToken(ctx context.Context) (*paypal.TokenResponse, error)
 	CreateOrder(ctx context.Context, intent string, purchaseUnits []paypal.PurchaseUnitRequest, payer *paypal.CreateOrderPayer, appContext *paypal.ApplicationContext) (*paypal.Order, error)
+	GetOrder(ctx context.Context, orderID string) (*paypal.Order, error)
+	CaptureOrder(ctx context.Context, orderID string, captureOrderRequest paypal.CaptureOrderRequest) (*paypal.CaptureOrderResponse, error)
 }
 
 // PayPalService handles the specific functionality of integrating PayPal into Payment Sessions
@@ -61,11 +63,15 @@ func (pp *PayPalService) CreatePaymentAndGenerateNextURL(req *http.Request, paym
 
 	log.TraceR(req, "performing PayPal request", log.Data{"company_number": paymentResource.CompanyNumber})
 
+	selfLink := paymentResource.Links.Self
+	id := strings.Split(selfLink, "/")[1] //TODO: Find better way to this
+
 	order, err := pp.Client.CreateOrder(
 		context.Background(),
 		paypal.OrderIntentCapture,
 		[]paypal.PurchaseUnitRequest{
 			{
+				ReferenceID: id,
 				Amount: &paypal.PurchaseUnitAmount{
 					Value:    paymentResource.Amount,
 					Currency: "GBP",
@@ -127,6 +133,18 @@ func (pp *PayPalService) GetRefundStatus(_ *models.PaymentResourceRest, _ string
 	//TODO: Get refund status
 
 	return nil, Success, nil
+}
+
+func (pp *PayPalService) CapturePayment(orderId string) (*paypal.CaptureOrderResponse, error) {
+	res, err := pp.Client.CaptureOrder(
+		context.Background(),
+		orderId,
+		paypal.CaptureOrderRequest{},
+	)
+	if err != nil {
+		log.Error(fmt.Errorf("error capturing paypal payment: [%v]", err))
+	}
+	return res, err
 }
 
 func getPayPalAPIBase(env string) string {
