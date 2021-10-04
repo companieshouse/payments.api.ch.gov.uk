@@ -103,6 +103,14 @@ func (pp *PayPalService) CreatePaymentAndGenerateNextURL(req *http.Request, paym
 	return nextURL, Success, nil
 }
 
+func (pp *PayPalService) GetOrderDetails(id string) (*paypal.Order, error) {
+	res, err := pp.Client.GetOrder(
+		context.Background(),
+		id,
+	)
+	return res, err
+}
+
 // GetPaymentDetails gets the details of a PayPal payment
 func (pp *PayPalService) GetPaymentDetails(_ *models.PaymentResourceRest) (*models.PaymentDetails, ResponseType, error) {
 

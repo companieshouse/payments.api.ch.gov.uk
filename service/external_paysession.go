@@ -6,6 +6,7 @@ import (
 
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/plutov/paypal/v4"
 )
 
 // ExternalPaymentProvidersService contains the different external services which can be used to make a payment
@@ -19,6 +20,8 @@ type PaymentProviderService interface {
 	CheckPaymentProviderStatus(paymentResource *models.PaymentResourceRest) (*models.StatusResponse, ResponseType, error)
 	CreatePaymentAndGenerateNextURL(req *http.Request, paymentResource *models.PaymentResourceRest) (string, ResponseType, error)
 	GetPaymentDetails(paymentResource *models.PaymentResourceRest) (*models.PaymentDetails, ResponseType, error)
+	GetOrderDetails(id string) (*paypal.Order, error)
+	CapturePayment(id string) (*paypal.CaptureOrderResponse, error)
 	GetRefundSummary(req *http.Request, id string) (*models.PaymentResourceRest, *models.RefundSummary, ResponseType, error)
 	GetRefundStatus(paymentResource *models.PaymentResourceRest, refundId string) (*models.GetRefundStatusGovPayResponse, ResponseType, error)
 	CreateRefund(paymentResource *models.PaymentResourceRest, refundRequest *models.CreateRefundGovPayRequest) (*models.CreateRefundGovPayResponse, ResponseType, error)

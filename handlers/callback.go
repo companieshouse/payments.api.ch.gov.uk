@@ -128,25 +128,30 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 }
 
 func HandlePayPalCallback(w http.ResponseWriter, req *http.Request) {
-	// Get the payment session
-	vars := mux.Vars(req)
-	id := vars["payment_id"]
-	if id == "" {
-		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
-		w.WriteHeader(http.StatusBadRequest)
+
+	orderID := req.URL.Query().Get("token")
+
+	pp := &service.PayPalService{
+		PaymentService: *paymentService,
+	}
+
+	order, err := pp.GetOrderDetails(orderID)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error getting order details: %v", err))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	req.URL.Query().Get("token")
 
 	// The payment session must be retrieved directly to enable access to metadata outside the data block
-	paymentSession, _, err := paymentService.GetPaymentSession(req, id)
+	paymentID := order.PurchaseUnits[0].ReferenceID
+	paymentSession, _, err := paymentService.GetPaymentSession(req, paymentID)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error getting payment session: [%v]", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	if paymentSession == nil {
-		log.ErrorR(req, fmt.Errorf("payment session not found. id: %s", id))
+		log.ErrorR(req, fmt.Errorf("payment session not found. id: %s", paymentID))
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -162,7 +167,7 @@ func HandlePayPalCallback(w http.ResponseWriter, req *http.Request) {
 	if isExpired {
 		// Set the status of the payment
 		paymentSession.Status = service.Expired.String()
-		responseType, err := paymentService.PatchPaymentSession(req, id, *paymentSession)
+		responseType, err := paymentService.PatchPaymentSession(req, paymentID, *paymentSession)
 		if err != nil {
 			log.ErrorR(req, fmt.Errorf("error setting payment status of expired payment session: [%v]", err))
 			switch responseType {
@@ -181,30 +186,13 @@ func HandlePayPalCallback(w http.ResponseWriter, req *http.Request) {
 
 	// Ensure payment method matches endpoint
 	if strings.ToLower(paymentSession.PaymentMethod) != "paypal" {
-		log.ErrorR(req, fmt.Errorf("payment method, [%s], for resource [%s] not recognised", paymentSession.PaymentMethod, id))
+		log.ErrorR(req, fmt.Errorf("payment method, [%s], for resource [%s] not recognised", paymentSession.PaymentMethod, paymentID))
 		w.WriteHeader(http.StatusPreconditionFailed)
 		return
 	}
 
-	// Get the state of a PayPal payment
-	pp := &service.PayPalService{
-		PaymentService: *paymentService,
-	}
-	statusResponse, responseType, err := pp.CheckPaymentProviderStatus(paymentSession)
-	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error getting payment status from paypal: [%v]", err), log.Data{"service_response_type": responseType.String()})
-		switch responseType {
-		case service.Error:
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		default:
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-	}
-
-	if strings.ToLower(statusResponse.Status) != "approved" {
-		log.ErrorR(req, fmt.Errorf("error - paypal payment status not approved, status is: [%s]", statusResponse.Status))
+	if strings.ToLower(order.Status) != "approved" {
+		log.ErrorR(req, fmt.Errorf("error - paypal payment status not approved, status is: [%s]", order.Status))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
