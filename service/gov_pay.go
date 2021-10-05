@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/plutov/paypal/v4"
+
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
@@ -329,4 +331,16 @@ func addGovPayHeaders(request *http.Request, paymentResource *models.PaymentReso
 	request.Header.Add("content-type", "application/json")
 
 	return nil
+}
+
+// GetOrderDetails is a paypal specific implementation
+// so it does not need to be implemented by the govpay svc
+func (gp GovPayService) GetOrderDetails(_ string) (*paypal.Order, error) {
+	return nil, nil
+}
+
+// CapturePayment is a paypal specific implementation
+// so it does not need to be implemented by the govpay svc
+func (gp GovPayService) CapturePayment(_ string) (*paypal.CaptureOrderResponse, error) {
+	return nil, nil
 }
