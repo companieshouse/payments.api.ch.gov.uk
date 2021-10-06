@@ -196,7 +196,7 @@ func HandlePayPalCallback(pp *service.PayPalService) http.Handler {
 			return
 		}
 
-		_, err = pp.CapturePayment(orderID)
+		response, err := pp.CapturePayment(orderID)
 		if err != nil {
 			log.ErrorR(req, fmt.Errorf("error capturing payment: %v", err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -204,12 +204,13 @@ func HandlePayPalCallback(pp *service.PayPalService) http.Handler {
 		}
 
 		// TODO: uncomment when plutov accepts PR
-		//captureStatus := response.PurchaseUnits[0].Payments.Captures[0].Status
-		//if strings.ToLower(captureStatus) != "completed" {
-		//	log.ErrorR(req, fmt.Errorf("error - paypal payment status not completed, status is: [%s]", captureStatus))
-		//	w.WriteHeader(http.StatusInternalServerError)
-		//	return
-		//}
+		captureStatus := response.PurchaseUnits[0].Payments.Captures[0].Status
+		if strings.ToLower(captureStatus) != "completed" {
+			log.ErrorR(req, fmt.Errorf("error - paypal payment status not completed, status is: [%s]", captureStatus))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 		// TODO handle unsuccessful capture statuses
 
 		// Set the status of the payment

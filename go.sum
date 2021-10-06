@@ -69,6 +69,8 @@ github.com/plutov/paypal v2.0.5+incompatible h1:i5ma4HiHO0MUvJGHaKkL2aqOj0B19q8W
 github.com/plutov/paypal v2.0.5+incompatible/go.mod h1:jOStyiXeDrJ9dHA/yVUB2ahyYPjd5rMXUZ4N7XM37nQ=
 github.com/plutov/paypal/v4 v4.3.7 h1:wPvhAJ3RkDkV+UDrGX/UivXAl5JEPOOJuzsdgnTMJHc=
 github.com/plutov/paypal/v4 v4.3.7/go.mod h1:D56boafCRGcF/fEM0w282kj0fCDKIyrwOPX/Te1jCmw=
+github.com/plutov/paypal/v4 v4.4.2-0.20211005113259-1a2c109908d6 h1:wyMlIHqLI0LkjxYxjU3X5qFspGXskDw4pDcjdCzTNLQ=
+github.com/plutov/paypal/v4 v4.4.2-0.20211005113259-1a2c109908d6/go.mod h1:D56boafCRGcF/fEM0w282kj0fCDKIyrwOPX/Te1jCmw=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a h1:9ZKAASQSHhDYGoxY8uLVpewe1GDZ2vu2Tr/vTdVAkFQ=
