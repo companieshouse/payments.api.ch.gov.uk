@@ -203,7 +203,6 @@ func HandlePayPalCallback(pp *service.PayPalService) http.Handler {
 			return
 		}
 
-		// TODO: uncomment when plutov accepts PR
 		captureStatus := response.PurchaseUnits[0].Payments.Captures[0].Status
 		if strings.ToLower(captureStatus) != "completed" {
 			log.ErrorR(req, fmt.Errorf("error - paypal payment status not completed, status is: [%s]", captureStatus))
