@@ -129,12 +129,17 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 	redirectUser(w, req, paymentSession.MetaData.RedirectURI, params)
 }
 
-func HandlePayPalCallback(pp *service.PayPalService) http.Handler {
+func HandlePayPalCallback(externalPaymentSvc service.PaymentProviderService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 
 		orderID := req.URL.Query().Get("token")
+		if orderID == "" {
+			log.ErrorR(req, fmt.Errorf("error orderID is blank"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
-		order, err := pp.GetOrderDetails(orderID)
+		order, err := externalPaymentSvc.GetOrderDetails(orderID)
 		if err != nil {
 			log.ErrorR(req, fmt.Errorf("error getting order details: %v", err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -196,7 +201,7 @@ func HandlePayPalCallback(pp *service.PayPalService) http.Handler {
 			return
 		}
 
-		response, err := pp.CapturePayment(orderID)
+		response, err := externalPaymentSvc.CapturePayment(orderID)
 		if err != nil {
 			log.ErrorR(req, fmt.Errorf("error capturing payment: %v", err))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -209,11 +214,10 @@ func HandlePayPalCallback(pp *service.PayPalService) http.Handler {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-
 		// TODO handle unsuccessful capture statuses
 
 		// Set the status of the payment
-		paymentSession.Status = "completed"
+		paymentSession.Status = "paid"
 		// To match the format time is saved to mongo, e.g. "2018-11-22T08:39:16.782Z", truncate the time
 		paymentSession.CompletedAt = time.Now().Truncate(time.Millisecond)
 
