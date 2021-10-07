@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"regexp"
@@ -42,8 +43,7 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 
 	payPalClient, err := service.GetPayPalClient(cfg)
 	if err != nil {
-		err = errors.New("error creating PayPal client")
-		log.Error(err)
+		log.Error(fmt.Errorf("error getting PayPal client: %v", err))
 		os.Exit(1)
 	}
 
