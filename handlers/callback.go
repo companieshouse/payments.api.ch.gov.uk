@@ -147,7 +147,8 @@ func HandlePayPalCallback(externalPaymentSvc service.PaymentProviderService) htt
 		}
 
 		// The payment session must be retrieved directly to enable access to metadata outside the data block
-		paymentID := order.PurchaseUnits[0].ReferenceID
+		vars := mux.Vars(req)
+		paymentID := vars["payment_id"]
 		paymentSession, _, err := paymentService.GetPaymentSession(req, paymentID)
 		if err != nil {
 			log.ErrorR(req, fmt.Errorf("error getting payment session: [%v]", err))
