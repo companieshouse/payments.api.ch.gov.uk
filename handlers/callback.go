@@ -6,12 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/plutov/paypal/v4"
-
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/gorilla/mux"
+	"github.com/plutov/paypal/v4"
 )
 
 // handlePaymentMessage allows us to mock the call to producePaymentMessage for unit tests
