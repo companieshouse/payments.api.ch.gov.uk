@@ -128,6 +128,7 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 	redirectUser(w, req, paymentSession.MetaData.RedirectURI, params)
 }
 
+// HandlePayPalCallback handles the callback from PayPal and redirects the user
 func HandlePayPalCallback(externalPaymentSvc service.PaymentProviderService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 
