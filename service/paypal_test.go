@@ -62,6 +62,9 @@ func TestUnitCreatePaymentAndGenerateNextURL(t *testing.T) {
 			Amount:        "3",
 			Status:        InProgress.String(),
 			Costs:         []models.CostResourceRest{costResource},
+			Links: models.PaymentLinksRest{
+				Self: "payments/1234",
+			},
 		}
 
 		mockPayPalSDK.EXPECT().CreateOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("error"))
@@ -85,6 +88,9 @@ func TestUnitCreatePaymentAndGenerateNextURL(t *testing.T) {
 			Amount:        "3",
 			Status:        InProgress.String(),
 			Costs:         []models.CostResourceRest{costResource},
+			Links: models.PaymentLinksRest{
+				Self: "payments/1234",
+			},
 		}
 
 		order := paypal.Order{
@@ -113,6 +119,9 @@ func TestUnitCreatePaymentAndGenerateNextURL(t *testing.T) {
 			Amount:        "3",
 			Status:        InProgress.String(),
 			Costs:         []models.CostResourceRest{costResource},
+			Links: models.PaymentLinksRest{
+				Self: "payments/1234",
+			},
 		}
 
 		order := paypal.Order{
