@@ -143,6 +143,8 @@ func (pp *PayPalService) GetRefundStatus(_ *models.PaymentResourceRest, _ string
 	return nil, Success, nil
 }
 
+// CapturePayment captures the payment in PayPal
+
 func (pp *PayPalService) CapturePayment(orderId string) (*paypal.CaptureOrderResponse, error) {
 	res, err := pp.Client.CaptureOrder(
 		context.Background(),
