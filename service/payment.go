@@ -200,13 +200,8 @@ func (service *PaymentService) StoreExternalPaymentStatusURI(req *http.Request, 
 func (service *PaymentService) GetPaymentSession(req *http.Request, id string) (*models.PaymentResourceRest, ResponseType, error) {
 	paymentResource, err := service.DAO.GetPaymentResource(id)
 	if err != nil {
-		err = fmt.Errorf("error getting payment resource from db: [%v]", err)
-		log.ErrorR(req, err)
+		err = fmt.Errorf("error getting payment resource from db: [%w]", err)
 		return nil, Error, err
-	}
-	if paymentResource == nil {
-		log.TraceR(req, "payment session not found", log.Data{"payment_id": id})
-		return nil, NotFound, nil
 	}
 
 	costs, costsResponseType, err := getCosts(paymentResource.Data.Links.Resource, &service.Config, service.SecureCostsRegex)

@@ -66,10 +66,8 @@ func (m *Mongo) GetPaymentResource(id string) (*models.PaymentResourceDB, error)
 
 	c := paymentSession.DB(cfg.Database).C(cfg.Collection)
 	err = c.FindId(id).One(&resource)
-
-	// If Payment not found in DB, return empty resource
-	if err != nil && err == mgo.ErrNotFound {
-		return nil, nil
+	if err != nil {
+		return nil, err
 	}
 
 	return &resource, err

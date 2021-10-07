@@ -1,10 +1,13 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/globalsign/mgo"
 
 	"github.com/plutov/paypal/v4"
 
@@ -150,13 +153,14 @@ func HandlePayPalCallback(externalPaymentSvc service.PaymentProviderService) htt
 		paymentID := order.PurchaseUnits[0].ReferenceID
 		paymentSession, _, err := paymentService.GetPaymentSession(req, paymentID)
 		if err != nil {
-			log.ErrorR(req, fmt.Errorf("error getting payment session: [%v]", err))
+			if errors.Is(err, mgo.ErrNotFound) {
+				log.ErrorR(req, fmt.Errorf("payment session not found: [%w]", err))
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+
+			log.ErrorR(req, fmt.Errorf("error getting payment session: [%w]", err))
 			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		if paymentSession == nil {
-			log.ErrorR(req, fmt.Errorf("payment session not found. id: %s", paymentID))
-			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
