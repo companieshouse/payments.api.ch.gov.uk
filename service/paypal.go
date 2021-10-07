@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
@@ -63,8 +62,7 @@ func (pp *PayPalService) CreatePaymentAndGenerateNextURL(req *http.Request, paym
 
 	log.TraceR(req, "performing PayPal request", log.Data{"company_number": paymentResource.CompanyNumber})
 
-	selfLink := paymentResource.Links.Self
-	id := strings.Split(selfLink, "/")[1] //TODO: Find better way to this
+	id := paymentResource.MetaData.ID
 
 	order, err := pp.Client.CreateOrder(
 		context.Background(),
