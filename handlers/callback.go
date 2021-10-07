@@ -188,7 +188,7 @@ func HandlePayPalCallback(externalPaymentSvc service.PaymentProviderService) htt
 		}
 
 		// Ensure payment method matches endpoint
-		if strings.ToLower(paymentSession.PaymentMethod) != "paypal" {
+		if !strings.EqualFold(paymentSession.PaymentMethod, "paypal") {
 			log.ErrorR(req, fmt.Errorf("payment method, [%s], for resource [%s] not recognised", paymentSession.PaymentMethod, paymentID))
 			w.WriteHeader(http.StatusPreconditionFailed)
 			return
@@ -206,9 +206,8 @@ func HandlePayPalCallback(externalPaymentSvc service.PaymentProviderService) htt
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-
 		captureStatus := response.PurchaseUnits[0].Payments.Captures[0].Status
-		if strings.ToLower(captureStatus) != "completed" {
+		if !strings.EqualFold(captureStatus, "completed") {
 			log.ErrorR(req, fmt.Errorf("error - paypal payment status not completed, status is: [%s]", captureStatus))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
