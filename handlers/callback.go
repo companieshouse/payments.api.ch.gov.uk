@@ -214,8 +214,6 @@ func HandlePayPalCallback(externalPaymentSvc service.PaymentProviderService) htt
 			paymentSession.Status = service.Paid.String()
 		case "DECLINED":
 			paymentSession.Status = service.NoFunds.String()
-		case "FAILED":
-			paymentSession.Status = service.Failed.String()
 		default:
 			paymentSession.Status = service.Failed.String()
 		}
