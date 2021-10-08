@@ -82,20 +82,19 @@ func (service *PaymentService) CreateExternalPaymentJourney(req *http.Request, p
 	paymentJourney.NextURL = nextURL
 
 	return paymentJourney, responseType, nil
-
 }
 
 func validateClassOfPayment(costs *[]models.CostResourceRest) error {
 
 	for i, cost := range *costs {
-		//Loop through Class Of Payments on a single resource to check they're the same.
+		// Loop through Class Of Payments on a single resource to check they're the same.
 		for j, classOfPayment := range cost.ClassOfPayment {
 			if classOfPayment[j] != classOfPayment[0] {
 				return fmt.Errorf("Two or more class of payments are different on the same cost resource: [%v] ", cost.Description)
 			}
 		}
 
-		//Check the Class Of Payments on separate resources are the same.
+		// Check the Class Of Payments on separate resources are the same.
 		if (*costs)[i].ClassOfPayment[0] != (*costs)[0].ClassOfPayment[0] {
 			return fmt.Errorf("Two or more class of payments are different on the same transaction: [%v] and [%v] ", (*costs)[0].Description, (*costs)[i].Description)
 		}

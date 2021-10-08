@@ -315,5 +315,4 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(err.Error(), ShouldEqual, "payment method [invalid] for resource [] not recognised")
 	})
-
 }

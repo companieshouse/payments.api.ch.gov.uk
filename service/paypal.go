@@ -101,6 +101,7 @@ func (pp *PayPalService) CreatePaymentAndGenerateNextURL(req *http.Request, paym
 	return nextURL, Success, nil
 }
 
+// GetOrderDetails gets the details of a PayPal order
 func (pp *PayPalService) GetOrderDetails(id string) (*paypal.Order, error) {
 	res, err := pp.Client.GetOrder(
 		context.Background(),
@@ -142,7 +143,6 @@ func (pp *PayPalService) GetRefundStatus(_ *models.PaymentResourceRest, _ string
 }
 
 // CapturePayment captures the payment in PayPal
-
 func (pp *PayPalService) CapturePayment(orderId string) (*paypal.CaptureOrderResponse, error) {
 	res, err := pp.Client.CaptureOrder(
 		context.Background(),
