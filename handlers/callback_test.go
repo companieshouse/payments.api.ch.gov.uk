@@ -748,7 +748,6 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 	})
 
 	Convey("Error paypal payment status is not complete", t, func() {
-		//This one
 		mock := dao.NewMockDAO(mockCtrl)
 		cfg, _ := config.Get()
 		paymentService = createMockPaymentService(mock, cfg)
