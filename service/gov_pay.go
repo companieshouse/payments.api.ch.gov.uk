@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/plutov/paypal/v4"
+
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
@@ -20,7 +22,7 @@ type GovPayService struct {
 	PaymentService PaymentService
 }
 
-// CheckProvider checks the status of the payment with GovPay
+// CheckPaymentProviderStatus checks the status of the payment with GovPay
 func (gp GovPayService) CheckPaymentProviderStatus(paymentResource *models.PaymentResourceRest) (*models.StatusResponse, ResponseType, error) {
 	// Call the getGovPayPaymentState method down below to get state
 	cfg, err := config.Get()
@@ -41,7 +43,7 @@ func (gp GovPayService) CheckPaymentProviderStatus(paymentResource *models.Payme
 	return &models.StatusResponse{Status: "failed"}, Error, nil
 }
 
-// GenerateNextURLGovPay creates a gov pay session linked to the given payment session and stores the required details on the payment session
+// CreatePaymentAndGenerateNextURL creates a gov pay session linked to the given payment session and stores the required details on the payment session
 func (gp *GovPayService) CreatePaymentAndGenerateNextURL(req *http.Request, paymentResource *models.PaymentResourceRest) (string, ResponseType, error) {
 	var govPayRequest models.OutgoingGovPayRequest
 
@@ -128,7 +130,7 @@ func (gp *GovPayService) getGovPayPaymentState(paymentResource *models.PaymentRe
 	return &govPayResponse.State, Success, nil
 }
 
-// GetGovPayPaymentDetails gets the details of a GovPay payment
+// GetPaymentDetails gets the details of a GovPay payment
 func (gp *GovPayService) GetPaymentDetails(paymentResource *models.PaymentResourceRest) (*models.PaymentDetails, ResponseType, error) {
 
 	govPayResponse, err := callGovPay(gp, paymentResource)
@@ -147,7 +149,7 @@ func (gp *GovPayService) GetPaymentDetails(paymentResource *models.PaymentResour
 	return paymentDetails, Success, nil
 }
 
-// GetGovPayRefundSummary gets refund summary of a GovPay payment
+// GetRefundSummary gets refund summary of a GovPay payment
 func (gp *GovPayService) GetRefundSummary(req *http.Request, id string) (*models.PaymentResourceRest, *models.RefundSummary, ResponseType, error) {
 	// Get PaymentSession for the GovPay call
 	paymentSession, response, err := gp.PaymentService.GetPaymentSession(req, id)
@@ -230,7 +232,7 @@ func (gp *GovPayService) CreateRefund(paymentResource *models.PaymentResourceRes
 	return govPayResponse, Success, nil
 }
 
-// GetGovPayRefundStatus gets refund status from GovPay
+// GetRefundStatus gets refund status from GovPay
 func (gp *GovPayService) GetRefundStatus(paymentResource *models.PaymentResourceRest, refundId string) (*models.GetRefundStatusGovPayResponse, ResponseType, error) {
 	request, err := http.NewRequest("GET", paymentResource.MetaData.ExternalPaymentStatusURI+"/refunds/"+refundId, nil)
 	if err != nil {
@@ -329,4 +331,16 @@ func addGovPayHeaders(request *http.Request, paymentResource *models.PaymentReso
 	request.Header.Add("content-type", "application/json")
 
 	return nil
+}
+
+// GetOrderDetails is a paypal specific implementation
+// so it does not need to be implemented by the govpay svc
+func (gp GovPayService) GetOrderDetails(_ string) (*paypal.Order, error) {
+	return nil, nil
+}
+
+// CapturePayment is a paypal specific implementation
+// so it does not need to be implemented by the govpay svc
+func (gp GovPayService) CapturePayment(_ string) (*paypal.CaptureOrderResponse, error) {
+	return nil, nil
 }

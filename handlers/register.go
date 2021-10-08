@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"regexp"
@@ -42,8 +43,7 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 
 	payPalClient, err := service.GetPayPalClient(cfg)
 	if err != nil {
-		err = errors.New("error creating PayPal client")
-		log.Error(err)
+		log.Error(fmt.Errorf("error getting PayPal client: %v", err))
 		os.Exit(1)
 	}
 
@@ -100,6 +100,7 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	// callback endpoints should not be intercepted by the paymentauth or userauth interceptors, so needs to be it's own subrouter
 	callbackRouter := mainRouter.PathPrefix("/callback").Subrouter()
 	callbackRouter.HandleFunc("/payments/govpay/{payment_id}", HandleGovPayCallback).Methods("GET").Name("handle-govpay-callback")
+	callbackRouter.Handle("/payments/paypal/orders/{payment_id}", HandlePayPalCallback(payPalService)).Methods("GET").Name("handle-paypal-callback")
 
 	// Set middleware for subrouters
 	createPaymentRouter.Use(log.Handler, interceptors.Oauth2OrPaymentPrivilegesIntercept, interceptors.UserPaymentAuthenticationIntercept)

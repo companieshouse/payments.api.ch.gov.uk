@@ -6,7 +6,7 @@ package service
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
-	paypal "github.com/plutov/paypal/v4"
+	v4 "github.com/plutov/paypal/v4"
 	reflect "reflect"
 )
 
@@ -34,31 +34,53 @@ func (m *MockPayPalSDK) EXPECT() *MockPayPalSDKMockRecorder {
 }
 
 // GetAccessToken mocks base method
-func (m *MockPayPalSDK) GetAccessToken(ctx context.Context) (*paypal.TokenResponse, error) {
-	m.ctrl.T.Helper()
+func (m *MockPayPalSDK) GetAccessToken(ctx context.Context) (*v4.TokenResponse, error) {
 	ret := m.ctrl.Call(m, "GetAccessToken", ctx)
-	ret0, _ := ret[0].(*paypal.TokenResponse)
+	ret0, _ := ret[0].(*v4.TokenResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAccessToken indicates an expected call of GetAccessToken
 func (mr *MockPayPalSDKMockRecorder) GetAccessToken(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccessToken", reflect.TypeOf((*MockPayPalSDK)(nil).GetAccessToken), ctx)
 }
 
 // CreateOrder mocks base method
-func (m *MockPayPalSDK) CreateOrder(ctx context.Context, intent string, purchaseUnits []paypal.PurchaseUnitRequest, payer *paypal.CreateOrderPayer, appContext *paypal.ApplicationContext) (*paypal.Order, error) {
-	m.ctrl.T.Helper()
+func (m *MockPayPalSDK) CreateOrder(ctx context.Context, intent string, purchaseUnits []v4.PurchaseUnitRequest, payer *v4.CreateOrderPayer, appContext *v4.ApplicationContext) (*v4.Order, error) {
 	ret := m.ctrl.Call(m, "CreateOrder", ctx, intent, purchaseUnits, payer, appContext)
-	ret0, _ := ret[0].(*paypal.Order)
+	ret0, _ := ret[0].(*v4.Order)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateOrder indicates an expected call of CreateOrder
 func (mr *MockPayPalSDKMockRecorder) CreateOrder(ctx, intent, purchaseUnits, payer, appContext interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrder", reflect.TypeOf((*MockPayPalSDK)(nil).CreateOrder), ctx, intent, purchaseUnits, payer, appContext)
+}
+
+// GetOrder mocks base method
+func (m *MockPayPalSDK) GetOrder(ctx context.Context, orderID string) (*v4.Order, error) {
+	ret := m.ctrl.Call(m, "GetOrder", ctx, orderID)
+	ret0, _ := ret[0].(*v4.Order)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOrder indicates an expected call of GetOrder
+func (mr *MockPayPalSDKMockRecorder) GetOrder(ctx, orderID interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrder", reflect.TypeOf((*MockPayPalSDK)(nil).GetOrder), ctx, orderID)
+}
+
+// CaptureOrder mocks base method
+func (m *MockPayPalSDK) CaptureOrder(ctx context.Context, orderID string, captureOrderRequest v4.CaptureOrderRequest) (*v4.CaptureOrderResponse, error) {
+	ret := m.ctrl.Call(m, "CaptureOrder", ctx, orderID, captureOrderRequest)
+	ret0, _ := ret[0].(*v4.CaptureOrderResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CaptureOrder indicates an expected call of CaptureOrder
+func (mr *MockPayPalSDKMockRecorder) CaptureOrder(ctx, orderID, captureOrderRequest interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CaptureOrder", reflect.TypeOf((*MockPayPalSDK)(nil).CaptureOrder), ctx, orderID, captureOrderRequest)
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	"github.com/jarcoal/httpmock"
+	"github.com/plutov/paypal/v4"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -92,6 +93,33 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		w := httptest.NewRecorder()
 		HandleGovPayCallback(w, req)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
+	})
+
+	Convey("Invalid expiry time", t, func() {
+		cfg.ExpiryTimeInMinutes = "invalid"
+		mock := dao.NewMockDAO(mockCtrl)
+		paymentService = createMockPaymentService(mock, cfg)
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount: "10.00",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				CreatedAt: time.Now().Add(time.Hour * -2),
+			},
+		}
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+
+		req := httptest.NewRequest("GET", "/test", nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
+		w := httptest.NewRecorder()
+		HandleGovPayCallback(w, req)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
 	cfg.ExpiryTimeInMinutes = "60"
@@ -277,7 +305,8 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 				Links: models.PaymentLinksDB{
 					Resource: "http://dummy-url",
 				},
-				CreatedAt: time.Now(),
+				CreatedAt:   time.Now(),
+				CompletedAt: time.Now(),
 			},
 			ExternalPaymentStatusURI: "http://dummy-url",
 		}
@@ -300,7 +329,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		w := httptest.NewRecorder()
 		HandleGovPayCallback(w, req)
 		So(w.Code, ShouldEqual, http.StatusSeeOther)
-		So(paymentSession.Data.CompletedAt, ShouldNotBeNil)
+		So(paymentSession.Data.CompletedAt, ShouldNotBeZeroValue)
 	})
 
 	Convey("Successful message preparation with prepareKafkaMessage", t, func() {
@@ -368,5 +397,595 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 
 		_, err := prepareKafkaMessage(paymentID, refundID, *producerSchema)
 		So(err, ShouldNotBeEmpty)
+	})
+}
+
+func serveHandlePayPalCallback(externalPaymentSvc service.PaymentProviderService, orderIDSet bool) *httptest.ResponseRecorder {
+	path := "/callback/payments/paypal/orders/1234"
+	req := httptest.NewRequest(http.MethodGet, path, nil)
+	if orderIDSet {
+		params := req.URL.Query()
+		params.Set("token", "5678")
+		req.URL.RawQuery = params.Encode()
+	}
+	res := httptest.NewRecorder()
+
+	handler := HandlePayPalCallback(externalPaymentSvc)
+	handler.ServeHTTP(res, req)
+
+	return res
+}
+
+func TestUnitHandlePayPalCallback(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	// Generate a mock external provider service using mocks for both PayPal and GovPay
+	mockExternalPaymentProvidersService := service.NewMockPaymentProviderService(mockCtrl)
+
+	Convey("Error - orderID is blank", t, func() {
+		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, false)
+		So(res.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Error getting order details", t, func() {
+		mockExternalPaymentProvidersService.EXPECT().GetOrderDetails(gomock.Any()).Return(nil, fmt.Errorf("error"))
+
+		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
+		So(res.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Error getting payment session", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		cfg, _ := config.Get()
+		paymentService = createMockPaymentService(mock, cfg)
+		order := paypal.Order{
+			ID:     "1234",
+			Status: paypal.OrderStatusApproved,
+			PurchaseUnits: []paypal.PurchaseUnit{
+				{
+					ReferenceID: "test",
+				},
+			},
+		}
+
+		mockExternalPaymentProvidersService.EXPECT().GetOrderDetails(gomock.Any()).Return(&order, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(nil, fmt.Errorf("error"))
+
+		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
+		So(res.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Payment session not found", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		cfg, _ := config.Get()
+		paymentService = createMockPaymentService(mock, cfg)
+		order := paypal.Order{
+			ID:     "1234",
+			Status: paypal.OrderStatusApproved,
+			PurchaseUnits: []paypal.PurchaseUnit{
+				{
+					ReferenceID: "test",
+				},
+			},
+		}
+
+		mockExternalPaymentProvidersService.EXPECT().GetOrderDetails(gomock.Any()).Return(&order, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(nil, nil)
+
+		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
+		So(res.Code, ShouldEqual, http.StatusNotFound)
+	})
+
+	Convey("Invalid expiry time", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		cfg, _ := config.Get()
+		cfg.ExpiryTimeInMinutes = "invalid"
+		paymentService = createMockPaymentService(mock, cfg)
+		order := paypal.Order{
+			ID:     "1234",
+			Status: paypal.OrderStatusApproved,
+			PurchaseUnits: []paypal.PurchaseUnit{
+				{
+					ReferenceID: "test",
+				},
+			},
+		}
+
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount: "10.00",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				CreatedAt: time.Now().Add(time.Hour * -2),
+			},
+		}
+
+		mockExternalPaymentProvidersService.EXPECT().GetOrderDetails(gomock.Any()).Return(&order, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+
+		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
+		So(res.Code, ShouldEqual, http.StatusInternalServerError)
+
+	})
+
+	Convey("Payment session is expired", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		cfg, _ := config.Get()
+		cfg.ExpiryTimeInMinutes = "60"
+		paymentService = createMockPaymentService(mock, cfg)
+		order := paypal.Order{
+			ID:     "1234",
+			Status: paypal.OrderStatusApproved,
+			PurchaseUnits: []paypal.PurchaseUnit{
+				{
+					ReferenceID: "test",
+				},
+			},
+		}
+
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount: "10.00",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				CreatedAt: time.Now().Add(time.Hour * -2),
+			},
+		}
+
+		mockExternalPaymentProvidersService.EXPECT().GetOrderDetails(gomock.Any()).Return(&order, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+
+		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
+		So(res.Code, ShouldEqual, http.StatusForbidden)
+	})
+
+	Convey("Error setting payment status of expired payment session", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		cfg, _ := config.Get()
+		paymentService = createMockPaymentService(mock, cfg)
+		order := paypal.Order{
+			ID:     "1234",
+			Status: paypal.OrderStatusApproved,
+			PurchaseUnits: []paypal.PurchaseUnit{
+				{
+					ReferenceID: "test",
+				},
+			},
+		}
+
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount: "10.00",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				CreatedAt: time.Now().Add(time.Hour * -2),
+			},
+		}
+
+		mockExternalPaymentProvidersService.EXPECT().GetOrderDetails(gomock.Any()).Return(&order, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+
+		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
+		So(res.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("PayPal Payment method not recognised", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		cfg, _ := config.Get()
+		paymentService = createMockPaymentService(mock, cfg)
+		order := paypal.Order{
+			ID:     "1234",
+			Status: paypal.OrderStatusApproved,
+			PurchaseUnits: []paypal.PurchaseUnit{
+				{
+					ReferenceID: "test",
+				},
+			},
+		}
+
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount:        "10.00",
+				PaymentMethod: "invalid",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				CreatedAt: time.Now(),
+			},
+		}
+
+		mockExternalPaymentProvidersService.EXPECT().GetOrderDetails(gomock.Any()).Return(&order, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+
+		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
+		So(res.Code, ShouldEqual, http.StatusPreconditionFailed)
+	})
+
+	Convey("Error - paypal payment status not approved", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		cfg, _ := config.Get()
+		paymentService = createMockPaymentService(mock, cfg)
+		order := paypal.Order{
+			ID:     "1234",
+			Status: paypal.OrderStatusVoided,
+			PurchaseUnits: []paypal.PurchaseUnit{
+				{
+					ReferenceID: "test",
+				},
+			},
+		}
+
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount:        "10.00",
+				PaymentMethod: "paypal",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				CreatedAt: time.Now(),
+			},
+		}
+
+		mockExternalPaymentProvidersService.EXPECT().GetOrderDetails(gomock.Any()).Return(&order, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+
+		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
+		So(res.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Error capturing payment", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		cfg, _ := config.Get()
+		paymentService = createMockPaymentService(mock, cfg)
+		order := paypal.Order{
+			ID:     "1234",
+			Status: paypal.OrderStatusApproved,
+			PurchaseUnits: []paypal.PurchaseUnit{
+				{
+					ReferenceID: "test",
+				},
+			},
+		}
+
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount:        "10.00",
+				PaymentMethod: "paypal",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				CreatedAt: time.Now(),
+			},
+		}
+
+		mockExternalPaymentProvidersService.EXPECT().GetOrderDetails(gomock.Any()).Return(&order, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mockExternalPaymentProvidersService.EXPECT().CapturePayment(gomock.Any()).Return(nil, fmt.Errorf("error"))
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+
+		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
+		So(res.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Error capturing payment", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		cfg, _ := config.Get()
+		paymentService = createMockPaymentService(mock, cfg)
+		order := paypal.Order{
+			ID:     "1234",
+			Status: paypal.OrderStatusApproved,
+			PurchaseUnits: []paypal.PurchaseUnit{
+				{
+					ReferenceID: "test",
+					Payments: &paypal.CapturedPayments{
+						Captures: []paypal.CaptureAmount{
+							{
+								Status: "invalid",
+							},
+						},
+					},
+				},
+			},
+		}
+
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount:        "10.00",
+				PaymentMethod: "paypal",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				CreatedAt: time.Now(),
+			},
+		}
+
+		mockExternalPaymentProvidersService.EXPECT().GetOrderDetails(gomock.Any()).Return(&order, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mockExternalPaymentProvidersService.EXPECT().CapturePayment(gomock.Any()).Return(nil, fmt.Errorf("error"))
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+
+		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
+		So(res.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Error paypal payment status is not complete", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		cfg, _ := config.Get()
+		paymentService = createMockPaymentService(mock, cfg)
+		order := paypal.Order{
+			ID:     "1234",
+			Status: paypal.OrderStatusApproved,
+			PurchaseUnits: []paypal.PurchaseUnit{
+				{
+					ReferenceID: "test",
+					Payments: &paypal.CapturedPayments{
+						Captures: []paypal.CaptureAmount{
+							{
+								Status: "invalid",
+							},
+						},
+					},
+				},
+			},
+		}
+
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount:        "10.00",
+				PaymentMethod: "paypal",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				CreatedAt: time.Now(),
+			},
+		}
+
+		captureResponse := paypal.CaptureOrderResponse{
+			PurchaseUnits: []paypal.CapturedPurchaseUnit{
+				{
+					Payments: &paypal.CapturedPayments{
+						Captures: []paypal.CaptureAmount{
+							{
+								Status: "INCOMPLETE",
+							},
+						},
+					},
+				},
+			},
+		}
+
+		mockExternalPaymentProvidersService.EXPECT().GetOrderDetails(gomock.Any()).Return(&order, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mockExternalPaymentProvidersService.EXPECT().CapturePayment(gomock.Any()).Return(&captureResponse, nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+
+		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
+		So(res.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Error setting successful payment status", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		cfg, _ := config.Get()
+		paymentService = createMockPaymentService(mock, cfg)
+		order := paypal.Order{
+			ID:     "1234",
+			Status: paypal.OrderStatusApproved,
+			PurchaseUnits: []paypal.PurchaseUnit{
+				{
+					ReferenceID: "test",
+					Payments: &paypal.CapturedPayments{
+						Captures: []paypal.CaptureAmount{
+							{
+								Status: "COMPLETED",
+							},
+						},
+					},
+				},
+			},
+		}
+
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount:        "10.00",
+				PaymentMethod: "paypal",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				CreatedAt: time.Now(),
+			},
+		}
+
+		captureResponse := paypal.CaptureOrderResponse{
+			PurchaseUnits: []paypal.CapturedPurchaseUnit{
+				{
+					Payments: &paypal.CapturedPayments{
+						Captures: []paypal.CaptureAmount{
+							{
+								Status: "COMPLETED",
+							},
+						},
+					},
+				},
+			},
+		}
+
+		mockExternalPaymentProvidersService.EXPECT().GetOrderDetails(gomock.Any()).Return(&order, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mockExternalPaymentProvidersService.EXPECT().CapturePayment(gomock.Any()).Return(&captureResponse, nil)
+		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+
+		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
+		So(res.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Error sending kafka message", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		cfg, _ := config.Get()
+		paymentService = createMockPaymentService(mock, cfg)
+		order := paypal.Order{
+			ID:     "1234",
+			Status: paypal.OrderStatusApproved,
+			PurchaseUnits: []paypal.PurchaseUnit{
+				{
+					ReferenceID: "test",
+					Payments: &paypal.CapturedPayments{
+						Captures: []paypal.CaptureAmount{
+							{
+								Status: "COMPLETED",
+							},
+						},
+					},
+				},
+			},
+		}
+
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount:        "10.00",
+				PaymentMethod: "paypal",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				CreatedAt: time.Now(),
+			},
+		}
+
+		captureResponse := paypal.CaptureOrderResponse{
+			PurchaseUnits: []paypal.CapturedPurchaseUnit{
+				{
+					Payments: &paypal.CapturedPayments{
+						Captures: []paypal.CaptureAmount{
+							{
+								Status: "COMPLETED",
+							},
+						},
+					},
+				},
+			},
+		}
+
+		mockExternalPaymentProvidersService.EXPECT().GetOrderDetails(gomock.Any()).Return(&order, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mockExternalPaymentProvidersService.EXPECT().CapturePayment(gomock.Any()).Return(&captureResponse, nil)
+		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+
+		handlePaymentMessage = mockProduceKafkaMessageError
+
+		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
+		So(res.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Successful PayPal callback with redirect", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		cfg, _ := config.Get()
+		paymentService = createMockPaymentService(mock, cfg)
+		order := paypal.Order{
+			ID:     "1234",
+			Status: paypal.OrderStatusApproved,
+			PurchaseUnits: []paypal.PurchaseUnit{
+				{
+					ReferenceID: "test",
+					Payments: &paypal.CapturedPayments{
+						Captures: []paypal.CaptureAmount{
+							{
+								Status: "COMPLETED",
+							},
+						},
+					},
+				},
+			},
+		}
+
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount:        "10.00",
+				PaymentMethod: "paypal",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				CreatedAt:   time.Now(),
+				CompletedAt: time.Now(),
+			},
+		}
+
+		captureResponse := paypal.CaptureOrderResponse{
+			PurchaseUnits: []paypal.CapturedPurchaseUnit{
+				{
+					Payments: &paypal.CapturedPayments{
+						Captures: []paypal.CaptureAmount{
+							{
+								Status: "COMPLETED",
+							},
+						},
+					},
+				},
+			},
+		}
+
+		mockExternalPaymentProvidersService.EXPECT().GetOrderDetails(gomock.Any()).Return(&order, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mockExternalPaymentProvidersService.EXPECT().CapturePayment(gomock.Any()).Return(&captureResponse, nil)
+		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+
+		handlePaymentMessage = mockProduceKafkaMessage
+
+		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
+		So(res.Code, ShouldEqual, http.StatusSeeOther)
+		So(paymentSession.Data.CompletedAt, ShouldNotBeZeroValue)
 	})
 }

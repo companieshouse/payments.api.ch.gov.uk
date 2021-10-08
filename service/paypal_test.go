@@ -41,7 +41,7 @@ func CreateMockPayPalService(sdk PayPalSDK, service PaymentService) PayPalServic
 	}
 }
 
-func TestUnitCreateOrder(t *testing.T) {
+func TestUnitCreatePaymentAndGenerateNextURL(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
@@ -62,6 +62,9 @@ func TestUnitCreateOrder(t *testing.T) {
 			Amount:        "3",
 			Status:        InProgress.String(),
 			Costs:         []models.CostResourceRest{costResource},
+			Links: models.PaymentLinksRest{
+				Self: "payments/1234",
+			},
 		}
 
 		mockPayPalSDK.EXPECT().CreateOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("error"))
@@ -85,6 +88,9 @@ func TestUnitCreateOrder(t *testing.T) {
 			Amount:        "3",
 			Status:        InProgress.String(),
 			Costs:         []models.CostResourceRest{costResource},
+			Links: models.PaymentLinksRest{
+				Self: "payments/1234",
+			},
 		}
 
 		order := paypal.Order{
@@ -113,6 +119,9 @@ func TestUnitCreateOrder(t *testing.T) {
 			Amount:        "3",
 			Status:        InProgress.String(),
 			Costs:         []models.CostResourceRest{costResource},
+			Links: models.PaymentLinksRest{
+				Self: "payments/1234",
+			},
 		}
 
 		order := paypal.Order{
@@ -141,5 +150,53 @@ func TestUnitCreateOrder(t *testing.T) {
 		So(url, ShouldEqual, "return_url")
 		So(resType, ShouldEqual, Success)
 		So(err, ShouldBeNil)
+	})
+}
+
+func TestUnitGetOrderDetails(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	cfg, _ := config.Get()
+	mockDao := dao.NewMockDAO(mockCtrl)
+	mockPaymentService := createMockPaymentService(mockDao, cfg)
+	mockPayPalSDK := NewMockPayPalSDK(mockCtrl)
+	mockPayPalService := CreateMockPayPalService(mockPayPalSDK, mockPaymentService)
+
+	Convey("Get order from paypal", t, func() {
+		order := paypal.Order{
+			ID:     "123",
+			Status: paypal.OrderStatusApproved,
+		}
+
+		mockPayPalSDK.EXPECT().GetOrder(gomock.Any(), gomock.Any()).Return(&order, fmt.Errorf("error"))
+
+		res, err := mockPayPalService.GetOrderDetails("123")
+
+		So(res, ShouldEqual, &order)
+		So(err.Error(), ShouldEqual, "error")
+	})
+}
+
+func TestUnitCaptureOrder(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	cfg, _ := config.Get()
+	mockDao := dao.NewMockDAO(mockCtrl)
+	mockPaymentService := createMockPaymentService(mockDao, cfg)
+	mockPayPalSDK := NewMockPayPalSDK(mockCtrl)
+	mockPayPalService := CreateMockPayPalService(mockPayPalSDK, mockPaymentService)
+
+	Convey("Capture order in paypal", t, func() {
+		captureOrder := paypal.CaptureOrderResponse{
+			ID:     "123",
+			Status: paypal.OrderStatusCompleted,
+		}
+
+		mockPayPalSDK.EXPECT().CaptureOrder(gomock.Any(), gomock.Any(), gomock.Any()).Return(&captureOrder, fmt.Errorf("error"))
+
+		res, err := mockPayPalService.CapturePayment("123")
+
+		So(res, ShouldEqual, &captureOrder)
+		So(err.Error(), ShouldEqual, "error")
 	})
 }

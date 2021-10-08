@@ -11,7 +11,7 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/jarcoal/httpmock v1.0.4
 	github.com/leodido/go-urn v1.2.0 // indirect
-	github.com/plutov/paypal/v4 v4.3.7
+	github.com/plutov/paypal/v4 v4.4.2-0.20211005113259-1a2c109908d6
 	github.com/shopspring/decimal v0.0.0-20191130220710-360f2bc03045
 	github.com/smartystreets/goconvey v1.6.4
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect

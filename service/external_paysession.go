@@ -6,6 +6,7 @@ import (
 
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/plutov/paypal/v4"
 )
 
 // ExternalPaymentProvidersService contains the different external services which can be used to make a payment
@@ -19,6 +20,8 @@ type PaymentProviderService interface {
 	CheckPaymentProviderStatus(paymentResource *models.PaymentResourceRest) (*models.StatusResponse, ResponseType, error)
 	CreatePaymentAndGenerateNextURL(req *http.Request, paymentResource *models.PaymentResourceRest) (string, ResponseType, error)
 	GetPaymentDetails(paymentResource *models.PaymentResourceRest) (*models.PaymentDetails, ResponseType, error)
+	GetOrderDetails(id string) (*paypal.Order, error)
+	CapturePayment(id string) (*paypal.CaptureOrderResponse, error)
 	GetRefundSummary(req *http.Request, id string) (*models.PaymentResourceRest, *models.RefundSummary, ResponseType, error)
 	GetRefundStatus(paymentResource *models.PaymentResourceRest, refundId string) (*models.GetRefundStatusGovPayResponse, ResponseType, error)
 	CreateRefund(paymentResource *models.PaymentResourceRest, refundRequest *models.CreateRefundGovPayRequest) (*models.CreateRefundGovPayResponse, ResponseType, error)
@@ -79,20 +82,19 @@ func (service *PaymentService) CreateExternalPaymentJourney(req *http.Request, p
 	paymentJourney.NextURL = nextURL
 
 	return paymentJourney, responseType, nil
-
 }
 
 func validateClassOfPayment(costs *[]models.CostResourceRest) error {
 
 	for i, cost := range *costs {
-		//Loop through Class Of Payments on a single resource to check they're the same.
+		// Loop through Class Of Payments on a single resource to check they're the same.
 		for j, classOfPayment := range cost.ClassOfPayment {
 			if classOfPayment[j] != classOfPayment[0] {
 				return fmt.Errorf("Two or more class of payments are different on the same cost resource: [%v] ", cost.Description)
 			}
 		}
 
-		//Check the Class Of Payments on separate resources are the same.
+		// Check the Class Of Payments on separate resources are the same.
 		if (*costs)[i].ClassOfPayment[0] != (*costs)[0].ClassOfPayment[0] {
 			return fmt.Errorf("Two or more class of payments are different on the same transaction: [%v] and [%v] ", (*costs)[0].Description, (*costs)[i].Description)
 		}

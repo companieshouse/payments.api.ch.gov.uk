@@ -31,7 +31,6 @@ func GetPayPalClient(cfg config.Config) (*paypal.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error getting access token: [%v]", err)
 	}
-
 	return c, nil
 }
 
@@ -40,6 +39,8 @@ func GetPayPalClient(cfg config.Config) (*paypal.Client, error) {
 type PayPalSDK interface {
 	GetAccessToken(ctx context.Context) (*paypal.TokenResponse, error)
 	CreateOrder(ctx context.Context, intent string, purchaseUnits []paypal.PurchaseUnitRequest, payer *paypal.CreateOrderPayer, appContext *paypal.ApplicationContext) (*paypal.Order, error)
+	GetOrder(ctx context.Context, orderID string) (*paypal.Order, error)
+	CaptureOrder(ctx context.Context, orderID string, captureOrderRequest paypal.CaptureOrderRequest) (*paypal.CaptureOrderResponse, error)
 }
 
 // PayPalService handles the specific functionality of integrating PayPal into Payment Sessions
@@ -61,11 +62,14 @@ func (pp *PayPalService) CreatePaymentAndGenerateNextURL(req *http.Request, paym
 
 	log.TraceR(req, "performing PayPal request", log.Data{"company_number": paymentResource.CompanyNumber})
 
+	id := paymentResource.MetaData.ID
+
 	order, err := pp.Client.CreateOrder(
 		context.Background(),
 		paypal.OrderIntentCapture,
 		[]paypal.PurchaseUnitRequest{
 			{
+				ReferenceID: id,
 				Amount: &paypal.PurchaseUnitAmount{
 					Value:    paymentResource.Amount,
 					Currency: "GBP",
@@ -95,6 +99,15 @@ func (pp *PayPalService) CreatePaymentAndGenerateNextURL(req *http.Request, paym
 	}
 
 	return nextURL, Success, nil
+}
+
+// GetOrderDetails gets the details of a PayPal order
+func (pp *PayPalService) GetOrderDetails(id string) (*paypal.Order, error) {
+	res, err := pp.Client.GetOrder(
+		context.Background(),
+		id,
+	)
+	return res, err
 }
 
 // GetPaymentDetails gets the details of a PayPal payment
@@ -127,6 +140,16 @@ func (pp *PayPalService) GetRefundStatus(_ *models.PaymentResourceRest, _ string
 	//TODO: Get refund status
 
 	return nil, Success, nil
+}
+
+// CapturePayment captures the payment in PayPal
+func (pp *PayPalService) CapturePayment(orderId string) (*paypal.CaptureOrderResponse, error) {
+	res, err := pp.Client.CaptureOrder(
+		context.Background(),
+		orderId,
+		paypal.CaptureOrderRequest{},
+	)
+	return res, err
 }
 
 func getPayPalAPIBase(env string) string {

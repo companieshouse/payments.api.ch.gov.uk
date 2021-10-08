@@ -239,6 +239,9 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 			Amount:        "3",
 			Status:        InProgress.String(),
 			Costs:         []models.CostResourceRest{costResource},
+			Links: models.PaymentLinksRest{
+				Self: "payments/1234",
+			},
 		}
 
 		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession, mockExternalPaymentProvidersService)
@@ -263,6 +266,9 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 			Amount:        "3",
 			Status:        InProgress.String(),
 			Costs:         []models.CostResourceRest{costResource},
+			Links: models.PaymentLinksRest{
+				Self: "payments/1234",
+			},
 		}
 
 		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession, mockExternalPaymentProvidersService)
@@ -286,6 +292,9 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 			Amount:        "3",
 			Status:        InProgress.String(),
 			Costs:         []models.CostResourceRest{costResource},
+			Links: models.PaymentLinksRest{
+				Self: "payments/1234",
+			},
 		}
 
 		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession, mockExternalPaymentProvidersService)
@@ -306,5 +315,4 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		So(responseType.String(), ShouldEqual, Error.String())
 		So(err.Error(), ShouldEqual, "payment method [invalid] for resource [] not recognised")
 	})
-
 }
