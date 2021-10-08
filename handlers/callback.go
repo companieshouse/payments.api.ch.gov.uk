@@ -220,8 +220,6 @@ func HandlePayPalCallback(externalPaymentSvc service.PaymentProviderService) htt
 			paymentSession.Status = service.Failed.String()
 		}
 
-		// Set the status of the payment
-		paymentSession.Status = "paid"
 		// To match the format time is saved to mongo, e.g. "2018-11-22T08:39:16.782Z", truncate the time
 		paymentSession.CompletedAt = time.Now().Truncate(time.Millisecond)
 
