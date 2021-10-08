@@ -209,12 +209,16 @@ func HandlePayPalCallback(externalPaymentSvc service.PaymentProviderService) htt
 			return
 		}
 		captureStatus := response.PurchaseUnits[0].Payments.Captures[0].Status
-		if !strings.EqualFold(captureStatus, "completed") {
-			log.ErrorR(req, fmt.Errorf("error - paypal payment status not completed, status is: [%s]", captureStatus))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+		switch captureStatus {
+		case "COMPLETED":
+			paymentSession.Status = service.Paid.String()
+		case "DECLINED":
+			paymentSession.Status = service.NoFunds.String()
+		case "FAILED":
+			paymentSession.Status = service.Failed.String()
+		default:
+			paymentSession.Status = service.Failed.String()
 		}
-		// TODO handle unsuccessful capture statuses
 
 		// Set the status of the payment
 		paymentSession.Status = "paid"
