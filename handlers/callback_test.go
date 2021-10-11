@@ -766,6 +766,43 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 		So(res.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
+	Convey("Successful redirect if payment is cancelled", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		cfg, _ := config.Get()
+		cfg.ExpiryTimeInMinutes = "60"
+		paymentService = createMockPaymentService(mock, cfg)
+
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount:        "10.00",
+				PaymentMethod: "paypal",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				CreatedAt:   time.Now(),
+				CompletedAt: time.Now(),
+			},
+		}
+
+		statusResponse := models.StatusResponse{
+			Status: paypal.OrderStatusCreated,
+		}
+
+		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, service.Success, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+
+		handlePaymentMessage = mockProduceKafkaMessage
+
+		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
+		So(res.Code, ShouldEqual, http.StatusSeeOther)
+	})
+
 	Convey("Successful PayPal callback with redirect - paypal payment declined", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		cfg, _ := config.Get()

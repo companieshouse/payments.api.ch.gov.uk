@@ -196,25 +196,34 @@ func HandlePayPalCallback(externalPaymentSvc service.PaymentProviderService) htt
 			return
 		}
 
-		if statusResponse.Status != paypal.OrderStatusApproved {
+		if statusResponse.Status != paypal.OrderStatusApproved && statusResponse.Status != paypal.OrderStatusCreated {
 			log.ErrorR(req, fmt.Errorf("error - paypal payment status not approved, status is: [%s]", statusResponse.Status))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		response, err := externalPaymentSvc.CapturePayment(paymentSession.MetaData.ExternalPaymentStatusID)
-		if err != nil {
-			log.ErrorR(req, fmt.Errorf("error capturing payment: %v", err))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+		// If order has been approved, then proceed to capture payment
+		if statusResponse.Status == paypal.OrderStatusApproved {
+			response, err := externalPaymentSvc.CapturePayment(paymentSession.MetaData.ExternalPaymentStatusID)
+			if err != nil {
+				log.ErrorR(req, fmt.Errorf("error capturing payment: %v", err))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			captureStatus := response.PurchaseUnits[0].Payments.Captures[0].Status
+			log.InfoR(req, fmt.Sprintf("Status of paypal capture is: [%s]", captureStatus))
+			switch captureStatus {
+			case "COMPLETED":
+				paymentSession.Status = service.Paid.String()
+			case "DECLINED":
+				paymentSession.Status = service.NoFunds.String()
+			default:
+				paymentSession.Status = service.Failed.String()
+			}
 		}
-		captureStatus := response.PurchaseUnits[0].Payments.Captures[0].Status
-		switch captureStatus {
-		case "COMPLETED":
-			paymentSession.Status = service.Paid.String()
-		case "DECLINED":
-			paymentSession.Status = service.NoFunds.String()
-		default:
+
+		// If order status is created, then the payment has been cancelled
+		if statusResponse.Status == paypal.OrderStatusCreated {
 			paymentSession.Status = service.Failed.String()
 		}
 
