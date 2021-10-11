@@ -64,6 +64,9 @@ func (pp *PayPalService) CreatePaymentAndGenerateNextURL(req *http.Request, paym
 
 	id := paymentResource.MetaData.ID
 
+	redirectURL := fmt.Sprintf("%s/callback/payments/paypal/orders/%s",
+		pp.PaymentService.Config.PaymentsAPIURL, paymentResource.MetaData.ID)
+
 	order, err := pp.Client.CreateOrder(
 		context.Background(),
 		paypal.OrderIntentCapture,
@@ -78,8 +81,8 @@ func (pp *PayPalService) CreatePaymentAndGenerateNextURL(req *http.Request, paym
 		},
 		nil,
 		&paypal.ApplicationContext{
-			ReturnURL: fmt.Sprintf("%s/callback/payments/paypal/orders/%s",
-				pp.PaymentService.Config.PaymentsAPIURL, paymentResource.MetaData.ID),
+			ReturnURL: redirectURL,
+			CancelURL: redirectURL,
 		},
 	)
 	if err != nil {
