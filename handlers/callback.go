@@ -209,6 +209,7 @@ func HandlePayPalCallback(externalPaymentSvc service.PaymentProviderService) htt
 			return
 		}
 		captureStatus := response.PurchaseUnits[0].Payments.Captures[0].Status
+		log.InfoR(req, fmt.Sprintf("Status of paypal capture is: [%s]", captureStatus))
 		switch captureStatus {
 		case "COMPLETED":
 			paymentSession.Status = service.Paid.String()

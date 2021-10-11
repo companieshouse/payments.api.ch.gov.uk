@@ -80,6 +80,8 @@ func (pp *PayPalService) CreatePaymentAndGenerateNextURL(req *http.Request, paym
 		&paypal.ApplicationContext{
 			ReturnURL: fmt.Sprintf("%s/callback/payments/paypal/orders/%s",
 				pp.PaymentService.Config.PaymentsAPIURL, paymentResource.MetaData.ID),
+			CancelURL: fmt.Sprintf("%s/callback/payments/paypal/orders/%s",
+				pp.PaymentService.Config.PaymentsAPIURL, paymentResource.MetaData.ID),
 		},
 	)
 	if err != nil {
