@@ -4,9 +4,11 @@
 package dao
 
 import (
+	"fmt"
+	reflect "reflect"
+
 	models "github.com/companieshouse/payments.api.ch.gov.uk/models"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
 // MockDAO is a mock of DAO interface
@@ -66,5 +68,6 @@ func (m *MockDAO) PatchPaymentResource(id string, paymentUpdate *models.PaymentR
 
 // PatchPaymentResource indicates an expected call of PatchPaymentResource
 func (mr *MockDAOMockRecorder) PatchPaymentResource(id, paymentUpdate interface{}) *gomock.Call {
+	fmt.Println("PatchPaymentResource")
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PatchPaymentResource", reflect.TypeOf((*MockDAO)(nil).PatchPaymentResource), id, paymentUpdate)
 }
