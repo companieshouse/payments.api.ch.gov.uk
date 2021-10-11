@@ -57,7 +57,7 @@ func (pp *PayPalService) CheckPaymentProviderStatus(paymentResource *models.Paym
 		paymentResource.MetaData.ExternalPaymentStatusID,
 	)
 	if err != nil {
-		return nil, http.StatusInternalServerError, fmt.Errorf("error checking payment status with PayPal: [%w]", err)
+		return nil, Error, fmt.Errorf("error checking payment status with PayPal: [%w]", err)
 	}
 
 	return &models.StatusResponse{Status: res.Status}, Success, nil
