@@ -666,54 +666,6 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 		So(res.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
-	Convey("Error capture status is not complete", t, func() {
-		mock := dao.NewMockDAO(mockCtrl)
-		cfg, _ := config.Get()
-		cfg.ExpiryTimeInMinutes = "60"
-		paymentService = createMockPaymentService(mock, cfg)
-
-		paymentSession := models.PaymentResourceDB{
-			Data: models.PaymentResourceDataDB{
-				Amount:        "10.00",
-				PaymentMethod: "paypal",
-				Links: models.PaymentLinksDB{
-					Resource: "http://dummy-url",
-				},
-				CreatedAt: time.Now(),
-			},
-		}
-
-		statusResponse := models.StatusResponse{
-			Status: paypal.OrderStatusApproved,
-		}
-
-		captureResponse := paypal.CaptureOrderResponse{
-			PurchaseUnits: []paypal.CapturedPurchaseUnit{
-				{
-					Payments: &paypal.CapturedPayments{
-						Captures: []paypal.CaptureAmount{
-							{
-								Status: "INCOMPLETE",
-							},
-						},
-					},
-				},
-			},
-		}
-
-		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, service.Success, nil)
-		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
-		mockExternalPaymentProvidersService.EXPECT().CapturePayment(gomock.Any()).Return(&captureResponse, nil)
-
-		httpmock.Activate()
-		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
-
-		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
-		So(res.Code, ShouldEqual, http.StatusInternalServerError)
-	})
-
 	Convey("Error setting successful payment status", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		cfg, _ := config.Get()
@@ -814,7 +766,7 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 		So(res.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
-	Convey("Successfully return after payment taken", t, func() {
+	Convey("Successful PayPal callback with redirect - paypal payment declined", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		cfg, _ := config.Get()
 		cfg.ExpiryTimeInMinutes = "60"
@@ -827,7 +779,114 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 				Links: models.PaymentLinksDB{
 					Resource: "http://dummy-url",
 				},
-				CreatedAt: time.Now(),
+				CreatedAt:   time.Now(),
+				CompletedAt: time.Now(),
+			},
+		}
+
+		statusResponse := models.StatusResponse{
+			Status: paypal.OrderStatusApproved,
+		}
+
+		captureResponse := paypal.CaptureOrderResponse{
+			PurchaseUnits: []paypal.CapturedPurchaseUnit{
+				{
+					Payments: &paypal.CapturedPayments{
+						Captures: []paypal.CaptureAmount{
+							{
+								Status: "DECLINED",
+							},
+						},
+					},
+				},
+			},
+		}
+
+		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, service.Success, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mockExternalPaymentProvidersService.EXPECT().CapturePayment(gomock.Any()).Return(&captureResponse, nil)
+		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
+
+		handlePaymentMessage = mockProduceKafkaMessage
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+
+		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
+		So(res.Code, ShouldEqual, http.StatusSeeOther)
+		So(paymentSession.Data.CompletedAt, ShouldNotBeZeroValue)
+	})
+
+	Convey("Successful PayPal callback with redirect - paypal payment failed", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		cfg, _ := config.Get()
+		cfg.ExpiryTimeInMinutes = "60"
+		paymentService = createMockPaymentService(mock, cfg)
+
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount:        "10.00",
+				PaymentMethod: "paypal",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				CreatedAt:   time.Now(),
+				CompletedAt: time.Now(),
+			},
+		}
+
+		statusResponse := models.StatusResponse{
+			Status: paypal.OrderStatusApproved,
+		}
+
+		captureResponse := paypal.CaptureOrderResponse{
+			PurchaseUnits: []paypal.CapturedPurchaseUnit{
+				{
+					Payments: &paypal.CapturedPayments{
+						Captures: []paypal.CaptureAmount{
+							{
+								Status: "FAILED",
+							},
+						},
+					},
+				},
+			},
+		}
+
+		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, service.Success, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mockExternalPaymentProvidersService.EXPECT().CapturePayment(gomock.Any()).Return(&captureResponse, nil)
+		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
+
+		handlePaymentMessage = mockProduceKafkaMessage
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+
+		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
+		So(res.Code, ShouldEqual, http.StatusSeeOther)
+		So(paymentSession.Data.CompletedAt, ShouldNotBeZeroValue)
+	})
+
+	Convey("Successful PayPal callback with redirect", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		cfg, _ := config.Get()
+		cfg.ExpiryTimeInMinutes = "60"
+		paymentService = createMockPaymentService(mock, cfg)
+
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount:        "10.00",
+				PaymentMethod: "paypal",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				CreatedAt:   time.Now(),
+				CompletedAt: time.Now(),
 			},
 		}
 
@@ -863,5 +922,6 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 
 		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
 		So(res.Code, ShouldEqual, http.StatusSeeOther)
+		So(paymentSession.Data.CompletedAt, ShouldNotBeZeroValue)
 	})
 }
