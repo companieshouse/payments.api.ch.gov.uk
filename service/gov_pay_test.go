@@ -300,7 +300,7 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		req := httptest.NewRequest("", "/test", nil)
 		_, _, err := mockGovPayService.CreatePaymentAndGenerateNextURL(req, &paymentResource)
 
-		So(err.Error(), ShouldEqual, "error storing ExternalPaymentStatusURI for payment session: [error storing ExternalPaymentStatusURI on payment session: [error]]")
+		So(err.Error(), ShouldEqual, "error storing GovPay external payment details for payment session: [error storing the External Payment Status Details against the payment session: [error]]")
 	})
 
 	Convey("Valid request to GovPay and returned NextURL for penalty", t, func() {

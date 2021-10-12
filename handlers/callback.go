@@ -132,23 +132,16 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 func HandlePayPalCallback(externalPaymentSvc service.PaymentProviderService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 
-		orderID := req.URL.Query().Get("token")
-		if orderID == "" {
-			log.ErrorR(req, fmt.Errorf("error orderID is blank"))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		order, err := externalPaymentSvc.GetOrderDetails(orderID)
-		if err != nil {
-			log.ErrorR(req, fmt.Errorf("error getting order details: %v", err))
-			w.WriteHeader(http.StatusInternalServerError)
+		// Get the payment session
+		vars := mux.Vars(req)
+		paymentID := vars["payment_id"]
+		if paymentID == "" {
+			log.ErrorR(req, fmt.Errorf("payment id not supplied"))
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
 		// The payment session must be retrieved directly to enable access to metadata outside the data block
-		vars := mux.Vars(req)
-		paymentID := vars["payment_id"]
 		paymentSession, _, err := paymentService.GetPaymentSession(req, paymentID)
 		if err != nil {
 			log.ErrorR(req, fmt.Errorf("error getting payment session: [%v]", err))
@@ -196,15 +189,22 @@ func HandlePayPalCallback(externalPaymentSvc service.PaymentProviderService) htt
 			return
 		}
 
-		if order.Status != paypal.OrderStatusApproved && order.Status != paypal.OrderStatusCreated {
-			log.ErrorR(req, fmt.Errorf("error - paypal payment status not approved, status is: [%s]", order.Status))
+		statusResponse, responseType, err := externalPaymentSvc.CheckPaymentProviderStatus(paymentSession)
+		if err != nil {
+			log.ErrorR(req, fmt.Errorf("error getting payment status from PayPal: [%w]", err), log.Data{"service_response_type": responseType.String()})
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if statusResponse.Status != paypal.OrderStatusApproved && statusResponse.Status != paypal.OrderStatusCreated {
+			log.ErrorR(req, fmt.Errorf("error - paypal payment status not approved, status is: [%s]", statusResponse.Status))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		// If order has been approved, then proceed to capture payment
-		if order.Status == paypal.OrderStatusApproved {
-			response, err := externalPaymentSvc.CapturePayment(orderID)
+		if statusResponse.Status == paypal.OrderStatusApproved {
+			response, err := externalPaymentSvc.CapturePayment(paymentSession.MetaData.ExternalPaymentStatusID)
 			if err != nil {
 				log.ErrorR(req, fmt.Errorf("error capturing payment: %v", err))
 				w.WriteHeader(http.StatusInternalServerError)
@@ -223,14 +223,14 @@ func HandlePayPalCallback(externalPaymentSvc service.PaymentProviderService) htt
 		}
 
 		// If order status is created, then the payment has been cancelled
-		if order.Status == paypal.OrderStatusCreated {
+		if statusResponse.Status == paypal.OrderStatusCreated {
 			paymentSession.Status = service.Failed.String()
 		}
 
 		// To match the format time is saved to mongo, e.g. "2018-11-22T08:39:16.782Z", truncate the time
 		paymentSession.CompletedAt = time.Now().Truncate(time.Millisecond)
 
-		responseType, err := paymentService.PatchPaymentSession(req, paymentID, *paymentSession)
+		responseType, err = paymentService.PatchPaymentSession(req, paymentID, *paymentSession)
 		if err != nil {
 			log.ErrorR(req, fmt.Errorf("error setting payment status: [%v]", err), log.Data{"service_response_type": responseType.String()})
 			switch responseType {

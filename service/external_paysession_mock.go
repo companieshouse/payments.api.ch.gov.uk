@@ -36,6 +36,7 @@ func (m *MockPaymentProviderService) EXPECT() *MockPaymentProviderServiceMockRec
 
 // CheckPaymentProviderStatus mocks base method
 func (m *MockPaymentProviderService) CheckPaymentProviderStatus(paymentResource *models.PaymentResourceRest) (*models.StatusResponse, ResponseType, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckPaymentProviderStatus", paymentResource)
 	ret0, _ := ret[0].(*models.StatusResponse)
 	ret1, _ := ret[1].(ResponseType)
@@ -45,11 +46,13 @@ func (m *MockPaymentProviderService) CheckPaymentProviderStatus(paymentResource 
 
 // CheckPaymentProviderStatus indicates an expected call of CheckPaymentProviderStatus
 func (mr *MockPaymentProviderServiceMockRecorder) CheckPaymentProviderStatus(paymentResource interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckPaymentProviderStatus", reflect.TypeOf((*MockPaymentProviderService)(nil).CheckPaymentProviderStatus), paymentResource)
 }
 
 // CreatePaymentAndGenerateNextURL mocks base method
 func (m *MockPaymentProviderService) CreatePaymentAndGenerateNextURL(req *http.Request, paymentResource *models.PaymentResourceRest) (string, ResponseType, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePaymentAndGenerateNextURL", req, paymentResource)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(ResponseType)
@@ -59,11 +62,13 @@ func (m *MockPaymentProviderService) CreatePaymentAndGenerateNextURL(req *http.R
 
 // CreatePaymentAndGenerateNextURL indicates an expected call of CreatePaymentAndGenerateNextURL
 func (mr *MockPaymentProviderServiceMockRecorder) CreatePaymentAndGenerateNextURL(req, paymentResource interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePaymentAndGenerateNextURL", reflect.TypeOf((*MockPaymentProviderService)(nil).CreatePaymentAndGenerateNextURL), req, paymentResource)
 }
 
 // GetPaymentDetails mocks base method
 func (m *MockPaymentProviderService) GetPaymentDetails(paymentResource *models.PaymentResourceRest) (*models.PaymentDetails, ResponseType, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPaymentDetails", paymentResource)
 	ret0, _ := ret[0].(*models.PaymentDetails)
 	ret1, _ := ret[1].(ResponseType)
@@ -73,24 +78,13 @@ func (m *MockPaymentProviderService) GetPaymentDetails(paymentResource *models.P
 
 // GetPaymentDetails indicates an expected call of GetPaymentDetails
 func (mr *MockPaymentProviderServiceMockRecorder) GetPaymentDetails(paymentResource interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaymentDetails", reflect.TypeOf((*MockPaymentProviderService)(nil).GetPaymentDetails), paymentResource)
-}
-
-// GetOrderDetails mocks base method
-func (m *MockPaymentProviderService) GetOrderDetails(id string) (*v4.Order, error) {
-	ret := m.ctrl.Call(m, "GetOrderDetails", id)
-	ret0, _ := ret[0].(*v4.Order)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetOrderDetails indicates an expected call of GetOrderDetails
-func (mr *MockPaymentProviderServiceMockRecorder) GetOrderDetails(id interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderDetails", reflect.TypeOf((*MockPaymentProviderService)(nil).GetOrderDetails), id)
 }
 
 // CapturePayment mocks base method
 func (m *MockPaymentProviderService) CapturePayment(id string) (*v4.CaptureOrderResponse, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CapturePayment", id)
 	ret0, _ := ret[0].(*v4.CaptureOrderResponse)
 	ret1, _ := ret[1].(error)
@@ -99,11 +93,13 @@ func (m *MockPaymentProviderService) CapturePayment(id string) (*v4.CaptureOrder
 
 // CapturePayment indicates an expected call of CapturePayment
 func (mr *MockPaymentProviderServiceMockRecorder) CapturePayment(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CapturePayment", reflect.TypeOf((*MockPaymentProviderService)(nil).CapturePayment), id)
 }
 
 // GetRefundSummary mocks base method
 func (m *MockPaymentProviderService) GetRefundSummary(req *http.Request, id string) (*models.PaymentResourceRest, *models.RefundSummary, ResponseType, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRefundSummary", req, id)
 	ret0, _ := ret[0].(*models.PaymentResourceRest)
 	ret1, _ := ret[1].(*models.RefundSummary)
@@ -114,11 +110,13 @@ func (m *MockPaymentProviderService) GetRefundSummary(req *http.Request, id stri
 
 // GetRefundSummary indicates an expected call of GetRefundSummary
 func (mr *MockPaymentProviderServiceMockRecorder) GetRefundSummary(req, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefundSummary", reflect.TypeOf((*MockPaymentProviderService)(nil).GetRefundSummary), req, id)
 }
 
 // GetRefundStatus mocks base method
 func (m *MockPaymentProviderService) GetRefundStatus(paymentResource *models.PaymentResourceRest, refundId string) (*models.GetRefundStatusGovPayResponse, ResponseType, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRefundStatus", paymentResource, refundId)
 	ret0, _ := ret[0].(*models.GetRefundStatusGovPayResponse)
 	ret1, _ := ret[1].(ResponseType)
@@ -128,11 +126,13 @@ func (m *MockPaymentProviderService) GetRefundStatus(paymentResource *models.Pay
 
 // GetRefundStatus indicates an expected call of GetRefundStatus
 func (mr *MockPaymentProviderServiceMockRecorder) GetRefundStatus(paymentResource, refundId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefundStatus", reflect.TypeOf((*MockPaymentProviderService)(nil).GetRefundStatus), paymentResource, refundId)
 }
 
 // CreateRefund mocks base method
 func (m *MockPaymentProviderService) CreateRefund(paymentResource *models.PaymentResourceRest, refundRequest *models.CreateRefundGovPayRequest) (*models.CreateRefundGovPayResponse, ResponseType, error) {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateRefund", paymentResource, refundRequest)
 	ret0, _ := ret[0].(*models.CreateRefundGovPayResponse)
 	ret1, _ := ret[1].(ResponseType)
@@ -142,5 +142,6 @@ func (m *MockPaymentProviderService) CreateRefund(paymentResource *models.Paymen
 
 // CreateRefund indicates an expected call of CreateRefund
 func (mr *MockPaymentProviderServiceMockRecorder) CreateRefund(paymentResource, refundRequest interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRefund", reflect.TypeOf((*MockPaymentProviderService)(nil).CreateRefund), paymentResource, refundRequest)
 }

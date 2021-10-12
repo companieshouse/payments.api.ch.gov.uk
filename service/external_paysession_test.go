@@ -28,6 +28,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
 	cfg.GovPayURL = "http://dummy-govpay-url"
+
 	mockDao := dao.NewMockDAO(mockCtrl)
 	mockPaymentService := createMockPaymentService(mockDao, cfg)
 	mockPayPalSDK := NewMockPayPalSDK(mockCtrl)
@@ -62,6 +63,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 	})
 
 	Convey("Class Of Payment different on same cost resource", t, func() {
+
 		req := httptest.NewRequest("", "/test", nil)
 
 		httpmock.Activate()
@@ -86,6 +88,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 	})
 
 	Convey("Class Of Payment different on different cost resources", t, func() {
+
 		req := httptest.NewRequest("", "/test", nil)
 
 		httpmock.Activate()
@@ -116,6 +119,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 	})
 
 	Convey("Error communicating with GOV.UK Pay", t, func() {
+
 		req := httptest.NewRequest("", "/test", nil)
 
 		httpmock.Activate()
@@ -133,6 +137,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 	})
 
 	Convey("No NextURL received from GOV.UK Pay", t, func() {
+
 		mockDao.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
 
 		req := httptest.NewRequest("", "/test", nil)
@@ -160,6 +165,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 	})
 
 	Convey("Create External GovPay Payment Journey - success", t, func() {
+
 		mockDao.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
 
 		req := httptest.NewRequest("", "/test", nil)
@@ -193,6 +199,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 	})
 
 	Convey("Create External GovPay Payment Journey for orderable-item - success", t, func() {
+
 		mockDao.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
 
 		req := httptest.NewRequest("", "/test", nil)
@@ -226,6 +233,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 	})
 
 	Convey("Error communicating with Paypal", t, func() {
+
 		mockPayPalSDK.EXPECT().CreateOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("error"))
 
 		req := httptest.NewRequest("", "/test", nil)
@@ -252,8 +260,10 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 	})
 
 	Convey("No NextURL received from Paypal", t, func() {
+
 		paypalResponse := CreatePayPalOrderResponse("")
 		mockPayPalSDK.EXPECT().CreateOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&paypalResponse, nil)
+		mockDao.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
 
 		req := httptest.NewRequest("", "/test", nil)
 
@@ -278,8 +288,10 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 	})
 
 	Convey("Create an External PayPal Payment Journey for orderable-item - success", t, func() {
+
 		paypalResponse := CreatePayPalOrderResponse("response_url")
 		mockPayPalSDK.EXPECT().CreateOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&paypalResponse, nil)
+		mockDao.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
 
 		req := httptest.NewRequest("", "/test", nil)
 
@@ -304,7 +316,9 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 	})
 
 	Convey("Invalid Payment Method", t, func() {
+
 		req := httptest.NewRequest("", "/test", nil)
+
 		paymentSession := models.PaymentResourceRest{
 			PaymentMethod: "invalid",
 			Status:        InProgress.String(),

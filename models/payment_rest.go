@@ -36,6 +36,7 @@ type PaymentResourceMetaDataRest struct {
 	RedirectURI              string
 	State                    string
 	ExternalPaymentStatusURI string
+	ExternalPaymentStatusID  string
 }
 
 // CreatedByRest is the user who is creating the payment session

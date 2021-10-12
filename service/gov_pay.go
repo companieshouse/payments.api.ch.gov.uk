@@ -110,9 +110,9 @@ func (gp *GovPayService) CreatePaymentAndGenerateNextURL(req *http.Request, paym
 		return "", Error, fmt.Errorf("error status [%v] back from GovPay: [%s]", resp.StatusCode, govPayResponse.Description)
 	}
 
-	err = gp.PaymentService.StoreExternalPaymentStatusURI(req, paymentResource.MetaData.ID, govPayResponse.GovPayLinks.Self.HREF)
+	err = gp.PaymentService.StoreExternalPaymentStatusDetails(paymentResource.MetaData.ID, govPayResponse.GovPayLinks.Self.HREF, govPayResponse.PaymentID)
 	if err != nil {
-		return "", Error, fmt.Errorf("error storing ExternalPaymentStatusURI for payment session: [%s]", err)
+		return "", Error, fmt.Errorf("error storing GovPay external payment details for payment session: [%s]", err)
 	}
 
 	return govPayResponse.GovPayLinks.NextURL.HREF, Success, nil
@@ -331,12 +331,6 @@ func addGovPayHeaders(request *http.Request, paymentResource *models.PaymentReso
 	request.Header.Add("content-type", "application/json")
 
 	return nil
-}
-
-// GetOrderDetails is a paypal specific implementation
-// so it does not need to be implemented by the govpay svc
-func (gp GovPayService) GetOrderDetails(_ string) (*paypal.Order, error) {
-	return nil, nil
 }
 
 // CapturePayment is a paypal specific implementation

@@ -182,15 +182,15 @@ func (service *PaymentService) PatchPaymentSession(req *http.Request, id string,
 	return Success, nil
 }
 
-// StoreExternalPaymentStatusURI stores a new value in the payment resource metadata for the ExternalPaymentStatusURI
-func (service *PaymentService) StoreExternalPaymentStatusURI(req *http.Request, id string, externalPaymentStatusURI string) error {
+// StoreExternalPaymentStatusDetails stores the URI and the ID of the external payment session in the metadata
+func (service *PaymentService) StoreExternalPaymentStatusDetails(id, externalPaymentStatusURI, externalPaymentStatusID string) error {
 	PaymentResourceUpdate := models.PaymentResourceDB{
 		ExternalPaymentStatusURI: externalPaymentStatusURI,
+		ExternalPaymentStatusID:  externalPaymentStatusID,
 	}
 	err := service.DAO.PatchPaymentResource(id, &PaymentResourceUpdate)
 	if err != nil {
-		err = fmt.Errorf("error storing ExternalPaymentStatusURI on payment session: [%v]", err)
-		log.ErrorR(req, err)
+		err = fmt.Errorf("error storing the External Payment Status Details against the payment session: [%v]", err)
 		return err
 	}
 	return nil

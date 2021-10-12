@@ -8,6 +8,7 @@ type PaymentResourceDB struct {
 	RedirectURI              string                `bson:"redirect_uri"`
 	State                    string                `bson:"state"`
 	ExternalPaymentStatusURI string                `bson:"external_payment_status_url"`
+	ExternalPaymentStatusID  string                `bson:"external_payment_status_id"`
 	Data                     PaymentResourceDataDB `bson:"data"`
 	Refunds                  []RefundResourceDB    `bson:"refunds"`
 }
