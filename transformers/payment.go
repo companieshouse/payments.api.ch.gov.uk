@@ -64,6 +64,7 @@ func (pt PaymentTransformer) TransformToRest(dbResource models.PaymentResourceDB
 		RedirectURI:              dbResource.RedirectURI,
 		State:                    dbResource.State,
 		ExternalPaymentStatusURI: dbResource.ExternalPaymentStatusURI,
+		ExternalPaymentStatusID:  dbResource.ExternalPaymentStatusID,
 	}
 
 	return paymentResource
