@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
+	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
+	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -62,9 +64,27 @@ func TestUnitHandleGetPaymentDetails(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	Convey("Error getting payment session", t, func() {
+
+		cfg, _ := config.Get()
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
+		mockPayPalSDK := service.NewMockPayPalSDK(mockCtrl)
+
+		svc := service.ExternalPaymentProvidersService{
+			GovPayService: service.GovPayService{
+				PaymentService: *mockPaymentService,
+			},
+			PayPalService: service.PayPalService{
+				Client:         mockPayPalSDK,
+				PaymentService: *mockPaymentService,
+			},
+		}
+		handler := HandleCreateExternalPaymentJourney(&svc)
+
+		res := httptest.NewRecorder()
 		req := httptest.NewRequest("GET", "/test", nil)
-		w := httptest.NewRecorder()
-		HandleGetPaymentDetails(w, req)
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		handler.ServeHTTP(res, req)
+
+		HandleGetPaymentDetails(&svc)
+		So(res.Code, ShouldEqual, http.StatusBadRequest)
 	})
 }

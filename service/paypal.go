@@ -121,11 +121,28 @@ func (pp *PayPalService) CreatePaymentAndGenerateNextURL(req *http.Request, paym
 }
 
 // GetPaymentDetails gets the details of a PayPal payment
-func (pp *PayPalService) GetPaymentDetails(_ *models.PaymentResourceRest) (*models.PaymentDetails, ResponseType, error) {
+func (pp *PayPalService) GetPaymentDetails(paymentResource *models.PaymentResourceRest) (*models.PaymentDetails, ResponseType, error) {
 
-	//TODO: Check the payment details with PayPal
+	if paymentResource.MetaData.ExternalPaymentStatusID == "" {
+		return nil, Error, fmt.Errorf("external payment status ID not defined")
+	}
 
-	return nil, Success, nil
+	order, err := pp.Client.GetOrder(
+		context.Background(),
+		paymentResource.MetaData.ExternalPaymentStatusID,
+	)
+	if err != nil {
+		return nil, Error, fmt.Errorf("error getting order from PayPal: %v", err)
+	}
+
+	paymentDetails := &models.PaymentDetails{
+		CardType:          "",
+		ExternalPaymentID: order.ID,
+		TransactionDate:   order.CreateTime.String(),
+		PaymentStatus:     order.Status,
+	}
+
+	return paymentDetails, Success, nil
 }
 
 // GetRefundSummary gets refund summary of a PayPal payment

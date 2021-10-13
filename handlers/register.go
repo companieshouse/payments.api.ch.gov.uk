@@ -80,7 +80,7 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 
 	// payment-details endpoint needs it's own interceptor
 	paymentDetailsRouter := mainRouter.PathPrefix("/private/payments/{payment_id}/payment-details").Subrouter()
-	paymentDetailsRouter.HandleFunc("", HandleGetPaymentDetails).Methods("GET").Name("get-payment-details")
+	paymentDetailsRouter.Handle("", HandleGetPaymentDetails(externalPaymentService)).Methods("GET").Name("get-payment-details")
 
 	// create-refund endpoint needs its own interceptor
 	createRefundRouter := mainRouter.PathPrefix("/payments/{paymentId}/refunds").Subrouter()

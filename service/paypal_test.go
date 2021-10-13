@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
@@ -255,6 +256,75 @@ func TestUnitCreatePaymentAndGenerateNextURL(t *testing.T) {
 
 		So(url, ShouldEqual, "return_url")
 		So(resType, ShouldEqual, Success)
+		So(err, ShouldBeNil)
+	})
+}
+
+func TestUnitGetPaymentDetails(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	cfg, _ := config.Get()
+	mockDao := dao.NewMockDAO(mockCtrl)
+	mockPaymentService := createMockPaymentService(mockDao, cfg)
+	mockPayPalSDK := NewMockPayPalSDK(mockCtrl)
+	mockPayPalService := CreateMockPayPalService(mockPayPalSDK, mockPaymentService)
+
+	Convey("Payment ID not supplied", t, func() {
+
+		resource := models.PaymentResourceRest{
+			MetaData: models.PaymentResourceMetaDataRest{
+				ExternalPaymentStatusID: "",
+			},
+		}
+
+		paymentDetails, responseType, err := mockPayPalService.GetPaymentDetails(&resource)
+
+		So(paymentDetails, ShouldBeNil)
+		So(responseType, ShouldEqual, Error)
+		So(err.Error(), ShouldEqual, "external payment status ID not defined")
+	})
+
+	Convey("Error getting order from PayPal", t, func() {
+
+		mockPayPalSDK.EXPECT().GetOrder(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("error"))
+
+		resource := models.PaymentResourceRest{
+			MetaData: models.PaymentResourceMetaDataRest{
+				ExternalPaymentStatusID: "123",
+			},
+		}
+
+		paymentDetails, responseType, err := mockPayPalService.GetPaymentDetails(&resource)
+
+		So(paymentDetails, ShouldBeNil)
+		So(responseType, ShouldEqual, Error)
+		So(err.Error(), ShouldEqual, "error getting order from PayPal: error")
+	})
+
+	Convey("Get payment details - success", t, func() {
+		createTime, _ := time.Parse("2006-01-02", "2003-02-01")
+
+		paypalOrder := paypal.Order{
+			ID:         "ABC123",
+			Status:     "COMPLETED",
+			CreateTime: &createTime,
+		}
+
+		mockPayPalSDK.EXPECT().GetOrder(gomock.Any(), gomock.Any()).Return(&paypalOrder, nil)
+
+		resource := models.PaymentResourceRest{
+			MetaData: models.PaymentResourceMetaDataRest{
+				ExternalPaymentStatusID: "123",
+			},
+		}
+
+		paymentDetails, responseType, err := mockPayPalService.GetPaymentDetails(&resource)
+
+		So(paymentDetails.CardType, ShouldBeEmpty)
+		So(paymentDetails.ExternalPaymentID, ShouldEqual, "ABC123")
+		So(paymentDetails.TransactionDate, ShouldEqual, "2003-02-01 00:00:00 +0000 UTC")
+		So(paymentDetails.PaymentStatus, ShouldEqual, "COMPLETED")
+		So(responseType, ShouldEqual, Success)
 		So(err, ShouldBeNil)
 	})
 }
