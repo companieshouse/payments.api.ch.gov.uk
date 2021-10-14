@@ -148,7 +148,7 @@ func (pp *PayPalService) GetPaymentDetails(paymentResource *models.PaymentResour
 // GetRefundSummary gets refund summary of a PayPal payment
 func (pp *PayPalService) GetRefundSummary(_ *http.Request, _ string) (*models.PaymentResourceRest, *models.RefundSummary, ResponseType, error) {
 
-	//TODO: Get refund summary with PayPal
+	// not implemented
 
 	return nil, nil, Success, nil
 }
@@ -156,7 +156,7 @@ func (pp *PayPalService) GetRefundSummary(_ *http.Request, _ string) (*models.Pa
 // CreateRefund creates a refund in PayPal
 func (pp *PayPalService) CreateRefund(_ *models.PaymentResourceRest, _ *models.CreateRefundGovPayRequest) (*models.CreateRefundGovPayResponse, ResponseType, error) {
 
-	//TODO: Create a refund with PayPal
+	// not implemented
 
 	return nil, Success, nil
 }
@@ -164,7 +164,7 @@ func (pp *PayPalService) CreateRefund(_ *models.PaymentResourceRest, _ *models.C
 // GetRefundStatus gets refund status from PayPal
 func (pp *PayPalService) GetRefundStatus(_ *models.PaymentResourceRest, _ string) (*models.GetRefundStatusGovPayResponse, ResponseType, error) {
 
-	//TODO: Get refund status
+	// not implemented
 
 	return nil, Success, nil
 }
