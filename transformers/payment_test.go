@@ -124,6 +124,7 @@ func TestUnitTransformToRest(t *testing.T) {
 				Reference:     "ref",
 				CompanyNumber: "companyNumber",
 				Status:        "pending",
+				ProviderID:    "abc123",
 			},
 			Refunds: []models.RefundResourceDB{
 				{
@@ -164,6 +165,7 @@ func TestUnitTransformToRest(t *testing.T) {
 					ExternalRefundUrl: "external",
 				},
 			},
+			ProviderID: "abc123",
 		}
 
 		paymentResourceRest := PaymentTransformer{}.TransformToRest(paymentResourceDB)
