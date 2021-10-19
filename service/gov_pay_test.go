@@ -47,10 +47,11 @@ func TestUnitCheckProvider(t *testing.T) {
 			Costs: []models.CostResourceRest{costResource},
 		}
 
-		statusResponse, responseType, err := mockGovPayService.CheckPaymentProviderStatus(&paymentResourceRest)
+		statusResponse, providerID, responseType, err := mockGovPayService.CheckPaymentProviderStatus(&paymentResourceRest)
 		So(responseType.String(), ShouldEqual, Error.String())
+		So(providerID, ShouldBeEmpty)
 		So(statusResponse, ShouldBeNil)
-		So(err.Error(), ShouldEqual, "error getting state of GovPay payment: [error sending request to GovPay: [Get \"external_uri\": error]]")
+		So(err.Error(), ShouldEqual, "error sending request to GovPay: [Get \"external_uri\": error]")
 	})
 
 	Convey("Status - success", t, func() {
@@ -58,7 +59,7 @@ func TestUnitCheckProvider(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		GovPayState := models.State{Status: "success", Finished: true}
-		IncomingGovPayResponse := models.IncomingGovPayResponse{State: GovPayState}
+		IncomingGovPayResponse := models.IncomingGovPayResponse{State: GovPayState, ProviderID: "abc123"}
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, IncomingGovPayResponse)
 		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
 
@@ -73,8 +74,9 @@ func TestUnitCheckProvider(t *testing.T) {
 			Costs: []models.CostResourceRest{costResource},
 		}
 
-		statusResponse, responseType, err := mockGovPayService.CheckPaymentProviderStatus(&paymentResourceRest)
+		statusResponse, providerID, responseType, err := mockGovPayService.CheckPaymentProviderStatus(&paymentResourceRest)
 		So(responseType.String(), ShouldEqual, Success.String())
+		So(providerID, ShouldEqual, "abc123")
 		So(statusResponse.Status, ShouldEqual, "paid")
 		So(err, ShouldBeNil)
 	})
@@ -84,7 +86,7 @@ func TestUnitCheckProvider(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		GovPayState := models.State{Status: "failure", Finished: true}
-		IncomingGovPayResponse := models.IncomingGovPayResponse{State: GovPayState}
+		IncomingGovPayResponse := models.IncomingGovPayResponse{State: GovPayState, ProviderID: "abc123"}
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, IncomingGovPayResponse)
 		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
 
@@ -99,8 +101,9 @@ func TestUnitCheckProvider(t *testing.T) {
 			Costs: []models.CostResourceRest{costResource},
 		}
 
-		statusResponse, responseType, err := mockGovPayService.CheckPaymentProviderStatus(&paymentResourceRest)
+		statusResponse, providerID, responseType, err := mockGovPayService.CheckPaymentProviderStatus(&paymentResourceRest)
 		So(responseType.String(), ShouldEqual, Error.String())
+		So(providerID, ShouldBeEmpty)
 		So(statusResponse.Status, ShouldEqual, "failed")
 		So(err, ShouldBeNil)
 	})
@@ -110,7 +113,7 @@ func TestUnitCheckProvider(t *testing.T) {
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
 		GovPayState := models.State{Status: "failed", Finished: true, Code: "P0030"}
-		IncomingGovPayResponse := models.IncomingGovPayResponse{State: GovPayState}
+		IncomingGovPayResponse := models.IncomingGovPayResponse{State: GovPayState, ProviderID: "abc123"}
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, IncomingGovPayResponse)
 		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
 
@@ -125,8 +128,9 @@ func TestUnitCheckProvider(t *testing.T) {
 			Costs: []models.CostResourceRest{costResource},
 		}
 
-		statusResponse, responseType, err := mockGovPayService.CheckPaymentProviderStatus(&paymentResourceRest)
+		statusResponse, providerID, responseType, err := mockGovPayService.CheckPaymentProviderStatus(&paymentResourceRest)
 		So(responseType.String(), ShouldEqual, Success.String())
+		So(providerID, ShouldBeEmpty)
 		So(statusResponse.Status, ShouldEqual, "cancelled")
 		So(err, ShouldBeNil)
 	})
@@ -432,65 +436,6 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 
 		So(responseType.String(), ShouldEqual, Success.String())
 		So(govPayResponse, ShouldEqual, journeyURL)
-		So(err, ShouldBeNil)
-	})
-
-}
-
-func TestUnitGetGovPayPaymentState(t *testing.T) {
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
-	cfg, _ := config.Get()
-	mock := dao.NewMockDAO(mockCtrl)
-	mockPaymentService := createMockPaymentService(mock, cfg)
-	mockGovPayService := CreateMockGovPayService(&mockPaymentService)
-
-	Convey("Error sending request to GOV.UK Pay", t, func() {
-
-		httpmock.Activate()
-		defer httpmock.DeactivateAndReset()
-		jsonResponse := httpmock.NewErrorResponder(errors.New("error"))
-		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
-
-		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
-		}
-
-		paymentResourceRest := models.PaymentResourceRest{
-			MetaData: models.PaymentResourceMetaDataRest{
-				ExternalPaymentStatusURI: "external_uri",
-			},
-			Costs: []models.CostResourceRest{costResource},
-		}
-		govPayResponse, responseType, err := mockGovPayService.getGovPayPaymentState(&paymentResourceRest, cfg)
-		So(responseType.String(), ShouldEqual, Error.String())
-		So(govPayResponse, ShouldBeNil)
-		So(err.Error(), ShouldEqual, "error sending request to GovPay: [Get \"external_uri\": error]")
-	})
-
-	Convey("Valid GET request to GovPay and return status", t, func() {
-
-		httpmock.Activate()
-		defer httpmock.DeactivateAndReset()
-		GovPayState := models.State{Status: "complete", Finished: true}
-		IncomingGovPayResponse := models.IncomingGovPayResponse{State: GovPayState}
-
-		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, IncomingGovPayResponse)
-		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
-		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
-		}
-
-		paymentResource := models.PaymentResourceRest{
-			MetaData: models.PaymentResourceMetaDataRest{
-				ExternalPaymentStatusURI: "external_uri",
-			},
-			Costs: []models.CostResourceRest{costResource},
-		}
-		govPayResponse, responseType, err := mockGovPayService.getGovPayPaymentState(&paymentResource, cfg)
-
-		So(responseType.String(), ShouldEqual, Success.String())
-		So(govPayResponse, ShouldResemble, &GovPayState)
 		So(err, ShouldBeNil)
 	})
 

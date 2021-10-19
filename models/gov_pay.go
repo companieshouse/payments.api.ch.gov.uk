@@ -24,6 +24,7 @@ type IncomingGovPayResponse struct {
 	Language          string            `json:"language"`
 	PaymentID         string            `json:"payment_id"`
 	PaymentProvider   string            `json:"payment_provider"`
+	ProviderID        string            `json:"provider_id"`
 	ReturnURL         string            `json:"return_url"`
 	CreatedDate       string            `json:"created_date"`
 	RefundSummary     RefundSummary     `json:"refund_summary"`

@@ -28,6 +28,7 @@ type PaymentResourceDataDB struct {
 	Status                  string         `bson:"status"`
 	Etag                    string         `bson:"etag"`
 	Kind                    string         `bson:"kind"`
+	ProviderID              string         `bson:"provider_id,omitempty"`
 }
 
 // CreatedByDB is the user who is creating the payment session

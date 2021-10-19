@@ -27,6 +27,7 @@ func (pt PaymentTransformer) TransformToDB(rest models.PaymentResourceRest) mode
 		Status:        rest.Status,
 		Etag:          rest.Etag,
 		Kind:          rest.Kind,
+		ProviderID:    rest.ProviderID,
 	}
 
 	paymentResourceData.CreatedBy = models.CreatedByDB(rest.CreatedBy)

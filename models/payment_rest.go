@@ -19,6 +19,7 @@ type PaymentResourceRest struct {
 	CreatedBy               CreatedByRest               `json:"created_by"`
 	Description             string                      `json:"description"`
 	Links                   PaymentLinksRest            `json:"links"`
+	ProviderID              string                      `json:"provider_id,omitempty"`
 	PaymentMethod           string                      `json:"payment_method,omitempty"`
 	Reference               string                      `json:"reference,omitempty"`
 	CompanyNumber           string                      `json:"company_number,omitempty"`

@@ -587,7 +587,7 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 			Status: paypal.OrderStatusVoided,
 		}
 
-		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, service.Success, fmt.Errorf("error"))
+		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, "123", service.Success, fmt.Errorf("error"))
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 
 		httpmock.Activate()
@@ -620,7 +620,7 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 			Status: paypal.OrderStatusVoided,
 		}
 
-		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, service.Success, nil)
+		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, "", service.Success, nil)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 
 		httpmock.Activate()
@@ -653,7 +653,7 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 			Status: paypal.OrderStatusApproved,
 		}
 
-		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, service.Success, nil)
+		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, "", service.Success, nil)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 		mockExternalPaymentProvidersService.EXPECT().CapturePayment(gomock.Any()).Return(nil, fmt.Errorf("error"))
 
@@ -701,7 +701,7 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 			},
 		}
 
-		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, service.Success, nil)
+		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, "", service.Success, nil)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 		mockExternalPaymentProvidersService.EXPECT().CapturePayment(gomock.Any()).Return(&captureResponse, nil)
 		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
@@ -750,7 +750,7 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 			},
 		}
 
-		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, service.Success, nil)
+		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, "", service.Success, nil)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 		mockExternalPaymentProvidersService.EXPECT().CapturePayment(gomock.Any()).Return(&captureResponse, nil)
 		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
@@ -788,7 +788,7 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 			Status: paypal.OrderStatusCreated,
 		}
 
-		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, service.Success, nil)
+		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, "", service.Success, nil)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
 
@@ -839,7 +839,7 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 			},
 		}
 
-		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, service.Success, nil)
+		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, "", service.Success, nil)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 		mockExternalPaymentProvidersService.EXPECT().CapturePayment(gomock.Any()).Return(&captureResponse, nil)
 		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
@@ -892,7 +892,7 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 			},
 		}
 
-		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, service.Success, nil)
+		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, "", service.Success, nil)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 		mockExternalPaymentProvidersService.EXPECT().CapturePayment(gomock.Any()).Return(&captureResponse, nil)
 		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
@@ -945,7 +945,7 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 			},
 		}
 
-		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, service.Success, nil)
+		mockExternalPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, "", service.Success, nil)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 		mockExternalPaymentProvidersService.EXPECT().CapturePayment(gomock.Any()).Return(&captureResponse, nil)
 		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)

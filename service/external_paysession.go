@@ -17,7 +17,7 @@ type ExternalPaymentProvidersService struct {
 
 // PaymentProviderService is an Interface for all of the requests done to external payment providers
 type PaymentProviderService interface {
-	CheckPaymentProviderStatus(paymentResource *models.PaymentResourceRest) (*models.StatusResponse, ResponseType, error)
+	CheckPaymentProviderStatus(paymentResource *models.PaymentResourceRest) (*models.StatusResponse, string, ResponseType, error)
 	CreatePaymentAndGenerateNextURL(req *http.Request, paymentResource *models.PaymentResourceRest) (string, ResponseType, error)
 	GetPaymentDetails(paymentResource *models.PaymentResourceRest) (*models.PaymentDetails, ResponseType, error)
 	CapturePayment(id string) (*paypal.CaptureOrderResponse, error)

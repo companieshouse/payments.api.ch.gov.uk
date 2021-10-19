@@ -59,6 +59,7 @@ func TestUnitTransformToDB(t *testing.T) {
 					ExternalRefundUrl: "external",
 				},
 			},
+			ProviderID: "abc123",
 		}
 
 		expectedPaymentResourceDB := models.PaymentResourceDB{
@@ -82,6 +83,7 @@ func TestUnitTransformToDB(t *testing.T) {
 				Reference:     "ref",
 				CompanyNumber: "companyNumber",
 				Status:        "pending",
+				ProviderID:    "abc123",
 			},
 			Refunds: []models.RefundResourceDB{
 				{

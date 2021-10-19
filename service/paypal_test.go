@@ -59,7 +59,7 @@ func TestUnitCheckPaymentProviderStatus(t *testing.T) {
 
 		mockPayPalSDK.EXPECT().GetOrder(gomock.Any(), "123456").Return(nil, fmt.Errorf("error"))
 
-		status, resType, err := mockPayPalService.CheckPaymentProviderStatus(&paymentSession)
+		status, _, resType, err := mockPayPalService.CheckPaymentProviderStatus(&paymentSession)
 
 		So(status, ShouldBeNil)
 		So(resType, ShouldEqual, Error)
@@ -79,7 +79,7 @@ func TestUnitCheckPaymentProviderStatus(t *testing.T) {
 
 		mockPayPalSDK.EXPECT().GetOrder(gomock.Any(), "123456").Return(&paypalStatus, nil)
 
-		status, resType, err := mockPayPalService.CheckPaymentProviderStatus(&paymentSession)
+		status, _, resType, err := mockPayPalService.CheckPaymentProviderStatus(&paymentSession)
 
 		So(status.Status, ShouldContainSubstring, "COMPLETED")
 		So(resType, ShouldEqual, Success)
