@@ -119,6 +119,7 @@ type PaymentDetails struct {
 	ExternalPaymentID string `json:"external_payment_id"`
 	TransactionDate   string `json:"transaction_date"`
 	PaymentStatus     string `json:"payment_status"`
+	ProviderID        string `json:"provider_id,omitempty"`
 }
 
 // GovPayRefund

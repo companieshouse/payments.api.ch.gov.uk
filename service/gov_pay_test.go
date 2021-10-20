@@ -476,9 +476,9 @@ func TestUnitGetGovPayPaymentDetails(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		govPayPaymentDetails := models.PaymentDetails{CardType: "Visa", ExternalPaymentID: "1234", TransactionDate: "2016-01-21T17:15:000Z", PaymentStatus: "accepted"}
+		govPayPaymentDetails := models.PaymentDetails{CardType: "Visa", ExternalPaymentID: "1234", TransactionDate: "2016-01-21T17:15:000Z", PaymentStatus: "accepted", ProviderID: "abc123"}
 		govPayState := models.State{Status: "success", Finished: true}
-		incomingGovPayResponse := models.IncomingGovPayResponse{CardBrand: "Visa", PaymentID: "1234", CreatedDate: "2016-01-21T17:15:000Z", State: govPayState}
+		incomingGovPayResponse := models.IncomingGovPayResponse{CardBrand: "Visa", PaymentID: "1234", CreatedDate: "2016-01-21T17:15:000Z", State: govPayState, ProviderID: "abc123"}
 
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, incomingGovPayResponse)
 		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
