@@ -13,7 +13,6 @@ import (
 	"github.com/plutov/paypal/v4"
 
 	"github.com/companieshouse/chs.go/log"
-	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 )
 
@@ -23,24 +22,19 @@ type GovPayService struct {
 }
 
 // CheckPaymentProviderStatus checks the status of the payment with GovPay
-func (gp GovPayService) CheckPaymentProviderStatus(paymentResource *models.PaymentResourceRest) (*models.StatusResponse, ResponseType, error) {
-	// Call the getGovPayPaymentState method down below to get state
-	cfg, err := config.Get()
+func (gp *GovPayService) CheckPaymentProviderStatus(paymentResource *models.PaymentResourceRest) (*models.StatusResponse, string, ResponseType, error) {
+	govPayResponse, err := callGovPay(gp, paymentResource)
 	if err != nil {
-		return nil, Error, fmt.Errorf("error getting config: [%s]", err)
+		return nil, "", Error, err
 	}
+	state := govPayResponse.State
 
-	state, responseType, err := gp.getGovPayPaymentState(paymentResource, cfg)
-	if err != nil {
-		return nil, responseType, fmt.Errorf("error getting state of GovPay payment: [%s]", err)
-	}
-	// Return state
 	if state.Finished && state.Status == "success" {
-		return &models.StatusResponse{Status: "paid"}, Success, nil
+		return &models.StatusResponse{Status: "paid"}, govPayResponse.ProviderID, Success, nil
 	} else if state.Finished && state.Code == "P0030" {
-		return &models.StatusResponse{Status: "cancelled"}, Success, nil
+		return &models.StatusResponse{Status: "cancelled"}, "", Success, nil
 	}
-	return &models.StatusResponse{Status: "failed"}, Error, nil
+	return &models.StatusResponse{Status: "failed"}, "", Error, nil
 }
 
 // CreatePaymentAndGenerateNextURL creates a gov pay session linked to the given payment session and stores the required details on the payment session
@@ -118,18 +112,6 @@ func (gp *GovPayService) CreatePaymentAndGenerateNextURL(req *http.Request, paym
 	return govPayResponse.GovPayLinks.NextURL.HREF, Success, nil
 }
 
-// To get the status of a GovPay payment, GET the payment resource from GovPay and return the State block
-func (gp *GovPayService) getGovPayPaymentState(paymentResource *models.PaymentResourceRest, cfg *config.Config) (*models.State, ResponseType, error) {
-
-	govPayResponse, err := callGovPay(gp, paymentResource)
-	if err != nil {
-		return nil, Error, err
-	}
-
-	// Return the status of the payment
-	return &govPayResponse.State, Success, nil
-}
-
 // GetPaymentDetails gets the details of a GovPay payment
 func (gp *GovPayService) GetPaymentDetails(paymentResource *models.PaymentResourceRest) (*models.PaymentDetails, ResponseType, error) {
 
@@ -138,7 +120,12 @@ func (gp *GovPayService) GetPaymentDetails(paymentResource *models.PaymentResour
 		return nil, Error, err
 	}
 
-	paymentDetails := &models.PaymentDetails{CardType: govPayResponse.CardBrand, ExternalPaymentID: govPayResponse.PaymentID, TransactionDate: govPayResponse.CreatedDate}
+	paymentDetails := &models.PaymentDetails{
+		CardType:          govPayResponse.CardBrand,
+		ExternalPaymentID: govPayResponse.PaymentID,
+		TransactionDate:   govPayResponse.CreatedDate,
+		ProviderID:        govPayResponse.ProviderID,
+	}
 
 	if govPayResponse.State.Finished && govPayResponse.State.Status == "success" {
 		paymentDetails.PaymentStatus = "accepted"

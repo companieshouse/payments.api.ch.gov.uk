@@ -49,18 +49,19 @@ type PayPalService struct {
 	PaymentService PaymentService
 }
 
-// CheckPaymentProviderStatus checks the status of the payment with PayPal
-func (pp *PayPalService) CheckPaymentProviderStatus(paymentResource *models.PaymentResourceRest) (*models.StatusResponse, ResponseType, error) {
+// CheckPaymentProviderStatus checks the status of the payment with PayPal.
+// Provider ID return value not yet implemented for PayPal.
+func (pp *PayPalService) CheckPaymentProviderStatus(paymentResource *models.PaymentResourceRest) (*models.StatusResponse, string, ResponseType, error) {
 
 	res, err := pp.Client.GetOrder(
 		context.Background(),
 		paymentResource.MetaData.ExternalPaymentStatusID,
 	)
 	if err != nil {
-		return nil, Error, fmt.Errorf("error checking payment status with PayPal: [%w]", err)
+		return nil, "", Error, fmt.Errorf("error checking payment status with PayPal: [%w]", err)
 	}
 
-	return &models.StatusResponse{Status: res.Status}, Success, nil
+	return &models.StatusResponse{Status: res.Status}, "", Success, nil
 }
 
 // CreatePaymentAndGenerateNextURL creates a PayPal session linked to the given payment session

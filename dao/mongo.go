@@ -110,6 +110,9 @@ func (m *Mongo) PatchPaymentResource(id string, paymentUpdate *models.PaymentRes
 	if paymentUpdate.Refunds != nil {
 		patchUpdate["refunds"] = paymentUpdate.Refunds
 	}
+	if paymentUpdate.Data.ProviderID != "" {
+		patchUpdate["data.provider_id"] = paymentUpdate.Data.ProviderID
+	}
 
 	updateCall := bson.M{"$set": patchUpdate}
 

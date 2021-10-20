@@ -79,7 +79,8 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 	gp := &service.GovPayService{
 		PaymentService: *paymentService,
 	}
-	statusResponse, responseType, err := gp.CheckPaymentProviderStatus(paymentSession)
+	statusResponse, providerID, responseType, err := gp.CheckPaymentProviderStatus(paymentSession)
+
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error getting payment status from govpay: [%v]", err), log.Data{"service_response_type": responseType.String()})
 		switch responseType {
@@ -92,6 +93,8 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	// Set the Provider ID provided by Gov Pay
+	paymentSession.ProviderID = providerID
 	// Set the status of the payment
 	paymentSession.Status = statusResponse.Status
 	// To match the format time is saved to mongo, e.g. "2018-11-22T08:39:16.782Z", truncate the time
@@ -189,7 +192,7 @@ func HandlePayPalCallback(externalPaymentSvc service.PaymentProviderService) htt
 			return
 		}
 
-		statusResponse, responseType, err := externalPaymentSvc.CheckPaymentProviderStatus(paymentSession)
+		statusResponse, _, responseType, err := externalPaymentSvc.CheckPaymentProviderStatus(paymentSession)
 		if err != nil {
 			log.ErrorR(req, fmt.Errorf("error getting payment status from PayPal: [%w]", err), log.Data{"service_response_type": responseType.String()})
 			w.WriteHeader(http.StatusInternalServerError)
