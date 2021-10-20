@@ -41,7 +41,7 @@ func TestUnitHandleCreatePaymentSession(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
 
-	Convey("Error creating payment resource - error", t, func() {
+	Convey("Error creating payment resource - no authentication details", t, func() {
 		paymentService = &service.PaymentService{
 			Config: config.Config{DomainAllowList: "http://www.companieshouse.gov.uk"},
 		}
@@ -106,7 +106,7 @@ func TestUnitHandlePatchPaymentSession(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
-	Convey("Error checking expiry status", t, func() {
+	Convey("Error checking expiry status - config not set", t, func() {
 		req := httptest.NewRequest("GET", "/test", nil)
 
 		paymentResource := models.PaymentResourceRest{}
@@ -118,7 +118,7 @@ func TestUnitHandlePatchPaymentSession(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
-	Convey("Payment session expired", t, func() {
+	Convey("Patch Payment Session - Payment session expired", t, func() {
 		req := httptest.NewRequest("GET", "/test", nil)
 		twoHours, _ := time.ParseDuration("2h")
 		paymentResource := models.PaymentResourceRest{
