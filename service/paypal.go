@@ -80,6 +80,7 @@ func (pp *PayPalService) CreatePaymentAndGenerateNextURL(req *http.Request, paym
 		[]paypal.PurchaseUnitRequest{
 			{
 				ReferenceID: id,
+				InvoiceID:   id,
 				Amount: &paypal.PurchaseUnitAmount{
 					Value:    paymentResource.Amount,
 					Currency: "GBP",
