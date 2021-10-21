@@ -14,7 +14,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func CreatePayPalOrderResponse(nextUrl string) paypal.Order {
+func CreatePayPalOrderResponse(nextURL string) paypal.Order {
 	return paypal.Order{
 		ID:            "123",
 		Status:        paypal.OrderStatusCreated,
@@ -23,7 +23,7 @@ func CreatePayPalOrderResponse(nextUrl string) paypal.Order {
 		PurchaseUnits: nil,
 		Links: []paypal.Link{
 			{
-				Href:        nextUrl,
+				Href:        nextURL,
 				Rel:         "approve",
 				Method:      "GET",
 				Description: "Approve an order",
@@ -41,6 +41,35 @@ func CreateMockPayPalService(sdk PayPalSDK, service PaymentService) PayPalServic
 		PaymentService: service,
 	}
 }
+
+func TestUnitGetPayPalClient(t *testing.T) {
+	Convey("Client already defined", t, func() {
+		client, _ = paypal.NewClient("id", "secret", "base")
+		cfg, _ := config.Get()
+		c, err := GetPayPalClient(*cfg)
+		So(c, ShouldNotBeNil)
+		So(err, ShouldBeNil)
+		client = nil
+	})
+
+	Convey("Invalid paypal env in config", t, func() {
+		cfg, _ := config.Get()
+		cfg.PaypalEnv = "invalid"
+		c, err := GetPayPalClient(*cfg)
+		So(c, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "invalid paypal env in config: invalid")
+	})
+
+	Convey("Error creating paypal client", t, func() {
+		cfg, _ := config.Get()
+		cfg.PaypalEnv = "test"
+		c, err := GetPayPalClient(*cfg)
+		So(c, ShouldBeNil)
+		So(err.Error(), ShouldEqual,
+			"error creating paypal client: [ClientID, Secret and APIBase are required to create a Client]")
+	})
+}
+
 func TestUnitCheckPaymentProviderStatus(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -329,6 +358,37 @@ func TestUnitGetPaymentDetails(t *testing.T) {
 	})
 }
 
+func TestUnitUnimplementedFunctions(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	cfg, _ := config.Get()
+	mockDao := dao.NewMockDAO(mockCtrl)
+	mockPaymentService := createMockPaymentService(mockDao, cfg)
+	mockPayPalSDK := NewMockPayPalSDK(mockCtrl)
+	mockPayPalService := CreateMockPayPalService(mockPayPalSDK, mockPaymentService)
+	Convey("Get Refund Summary (not implemented)", t, func() {
+		resource, summary, responseType, err := mockPayPalService.GetRefundSummary(nil, "")
+		So(resource, ShouldBeNil)
+		So(summary, ShouldBeNil)
+		So(responseType, ShouldEqual, Success)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Create Refund (not implemented)", t, func() {
+		response, responseType, err := mockPayPalService.CreateRefund(nil, nil)
+		So(response, ShouldBeNil)
+		So(responseType, ShouldEqual, Success)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Get Refund Status (not implemented)", t, func() {
+		response, responseType, err := mockPayPalService.GetRefundStatus(nil, "")
+		So(response, ShouldBeNil)
+		So(responseType, ShouldEqual, Success)
+		So(err, ShouldBeNil)
+	})
+}
+
 func TestUnitCaptureOrder(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -350,5 +410,13 @@ func TestUnitCaptureOrder(t *testing.T) {
 
 		So(res, ShouldEqual, &captureOrder)
 		So(err.Error(), ShouldEqual, "error")
+	})
+}
+
+func TestUnitGetPayPalAPIBase(t *testing.T) {
+	Convey("Get PayPalAPIBase", t, func() {
+		So(getPayPalAPIBase("live"), ShouldEqual, paypal.APIBaseLive)
+		So(getPayPalAPIBase("test"), ShouldEqual, paypal.APIBaseSandBox)
+		So(getPayPalAPIBase("invalid"), ShouldBeEmpty)
 	})
 }
