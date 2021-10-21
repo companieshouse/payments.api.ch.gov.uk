@@ -51,17 +51,11 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 	if isExpired {
 		// Set the status of the payment
 		paymentSession.Status = service.Expired.String()
-		responseType, err := paymentService.PatchPaymentSession(req, id, *paymentSession)
+		_, err := paymentService.PatchPaymentSession(req, id, *paymentSession)
 		if err != nil {
 			log.ErrorR(req, fmt.Errorf("error setting payment status of expired payment session: [%v]", err))
-			switch responseType {
-			case service.Error:
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			default:
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 		log.ErrorR(req, fmt.Errorf("payment session has expired"))
 		w.WriteHeader(http.StatusForbidden)
@@ -83,14 +77,8 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error getting payment status from govpay: [%v]", err), log.Data{"service_response_type": responseType.String()})
-		switch responseType {
-		case service.Error:
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		default:
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	// Set the Provider ID provided by Gov Pay
@@ -103,14 +91,8 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 	responseType, err = paymentService.PatchPaymentSession(req, id, *paymentSession)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error setting payment status: [%v]", err), log.Data{"service_response_type": responseType.String()})
-		switch responseType {
-		case service.Error:
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		default:
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	// Prepare parameters needed for redirecting
@@ -168,17 +150,11 @@ func HandlePayPalCallback(externalPaymentSvc service.PaymentProviderService) htt
 		if isExpired {
 			// Set the status of the payment
 			paymentSession.Status = service.Expired.String()
-			responseType, err := paymentService.PatchPaymentSession(req, paymentID, *paymentSession)
+			_, err := paymentService.PatchPaymentSession(req, paymentID, *paymentSession)
 			if err != nil {
 				log.ErrorR(req, fmt.Errorf("error setting payment status of expired payment session: [%v]", err))
-				switch responseType {
-				case service.Error:
-					w.WriteHeader(http.StatusInternalServerError)
-					return
-				default:
-					w.WriteHeader(http.StatusInternalServerError)
-					return
-				}
+				w.WriteHeader(http.StatusInternalServerError)
+				return
 			}
 			log.ErrorR(req, fmt.Errorf("payment session has expired"))
 			w.WriteHeader(http.StatusForbidden)
@@ -236,14 +212,8 @@ func HandlePayPalCallback(externalPaymentSvc service.PaymentProviderService) htt
 		responseType, err = paymentService.PatchPaymentSession(req, paymentID, *paymentSession)
 		if err != nil {
 			log.ErrorR(req, fmt.Errorf("error setting payment status: [%v]", err), log.Data{"service_response_type": responseType.String()})
-			switch responseType {
-			case service.Error:
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			default:
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 
 		// Prepare parameters needed for redirecting

@@ -151,14 +151,8 @@ func HandlePatchPaymentSession(w http.ResponseWriter, req *http.Request) {
 
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error patching payment resource: [%v]", err), log.Data{"service_response_type": responseType.String()})
-		switch responseType {
-		case service.Error:
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		default:
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	log.InfoR(req, "Successful PATCH request for payment resource", log.Data{"payment_id": paymentSession.MetaData.ID, "status": http.StatusOK})
@@ -193,14 +187,8 @@ func HandleGetPaymentDetails(externalPaymentSvc *service.ExternalPaymentProvider
 
 		if err != nil {
 			log.ErrorR(req, fmt.Errorf("error getting payment details from external provider: [%v]", err), log.Data{"service_response_type": responseType.String()})
-			switch responseType {
-			case service.Error:
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			default:
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
