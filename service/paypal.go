@@ -79,7 +79,7 @@ func (pp *PayPalService) CreatePaymentAndGenerateNextURL(req *http.Request, paym
 		paypal.OrderIntentCapture,
 		[]paypal.PurchaseUnitRequest{
 			{
-				ReferenceID: id,
+				InvoiceID: id,
 				Amount: &paypal.PurchaseUnitAmount{
 					Value:    paymentResource.Amount,
 					Currency: "GBP",
