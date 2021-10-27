@@ -34,6 +34,11 @@ Variable                         | Default   | Description
 `EXPIRY_TIME_IN_MINUTES`         |           | Number of minutes before a payment session expires
 `KAFKA_BROKER_ADDR`              |           | Kafka Broker address
 `SCHEMA_REGISTRY_URL`            |           | Schema Registry URL
+`CHS_API_KEY`                    |           | API access key
+`SECURE_APP_COSTS_REGEX`         |           | Regex to match secure app costs resource
+`PAYPAL_ENV`                     |           | live or test
+`PAYPAL_CLIENT_ID`               |           | PayPal Client ID
+`PAYPAL_SECRET`                  |           | Paypal Secret
 
 ## Endpoints
 
@@ -46,6 +51,8 @@ Method    | Path                                            | Description
 **PATCH** | /private/payments/{payment_id}                  | Patch Payment Session
 **POST**  | /private/payments/{payment_id}/external-journey | Returns URL for external Payment Provider
 **GET**   | /callback/payments/govpay/{payment_id}          | [GOV.UK Pay](https://www.payments.service.gov.uk) callback
+**GET**   | /callback/payments/paypal/orders/{payment_id}   | [PayPal](https://www.paypal.com) callback
+
 
 The `Create Payment Session` **POST** endpoint receives a `body` in the following format:
 
@@ -105,7 +112,13 @@ and returns a Refund Resource in the response:
 
 ## External Payment Providers
 
-The only external payment provider currently supported is [GOV.UK Pay](https://www.payments.service.gov.uk).
+The external payment providers currently supported are [GOV.UK Pay](https://www.payments.service.gov.uk) and [PayPal](https://www.paypal.com).
+
+A summary/Choose payment method screen is shown depending on what `allowed_payment_methods` are set as part of the `GET` payment details endpoint.
+
+## Returning to the payments Service
+
+
 
 ## Docker support
 
