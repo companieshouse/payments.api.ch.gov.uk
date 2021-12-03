@@ -13,6 +13,8 @@ import (
 
 var client *paypal.Client
 
+const gbp = "GBP"
+
 func GetPayPalClient(cfg config.Config) (*paypal.Client, error) {
 	if client != nil {
 		return client, nil
@@ -74,6 +76,11 @@ func (pp *PayPalService) CreatePaymentAndGenerateNextURL(req *http.Request, paym
 	redirectURL := fmt.Sprintf("%s/callback/payments/paypal/orders/%s",
 		pp.PaymentService.Config.PaymentsAPIURL, paymentResource.MetaData.ID)
 
+	money := &paypal.Money{
+		Currency: gbp,
+		Value:    paymentResource.Amount,
+	}
+
 	order, err := pp.Client.CreateOrder(
 		context.Background(),
 		paypal.OrderIntentCapture,
@@ -82,7 +89,18 @@ func (pp *PayPalService) CreatePaymentAndGenerateNextURL(req *http.Request, paym
 				InvoiceID: id,
 				Amount: &paypal.PurchaseUnitAmount{
 					Value:    paymentResource.Amount,
-					Currency: "GBP",
+					Currency: gbp,
+					Breakdown: &paypal.PurchaseUnitAmountBreakdown{
+						ItemTotal: money,
+					},
+				},
+				Items: []paypal.Item{
+					{
+						Name:       paymentResource.Reference,
+						SKU:        paymentResource.CompanyNumber, // SKU = Stock Keeping Unit
+						Quantity:   "1",
+						UnitAmount: money,
+					},
 				},
 			},
 		},
