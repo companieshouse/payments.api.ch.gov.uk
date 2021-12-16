@@ -21,11 +21,7 @@ var refundService *service.RefundService
 var externalPaymentService *service.ExternalPaymentProvidersService
 
 // Register defines the route mappings for the main router and it's subrouters
-func Register(mainRouter *mux.Router, cfg config.Config) {
-	m := &dao.Mongo{
-		URL: cfg.MongoDBURL,
-	}
-
+func Register(mainRouter *mux.Router, cfg config.Config, paymentsDao dao.DAO) {
 	r, err := regexp.Compile(cfg.SecureAppCostsRegex)
 	if err != nil {
 		err = errors.New("secure app costs regex failed to compile")
@@ -34,7 +30,7 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	}
 
 	paymentService = &service.PaymentService{
-		DAO:              m,
+		DAO:              paymentsDao,
 		Config:           cfg,
 		SecureCostsRegex: r,
 	}
@@ -57,7 +53,7 @@ func Register(mainRouter *mux.Router, cfg config.Config) {
 	refundService = &service.RefundService{
 		GovPayService:  govPayService,
 		PaymentService: paymentService,
-		DAO:            m,
+		DAO:            paymentsDao,
 		Config:         cfg,
 	}
 

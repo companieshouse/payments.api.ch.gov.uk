@@ -1,93 +1,110 @@
 package dao
 
 import (
-	"fmt"
+	"context"
+	"errors"
+	"os"
+	"time"
 
-	"github.com/companieshouse/payments.api.ch.gov.uk/config"
+	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
-	"github.com/globalsign/mgo"
-	"github.com/globalsign/mgo/bson"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var session *mgo.Session
+const deadline = 5 * time.Second
 
-// Mongo represents a simplistic MongoDB configuration.
-type Mongo struct {
-	URL string
+var client *mongo.Client
+
+// MongoService is an implementation of the Service interface using MongoDB as the backend driver.
+type MongoService struct {
+	db             MongoDatabaseInterface
+	CollectionName string
 }
 
-// getMongoSession gets a MongoDB Session
-func getMongoSession() (*mgo.Session, error) {
-	if session == nil {
-		var err error
-		cfg, err := config.Get()
-		if err != nil {
-			return nil, fmt.Errorf("error getting config: %s", err)
-		}
-		session, err = mgo.Dial(cfg.MongoDBURL)
-		if err != nil {
-			return nil, fmt.Errorf("error dialling into mongodb: %s", err)
-		}
+// MongoDatabaseInterface is an interface that describes the mongodb driver
+type MongoDatabaseInterface interface {
+	Collection(name string, opts ...*options.CollectionOptions) *mongo.Collection
+}
+
+func getMongoDatabase(mongoDBURL, databaseName string) MongoDatabaseInterface {
+	return getMongoClient(mongoDBURL).Database(databaseName)
+}
+
+func getMongoClient(mongoDBURL string) *mongo.Client {
+	if client != nil {
+		return client
 	}
-	return session.Copy(), nil
+
+	ctx := context.Background()
+
+	clientOptions := options.Client().ApplyURI(mongoDBURL)
+	client, err := mongo.Connect(ctx, clientOptions)
+
+	// Assume the caller of this func cannot handle the case where there is no database connection
+	// so the service must crash here as it cannot continue.
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
+
+	// Check we can connect to the mongodb instance. Failure here should result in a crash.
+	pingContext, cancel := context.WithDeadline(ctx, time.Now().Add(deadline))
+
+	err = client.Ping(pingContext, nil)
+	if err != nil {
+		log.Error(errors.New("ping to mongodb timed out. please check the connection to mongodb and that it is running"))
+		os.Exit(1)
+	}
+
+	defer cancel()
+
+	log.Info("connected to mongodb successfully")
+
+	return client
 }
 
 // CreatePaymentResource writes a new payment resource to the DB
-func (m *Mongo) CreatePaymentResource(paymentResource *models.PaymentResourceDB) error {
-	paymentSession, err := getMongoSession()
-	if err != nil {
-		return err
-	}
-	defer paymentSession.Close()
+// func (m *Mongo) CreatePaymentResource(paymentResource *models.PaymentResourceDB) error {
+func (m *MongoService) CreatePaymentResource(paymentResource *models.PaymentResourceDB) error {
+	collection := m.db.Collection(m.CollectionName)
 
-	cfg, err := config.Get()
-	if err != nil {
-		return fmt.Errorf("error getting config: %s", err)
-	}
-	c := paymentSession.DB(cfg.Database).C(cfg.Collection)
+	_, err := collection.InsertOne(context.Background(), paymentResource)
 
-	return c.Insert(paymentResource)
+	return err
 }
 
 // GetPaymentResource gets a payment resource from the DB
 // If payment not found in DB, return nil
-func (m *Mongo) GetPaymentResource(id string) (*models.PaymentResourceDB, error) {
+func (m *MongoService) GetPaymentResource(id string) (*models.PaymentResourceDB, error) {
+
 	var resource models.PaymentResourceDB
-	paymentSession, err := getMongoSession()
+
+	collection := m.db.Collection(m.CollectionName)
+	dbResource := collection.FindOne(context.Background(), bson.M{"_id": id})
+
+	err := dbResource.Err()
 	if err != nil {
-		return &resource, err
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			log.Info("no payment resource found for id " + id)
+			return nil, nil
+		}
+		return nil, err
 	}
-	defer paymentSession.Close()
 
-	cfg, err := config.Get()
+	err = dbResource.Decode(&resource)
+
 	if err != nil {
-		return nil, fmt.Errorf("error getting config: %s", err)
+		return nil, err
 	}
 
-	c := paymentSession.DB(cfg.Database).C(cfg.Collection)
-	err = c.FindId(id).One(&resource)
-
-	// If Payment not found in DB, return empty resource
-	if err != nil && err == mgo.ErrNotFound {
-		return nil, nil
-	}
-
-	return &resource, err
+	return &resource, nil
 }
 
 // PatchPaymentResource patches a payment resource from the DB
-func (m *Mongo) PatchPaymentResource(id string, paymentUpdate *models.PaymentResourceDB) error {
-	paymentSession, err := getMongoSession()
-	if err != nil {
-		return err
-	}
-	defer paymentSession.Close()
-
-	cfg, err := config.Get()
-	if err != nil {
-		return fmt.Errorf("error getting config: %s", err)
-	}
-	c := paymentSession.DB(cfg.Database).C(cfg.Collection)
+func (m *MongoService) PatchPaymentResource(id string, paymentUpdate *models.PaymentResourceDB) error {
+	collection := m.db.Collection(m.CollectionName)
 
 	patchUpdate := make(bson.M)
 
@@ -116,10 +133,7 @@ func (m *Mongo) PatchPaymentResource(id string, paymentUpdate *models.PaymentRes
 
 	updateCall := bson.M{"$set": patchUpdate}
 
-	err = c.UpdateId(id, updateCall)
-	if err != nil {
-		return err
-	}
+	_, err := collection.UpdateOne(context.Background(), bson.M{"_id": id}, updateCall)
 
-	return nil
+	return err
 }

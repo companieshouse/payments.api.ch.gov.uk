@@ -167,7 +167,7 @@ func TestUnitCreatePaymentSession(t *testing.T) {
 		paymentResourceRest, status, err := mockPaymentService.CreatePaymentSession(req.WithContext(ctx), resource)
 		So(paymentResourceRest, ShouldBeNil)
 		So(status, ShouldEqual, Error)
-		So(err.Error(), ShouldEqual, "error writing to MongoDB: error")
+		So(err.Error(), ShouldEqual, "error writing to DB: error")
 	})
 
 	cfg.PaymentsWebURL = "https://payments.companieshouse.gov.uk"

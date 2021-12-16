@@ -6,6 +6,7 @@ import (
 
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
+	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/handlers"
 	"github.com/gorilla/mux"
 )
@@ -20,10 +21,12 @@ func main() {
 		return
 	}
 
+	paymentsDAO := dao.NewDAO(cfg)
+
 	// Create router
 	mainRouter := mux.NewRouter()
 
-	handlers.Register(mainRouter, *cfg)
+	handlers.Register(mainRouter, *cfg, paymentsDAO)
 
 	log.Info("Starting " + namespace)
 	err = http.ListenAndServe(cfg.BindAddr, mainRouter)
