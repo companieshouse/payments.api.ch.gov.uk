@@ -42,6 +42,14 @@ func CreateMockPayPalService(sdk PayPalSDK, service PaymentService) PayPalServic
 	}
 }
 
+func TestUnitSetEmptyPaypalClientForUnitTests(t *testing.T) {
+	Convey("Unit Test Function", t, func() {
+		So(client, ShouldBeNil)
+		SetEmptyPaypalClientForUnitTests()
+		So(client, ShouldResemble, &paypal.Client{})
+	})
+}
+
 func TestUnitGetPayPalClient(t *testing.T) {
 	Convey("Client already defined", t, func() {
 		client, _ = paypal.NewClient("id", "secret", "base")
