@@ -66,7 +66,6 @@ func getMongoClient(mongoDBURL string) *mongo.Client {
 }
 
 // CreatePaymentResource writes a new payment resource to the DB
-// func (m *Mongo) CreatePaymentResource(paymentResource *models.PaymentResourceDB) error {
 func (m *MongoService) CreatePaymentResource(paymentResource *models.PaymentResourceDB) error {
 	collection := m.db.Collection(m.CollectionName)
 
