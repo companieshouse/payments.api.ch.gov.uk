@@ -150,7 +150,7 @@ func (service *PaymentService) CreatePaymentSession(req *http.Request, createRes
 	err = service.DAO.CreatePaymentResource(&paymentResourceEntity)
 
 	if err != nil {
-		err = fmt.Errorf("error writing to MongoDB: %v", err)
+		err = fmt.Errorf("error writing to DB: %v", err)
 		log.ErrorR(req, err)
 		return nil, Error, err
 	}

@@ -15,6 +15,12 @@ var client *paypal.Client
 
 const gbp = "GBP"
 
+// SetEmptyPaypalClientForUnitTests returns an empty client. Only to be used in unit tests.
+func SetEmptyPaypalClientForUnitTests() {
+	log.Info("setting empty paypal client for unit test")
+	client = &paypal.Client{}
+}
+
 func GetPayPalClient(cfg config.Config) (*paypal.Client, error) {
 	if client != nil {
 		return client, nil
