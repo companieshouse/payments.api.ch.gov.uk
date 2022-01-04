@@ -3,17 +3,21 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/companieshouse/chs.go/authentication"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/golang/mock/gomock"
+	"github.com/jarcoal/httpmock"
+	"github.com/plutov/paypal/v4"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -52,6 +56,37 @@ func TestUnitHandleCreatePaymentSession(t *testing.T) {
 
 		HandleCreatePaymentSession(w, req)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Create payment resource - success", t, func() {
+		mockDao := dao.NewMockDAO(gomock.NewController(t))
+		mockDao.EXPECT().CreatePaymentResource(gomock.Any()).Return(nil)
+
+		paymentService = &service.PaymentService{
+			DAO:    mockDao,
+			Config: config.Config{DomainAllowList: "https://www.companieshouse.gov.uk"},
+		}
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "https://www.companieshouse.gov.uk", jsonResponse)
+
+		b := []byte(`{"redirect_uri":"https://www.companieshouse.gov.uk", "reference":"invalid", "resource": "https://www.companieshouse.gov.uk", "state": "invalid"}`)
+		req := httptest.NewRequest("GET", "/test", bytes.NewReader(b))
+		w := httptest.NewRecorder()
+
+		var userDetails = authentication.AuthUserDetails{
+			Email:    "email@companieshouse.gov.uk",
+			Forename: "forename",
+			ID:       "id",
+			Surname:  "surname",
+		}
+
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, userDetails)
+
+		HandleCreatePaymentSession(w, req.WithContext(ctx))
+		So(w.Code, ShouldEqual, http.StatusCreated)
 	})
 
 }
@@ -95,10 +130,18 @@ func TestUnitHandleGetPaymentSession(t *testing.T) {
 		w := httptest.NewRecorder()
 		HandleGetPaymentSession(w, req.WithContext(ctx))
 		So(w.Code, ShouldEqual, http.StatusOK)
+
+		decoder := json.NewDecoder(w.Body)
+		var rest models.PaymentResourceRest
+		decoder.Decode(&rest)
+		So(rest.Status, ShouldEqual, service.Expired.String())
 	})
 }
 
 func TestUnitHandlePatchPaymentSession(t *testing.T) {
+	cfg, _ := config.Get()
+	mockCtrl := gomock.NewController(t)
+
 	Convey("Invalid PaymentResourceRest due to no context", t, func() {
 		req := httptest.NewRequest("GET", "/test", nil)
 		w := httptest.NewRecorder()
@@ -172,16 +215,72 @@ func TestUnitHandlePatchPaymentSession(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
 
+	Convey("Error patching payment", t, func() {
+		b := []byte(`{"status":"pending", "payment_method": "credit-card"}`)
+		req := httptest.NewRequest("GET", "/test", bytes.NewReader(b))
+		paymentResource := models.PaymentResourceRest{
+			CreatedAt: time.Now(),
+		}
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyPaymentSession, &paymentResource)
+
+		mockDao := dao.NewMockDAO(mockCtrl)
+		payment := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{Status: "pending"},
+		}
+		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&payment, nil)
+		paymentService = &service.PaymentService{
+			DAO:    mockDao,
+			Config: *cfg,
+		}
+
+		w := httptest.NewRecorder()
+		HandlePatchPaymentSession(w, req.WithContext(ctx))
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Successful patch", t, func() {
+		b := []byte(`{"status":"pending", "payment_method": "credit-card"}`)
+		req := httptest.NewRequest("GET", "/test", bytes.NewReader(b))
+		paymentResource := models.PaymentResourceRest{
+			CreatedAt: time.Now(),
+		}
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyPaymentSession, &paymentResource)
+
+		payment := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount: "10.00",
+				Status: "pending",
+				Links:  models.PaymentLinksDB{Resource: "companieshouse.gov.uk"},
+			},
+		}
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "companieshouse.gov.uk", jsonResponse)
+
+		mockDao := dao.NewMockDAO(mockCtrl)
+		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&payment, nil)
+		mockDao.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
+		paymentService = &service.PaymentService{
+			DAO:    mockDao,
+			Config: *cfg,
+		}
+
+		w := httptest.NewRecorder()
+		HandlePatchPaymentSession(w, req.WithContext(ctx))
+		So(w.Code, ShouldEqual, http.StatusOK)
+	})
+
 }
 
 func TestUnitHandleGetPaymentDetails(t *testing.T) {
 
+	cfg, _ := config.Get()
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
 	Convey("Invalid request", t, func() {
-
-		cfg, _ := config.Get()
 		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
 		mockPayPalSDK := service.NewMockPayPalSDK(mockCtrl)
 
@@ -205,8 +304,6 @@ func TestUnitHandleGetPaymentDetails(t *testing.T) {
 	})
 
 	Convey("Payment method not recognised", t, func() {
-
-		cfg, _ := config.Get()
 		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
 		mockPayPalSDK := service.NewMockPayPalSDK(mockCtrl)
 
@@ -229,6 +326,114 @@ func TestUnitHandleGetPaymentDetails(t *testing.T) {
 
 		HandleGetPaymentDetails(&svc)
 		So(res.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Error getting payment details from external provider", t, func() {
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
+		mockPayPalSDK := service.NewMockPayPalSDK(mockCtrl)
+
+		svc := service.ExternalPaymentProvidersService{
+			GovPayService: service.GovPayService{
+				PaymentService: *mockPaymentService,
+			},
+			PayPalService: service.PayPalService{
+				Client:         mockPayPalSDK,
+				PaymentService: *mockPaymentService,
+			},
+		}
+		handler := HandleGetPaymentDetails(&svc)
+
+		res := httptest.NewRecorder()
+		req := httptest.NewRequest("GET", "/test", nil)
+		paymentResource := models.PaymentResourceRest{PaymentMethod: "credit-card"}
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyPaymentSession, &paymentResource)
+		handler.ServeHTTP(res, req.WithContext(ctx))
+
+		HandleGetPaymentDetails(&svc)
+		So(res.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Get Payment Details - Credit Card Success", t, func() {
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
+		mockPayPalSDK := service.NewMockPayPalSDK(mockCtrl)
+
+		svc := service.ExternalPaymentProvidersService{
+			GovPayService: service.GovPayService{
+				PaymentService: *mockPaymentService,
+			},
+			PayPalService: service.PayPalService{
+				Client:         mockPayPalSDK,
+				PaymentService: *mockPaymentService,
+			},
+		}
+		handler := HandleGetPaymentDetails(&svc)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "companieshouse.gov.uk", jsonResponse)
+
+		res := httptest.NewRecorder()
+		req := httptest.NewRequest("GET", "/test", nil)
+		paymentResource := models.PaymentResourceRest{
+			PaymentMethod: "credit-card",
+			MetaData: models.PaymentResourceMetaDataRest{
+				ExternalPaymentStatusURI: "companieshouse.gov.uk",
+			},
+			Costs: []models.CostResourceRest{
+				{
+					ClassOfPayment: []string{"penalty"},
+				},
+			},
+		}
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyPaymentSession, &paymentResource)
+		handler.ServeHTTP(res, req.WithContext(ctx))
+
+		HandleGetPaymentDetails(&svc)
+		So(res.Code, ShouldEqual, http.StatusOK)
+	})
+
+	Convey("Get Payment Details - PayPal Success", t, func() {
+		mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
+		mockPayPalSDK := service.NewMockPayPalSDK(mockCtrl)
+
+		createTime, _ := time.Parse("2006-01-02", "2003-02-01")
+		paypalStatus := paypal.Order{
+			CreateTime: &createTime,
+			Status:     "COMPLETED",
+		}
+
+		mockPayPalSDK.EXPECT().GetOrder(gomock.Any(), "123456").Return(&paypalStatus, nil)
+
+		svc := service.ExternalPaymentProvidersService{
+			GovPayService: service.GovPayService{
+				PaymentService: *mockPaymentService,
+			},
+			PayPalService: service.PayPalService{
+				Client:         mockPayPalSDK,
+				PaymentService: *mockPaymentService,
+			},
+		}
+		handler := HandleGetPaymentDetails(&svc)
+
+		res := httptest.NewRecorder()
+		req := httptest.NewRequest("GET", "/test", nil)
+		paymentResource := models.PaymentResourceRest{
+			PaymentMethod: "PayPal",
+			MetaData: models.PaymentResourceMetaDataRest{
+				ExternalPaymentStatusID: "123456",
+			},
+			Costs: []models.CostResourceRest{
+				{
+					ClassOfPayment: []string{"penalty"},
+				},
+			},
+		}
+		ctx := context.WithValue(req.Context(), helpers.ContextKeyPaymentSession, &paymentResource)
+		handler.ServeHTTP(res, req.WithContext(ctx))
+
+		HandleGetPaymentDetails(&svc)
+		So(res.Code, ShouldEqual, http.StatusOK)
 	})
 
 }
