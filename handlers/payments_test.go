@@ -9,8 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plutov/paypal/v4"
-
 	"github.com/companieshouse/chs.go/authentication"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
@@ -19,6 +17,7 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/golang/mock/gomock"
 	"github.com/jarcoal/httpmock"
+	"github.com/plutov/paypal/v4"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
