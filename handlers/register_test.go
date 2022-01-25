@@ -36,6 +36,7 @@ func TestUnitRegisterRoutes(t *testing.T) {
 		So(router.GetRoute("create-external-payment-journey"), ShouldNotBeNil)
 		So(router.GetRoute("handle-govpay-callback"), ShouldNotBeNil)
 		So(router.GetRoute("handle-paypal-callback"), ShouldNotBeNil)
+		So(router.GetRoute("bulk-refund-govpay"), ShouldNotBeNil)
 	})
 }
 
