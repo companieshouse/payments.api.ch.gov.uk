@@ -44,7 +44,7 @@ func TestUnitHandleGovPayBulkRefund(t *testing.T) {
 	Convey("File not supplied", t, func() {
 		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/govpay", nil)
 		w := httptest.NewRecorder()
-		HandleBulkRefund(w, req)
+		HandleGovPayBulkRefund(w, req)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
@@ -58,7 +58,7 @@ func TestUnitHandleGovPayBulkRefund(t *testing.T) {
 		req.Header.Set("Content-Type", "multipart/form-data; boundary=test_boundary")
 		w := httptest.NewRecorder()
 
-		HandleBulkRefund(w, req)
+		HandleGovPayBulkRefund(w, req)
 		So(w.Code, ShouldEqual, http.StatusCreated)
 	})
 }
