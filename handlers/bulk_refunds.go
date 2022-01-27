@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/companieshouse/payments.api.ch.gov.uk/utils"
+	"github.com/companieshouse/chs.go/utils"
 
 	"github.com/companieshouse/chs.go/log"
 )

@@ -6,6 +6,8 @@ github.com/Shopify/toxiproxy v2.1.4+incompatible h1:TKdv8HiTLgE5wdJuEML90aBgNWso
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=
 github.com/companieshouse/chs.go v1.2.5 h1:43/yhS185r/y9gDLPksA93wWA133ZSAX9SeZw0Y+LvI=
 github.com/companieshouse/chs.go v1.2.5/go.mod h1:93vQ2qlzSbZenUOFet+pAJzxHdz+w6BF1IvJ56lvC7c=
+github.com/companieshouse/chs.go v1.2.7 h1:AtZvsUBvDZ5s2AtlGzjqQqz0twrkBN7w3Zk1QpEecSs=
+github.com/companieshouse/chs.go v1.2.7/go.mod h1:93vQ2qlzSbZenUOFet+pAJzxHdz+w6BF1IvJ56lvC7c=
 github.com/companieshouse/envconf v0.1.0 h1:6EAyUYqBJsduWZQuz1AR8hxG5OwhPK0r3Y6ppcTDBmQ=
 github.com/companieshouse/envconf v0.1.0/go.mod h1:/gP4p46vTAENnqc2vXW441VOjL91ReJv/uqnYBzlaFo=
 github.com/companieshouse/gofigure v0.1.1 h1:uzkgyKQ825tSlCaGpw61imQKZbqDfv9lP65+SbDFUIs=
