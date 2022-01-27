@@ -93,6 +93,11 @@ func Register(mainRouter *mux.Router, cfg config.Config, paymentsDao dao.DAO) {
 	privateJourneyRouter := mainRouter.PathPrefix("/private/payments/{payment_id}/external-journey").Subrouter()
 	privateJourneyRouter.Handle("", HandleCreateExternalPaymentJourney(externalPaymentService)).Methods("POST").Name("create-external-payment-journey")
 
+	// Admin router will handle all the routes with an admin prefix
+	// and will be intercepted to check for the admin role
+	adminRouter := mainRouter.PathPrefix("/admin/payments/bulk-refunds").Subrouter()
+	adminRouter.HandleFunc("/govpay", HandleGovPayBulkRefund).Methods("POST").Name("bulk-refund-govpay")
+
 	// callback endpoints should not be intercepted by the paymentauth or userauth interceptors, so needs to be it's own subrouter
 	callbackRouter := mainRouter.PathPrefix("/callback").Subrouter()
 	callbackRouter.HandleFunc("/payments/govpay/{payment_id}", HandleGovPayCallback).Methods("GET").Name("handle-govpay-callback")

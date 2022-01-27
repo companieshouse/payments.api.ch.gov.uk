@@ -3,7 +3,7 @@ module github.com/companieshouse/payments.api.ch.gov.uk
 go 1.16
 
 require (
-	github.com/companieshouse/chs.go v1.2.5
+	github.com/companieshouse/chs.go v1.2.7
 	github.com/companieshouse/gofigure v0.1.1
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/golang/mock v1.3.1
