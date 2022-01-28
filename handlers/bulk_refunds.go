@@ -17,8 +17,8 @@ func HandleGovPayBulkRefund(w http.ResponseWriter, req *http.Request) {
 
 	_, _, err := req.FormFile("file")
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error reading form from request: %w", err))
-		m := utils.NewMessageResponse("error reading form from request")
+		log.ErrorR(req, fmt.Errorf("error reading file from request: %w", err))
+		m := utils.NewMessageResponse("error reading file from request")
 		utils.WriteJSONWithStatus(w, req, m, http.StatusInternalServerError)
 		return
 	}
