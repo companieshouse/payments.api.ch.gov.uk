@@ -154,3 +154,74 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 		}
 	})
 }
+
+func PaymentAdminAuthenticationIntercept(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		// Get identity type from request
+		identityType := authentication.GetAuthorisedIdentityType(r)
+		if !(identityType == authentication.Oauth2IdentityType || identityType == authentication.APIKeyIdentityType) {
+			log.Error(fmt.Errorf("authentication interceptor unauthorised: not oauth2 or API key identity type"))
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		authorisedUser := ""
+
+		// Get user details from context, passed in by UserAuthenticationInterceptor
+		userDetails, ok := r.Context().Value(authentication.ContextKeyUserDetails).(authentication.AuthUserDetails)
+		if !ok {
+			log.ErrorR(r, fmt.Errorf("PaymentAuthenticationInterceptor error: invalid AuthUserDetails from UserAuthenticationInterceptor"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// Get user details from request
+		authorisedUser = userDetails.ID
+		if authorisedUser == "" {
+			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor unauthorised: no authorised identity"))
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		isPostRequest := http.MethodPost == r.Method
+		authUserHasBulkRefundRole := authentication.IsRoleAuthorised(r, helpers.AdminBulkRefundRole)
+		isApiKeyRequest := identityType == authentication.APIKeyIdentityType
+		apiKeyHasElevatedPrivileges := authentication.IsKeyElevatedPrivilegesAuthorised(r)
+		apiKeyHasPaymentPrivileges := authentication.CheckAuthorisedKeyHasPrivilege(r, authentication.APIKeyPaymentPrivilege)
+
+		// Set up debug map for logging at each exit point
+		debugMap := log.Data{
+			"auth_user_has_bulk_refund_role":  authUserHasBulkRefundRole,
+			"api_key_has_elevated_privileges": apiKeyHasElevatedPrivileges,
+			"request_method":                  r.Method,
+		}
+
+		// Now that we have the payment data and authorized user there are
+		// multiple cases that can be allowed through:
+		switch {
+		case authUserHasBulkRefundRole && isPostRequest:
+			// 2) Authorized user has admin permission to refund bulk payments and
+			// request is a POST
+			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as bulk refund admin role on POST", debugMap)
+			// Call the next handler
+			next.ServeHTTP(w, r)
+		case isApiKeyRequest && apiKeyHasElevatedPrivileges:
+			// 3) Authorized API key with elevated privileges is an internal API key
+			// that we trust
+			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as api key elevated user", debugMap)
+			// Call the next handler
+			next.ServeHTTP(w, r)
+		case isApiKeyRequest && apiKeyHasPaymentPrivileges:
+			// 4) Authorised API key with payment privileges
+			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as api key user with payment privileges", debugMap)
+			// Call the next handler
+			next.ServeHTTP(w, r)
+		default:
+			// If none of the above conditions above are met then the request is
+			// unauthorized
+			w.WriteHeader(http.StatusUnauthorized)
+			log.InfoR(r, "PaymentAuthenticationInterceptor unauthorised", debugMap)
+		}
+	})
+}

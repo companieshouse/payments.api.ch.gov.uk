@@ -4,4 +4,4 @@ package helpers
 const AdminPaymentLookupRole = "/admin/payment-lookup"
 
 // AdminPenaltyLookupRole defines the path to check whether a user is authorised to refund bulk payments.
-const AdminBulkRefundRole = "/admin/payments/bulk-refunds"
+const AdminBulkRefundRole = "/admin/payments-bulk-refunds"
