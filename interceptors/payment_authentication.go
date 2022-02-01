@@ -97,10 +97,8 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 
 		// Set up variables that are used to determine authorisation below
 		isGetRequest := http.MethodGet == r.Method
-		isPostRequest := http.MethodPost == r.Method
 		authUserIsPaymentCreator := authorisedUser == paymentSession.CreatedBy.ID
 		authUserHasPaymentLookupRole := authentication.IsRoleAuthorised(r, helpers.AdminPaymentLookupRole)
-		authUserHasBulkRefundRole := authentication.IsRoleAuthorised(r, helpers.AdminBulkRefundRole)
 		isApiKeyRequest := identityType == authentication.APIKeyIdentityType
 		apiKeyHasElevatedPrivileges := authentication.IsKeyElevatedPrivilegesAuthorised(r)
 		apiKeyHasPaymentPrivileges := authentication.CheckAuthorisedKeyHasPrivilege(r, authentication.APIKeyPaymentPrivilege)
@@ -110,7 +108,6 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 			"payment_id":                        id,
 			"auth_user_is_payment_creator":      authUserIsPaymentCreator,
 			"auth_user_has_payment_lookup_role": authUserHasPaymentLookupRole,
-			"auth_user_has_bulk_refund_role":    authUserHasBulkRefundRole,
 			"api_key_has_elevated_privileges":   apiKeyHasElevatedPrivileges,
 			"request_method":                    r.Method,
 		}
@@ -127,12 +124,6 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 			// 2) Authorized user has permission to lookup any payment session and
 			// request is a GET i.e. to see payment data but not modify/delete
 			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as payment lookup role on GET", debugMap)
-			// Call the next handler
-			next.ServeHTTP(w, r.WithContext(ctx))
-		case authUserHasBulkRefundRole && isPostRequest:
-			// 2) Authorized user has admin permission to refund bulk payments and
-			// request is a POST
-			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as bulk refund admin role on POST", debugMap)
 			// Call the next handler
 			next.ServeHTTP(w, r.WithContext(ctx))
 		case isApiKeyRequest && apiKeyHasElevatedPrivileges:
