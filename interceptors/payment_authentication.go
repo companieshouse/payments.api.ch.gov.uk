@@ -146,7 +146,7 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 	})
 }
 
-// PaymentAdminAuthenticationIntercept checks that the user is authenticated for the payment admin priveleges
+// PaymentAdminAuthenticationIntercept checks that the user is authenticated for payment admin priveleges
 func PaymentAdminAuthenticationIntercept(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -186,34 +186,35 @@ func PaymentAdminAuthenticationIntercept(next http.Handler) http.Handler {
 		debugMap := log.Data{
 			"auth_user_has_bulk_refund_role":  authUserHasBulkRefundRole,
 			"api_key_has_elevated_privileges": apiKeyHasElevatedPrivileges,
+			"api_key_has_payment_privileges":  apiKeyHasPaymentPrivileges,
 			"request_method":                  r.Method,
 		}
 
-		// Now that we have the payment data and authorized user there are
+		// Now that we have authorised user there are
 		// multiple cases that can be allowed through:
 		switch {
 		case authUserHasBulkRefundRole && isPostRequest:
-			// 1) Authorized user has admin permission to refund bulk payments and
+			// 1) Authorised user has admin permission to refund bulk payments and
 			// request is a POST
-			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as bulk refund admin role on POST", debugMap)
+			log.InfoR(r, "PaymentAdminAuthenticationInterceptor authorised as bulk refund admin role on POST", debugMap)
 			// Call the next handler
 			next.ServeHTTP(w, r)
 		case isApiKeyRequest && apiKeyHasElevatedPrivileges:
-			// 2) Authorized API key with elevated privileges is an internal API key
+			// 2) Authorised API key with elevated privileges is an internal API key
 			// that we trust
-			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as api key elevated user", debugMap)
+			log.InfoR(r, "PaymentAdminAuthenticationInterceptor authorised as api key elevated user", debugMap)
 			// Call the next handler
 			next.ServeHTTP(w, r)
 		case isApiKeyRequest && apiKeyHasPaymentPrivileges:
 			// 3) Authorised API key with payment privileges
-			log.InfoR(r, "PaymentAuthenticationInterceptor authorised as api key user with payment privileges", debugMap)
+			log.InfoR(r, "PaymentAdminAuthenticationInterceptor authorised as api key user with payment privileges", debugMap)
 			// Call the next handler
 			next.ServeHTTP(w, r)
 		default:
 			// If none of the above conditions above are met then the request is
 			// unauthorized
 			w.WriteHeader(http.StatusUnauthorized)
-			log.InfoR(r, "PaymentAuthenticationInterceptor unauthorised", debugMap)
+			log.InfoR(r, "PaymentAdminAuthenticationInterceptor unauthorised", debugMap)
 		}
 	})
 }
