@@ -439,3 +439,161 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusOK)
 	})
 }
+
+func TestUnitAdminUserPaymentInterceptor(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	cfg, _ := config.Get()
+	cfg.DomainAllowList = resourceURL
+
+	Convey("No oauth2 or API key identity type", t, func() {
+		path := "/admin/payments/bulk-refunds"
+		req, err := http.NewRequest("POST", path, nil)
+		So(err, ShouldBeNil)
+		req = mux.SetURLVars(req, map[string]string{})
+		req.Header.Set("Eric-Identity", "authorised_identity")
+		req.Header.Set("Eric-Identity-Type", "invalid")
+		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
+		req.Header.Set("ERIC-Authorised-Roles", "noroles")
+		// Pass no ID (identity)
+		authUserDetails := authentication.AuthUserDetails{}
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
+
+		w := httptest.NewRecorder()
+		test := PaymentAdminAuthenticationIntercept(GetTestHandler())
+		test.ServeHTTP(w, req.WithContext(ctx))
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+	})
+
+	Convey("Invalid user details in context", t, func() {
+		path := "/admin/payments/bulk-refunds"
+		req, err := http.NewRequest("POST", path, nil)
+		So(err, ShouldBeNil)
+		req = mux.SetURLVars(req, map[string]string{})
+		req.Header.Set("Eric-Identity", "authorised_identity")
+		req.Header.Set("Eric-Identity-Type", "oauth2")
+		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
+		req.Header.Set("ERIC-Authorised-Roles", "noroles")
+		// The details have to be in a authUserDetails struct, so pass a different struct to fail
+		authUserDetails := models.PaymentResourceRest{
+			Status: "test",
+		}
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
+
+		w := httptest.NewRecorder()
+		test := PaymentAdminAuthenticationIntercept(GetTestHandler())
+		test.ServeHTTP(w, req.WithContext(ctx))
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("No authorised identity", t, func() {
+		path := "/admin/payments/bulk-refunds"
+		req, err := http.NewRequest("POST", path, nil)
+		So(err, ShouldBeNil)
+		req = mux.SetURLVars(req, map[string]string{})
+		req.Header.Set("Eric-Identity", "authorised_identity")
+		req.Header.Set("Eric-Identity-Type", "oauth2")
+		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
+		req.Header.Set("ERIC-Authorised-Roles", "noroles")
+		// Pass no ID (identity)
+		authUserDetails := authentication.AuthUserDetails{}
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
+
+		w := httptest.NewRecorder()
+		test := PaymentAdminAuthenticationIntercept(GetTestHandler())
+		test.ServeHTTP(w, req.WithContext(ctx))
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+	})
+
+	Convey("User has admin role and request is GET", t, func() {
+		path := "/admin/payments/bulk-refunds"
+		req, err := http.NewRequest("GET", path, nil)
+		So(err, ShouldBeNil)
+		req = mux.SetURLVars(req, map[string]string{})
+		req.Header.Set("Eric-Identity", "identity")
+		req.Header.Set("Eric-Identity-Type", "oauth2")
+		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
+		req.Header.Set("ERIC-Authorised-Roles", "/admin/payments-bulk-refunds")
+		authUserDetails := authentication.AuthUserDetails{
+			ID: "identity",
+		}
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
+
+		w := httptest.NewRecorder()
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		test := PaymentAdminAuthenticationIntercept(GetTestHandler())
+		test.ServeHTTP(w, req.WithContext(ctx))
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+	})
+
+	Convey("Success - User has admin role and request is POST", t, func() {
+		path := "/admin/payments/bulk-refunds"
+		req, err := http.NewRequest("POST", path, nil)
+		So(err, ShouldBeNil)
+		req = mux.SetURLVars(req, map[string]string{})
+		req.Header.Set("Eric-Identity", "identity")
+		req.Header.Set("Eric-Identity-Type", "oauth2")
+		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
+		req.Header.Set("ERIC-Authorised-Roles", "/admin/payments-bulk-refunds")
+		authUserDetails := authentication.AuthUserDetails{
+			ID: "identity",
+		}
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
+
+		w := httptest.NewRecorder()
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		test := PaymentAdminAuthenticationIntercept(GetTestHandler())
+		test.ServeHTTP(w, req.WithContext(ctx))
+		So(w.Code, ShouldEqual, http.StatusOK)
+	})
+
+	Convey("Success - User has elevated privileges", t, func() {
+		path := "/admin/payments/bulk-refunds"
+		req, err := http.NewRequest("GET", path, nil)
+		So(err, ShouldBeNil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
+		req.Header.Set("Eric-Identity", "identity")
+		req.Header.Set("Eric-Identity-Type", "key")
+		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
+		req.Header.Set("ERIC-Authorised-Key-Roles", "*")
+		authUserDetails := authentication.AuthUserDetails{
+			ID: "api-key-user",
+		}
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
+
+		w := httptest.NewRecorder()
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		test := PaymentAdminAuthenticationIntercept(GetTestHandler())
+		test.ServeHTTP(w, req.WithContext(ctx))
+		So(w.Code, ShouldEqual, http.StatusOK)
+	})
+
+	Convey("Success - User has payment privileges", t, func() {
+		path := "/admin/payments/bulk-refunds"
+		req, err := http.NewRequest("POST", path, nil)
+		So(err, ShouldBeNil)
+		req = mux.SetURLVars(req, map[string]string{})
+		req.Header.Set("Eric-Identity", "identity")
+		req.Header.Set("Eric-Identity-Type", "key")
+		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
+		req.Header.Set("ERIC-Authorised-Key-Privileges", "payment")
+		authUserDetails := authentication.AuthUserDetails{
+			ID: "api-key-user",
+		}
+		ctx := context.WithValue(req.Context(), authentication.ContextKeyUserDetails, authUserDetails)
+
+		w := httptest.NewRecorder()
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		test := PaymentAdminAuthenticationIntercept(GetTestHandler())
+		test.ServeHTTP(w, req.WithContext(ctx))
+		So(w.Code, ShouldEqual, http.StatusOK)
+	})
+}
