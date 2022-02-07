@@ -185,7 +185,7 @@ func PaymentAdminAuthenticationIntercept(next http.Handler) http.Handler {
 			"request_method":                 r.Method,
 		}
 
-		// Authorised user check for bulk refund role
+		// Authorised user check for bulk refund roles
 		if authUserHasBulkRefundRole && isPostRequest {
 			log.InfoR(r, "PaymentAdminAuthenticationInterceptor authorised as bulk refund admin role on POST", debugMap)
 			next.ServeHTTP(w, r)
