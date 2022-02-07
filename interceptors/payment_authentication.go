@@ -178,43 +178,20 @@ func PaymentAdminAuthenticationIntercept(next http.Handler) http.Handler {
 
 		isPostRequest := http.MethodPost == r.Method
 		authUserHasBulkRefundRole := authentication.IsRoleAuthorised(r, helpers.AdminBulkRefundRole)
-		isApiKeyRequest := identityType == authentication.APIKeyIdentityType
-		apiKeyHasElevatedPrivileges := authentication.IsKeyElevatedPrivilegesAuthorised(r)
-		apiKeyHasPaymentPrivileges := authentication.CheckAuthorisedKeyHasPrivilege(r, authentication.APIKeyPaymentPrivilege)
 
-		// Set up debug map for logging at each exit point
+		// Set up debug map for logging
 		debugMap := log.Data{
-			"auth_user_has_bulk_refund_role":  authUserHasBulkRefundRole,
-			"api_key_has_elevated_privileges": apiKeyHasElevatedPrivileges,
-			"api_key_has_payment_privileges":  apiKeyHasPaymentPrivileges,
-			"request_method":                  r.Method,
+			"auth_user_has_bulk_refund_role": authUserHasBulkRefundRole,
+			"request_method":                 r.Method,
 		}
 
-		// Now that we have authorised user there are
-		// multiple cases that can be allowed through:
-		switch {
-		case authUserHasBulkRefundRole && isPostRequest:
-			// 1) Authorised user has admin permission to refund bulk payments and
-			// request is a POST
+		// Authorised user check for bulk refund role
+		if authUserHasBulkRefundRole && isPostRequest {
 			log.InfoR(r, "PaymentAdminAuthenticationInterceptor authorised as bulk refund admin role on POST", debugMap)
-			// Call the next handler
 			next.ServeHTTP(w, r)
-		case isApiKeyRequest && apiKeyHasElevatedPrivileges:
-			// 2) Authorised API key with elevated privileges is an internal API key
-			// that we trust
-			log.InfoR(r, "PaymentAdminAuthenticationInterceptor authorised as api key elevated user", debugMap)
-			// Call the next handler
-			next.ServeHTTP(w, r)
-		case isApiKeyRequest && apiKeyHasPaymentPrivileges:
-			// 3) Authorised API key with payment privileges
-			log.InfoR(r, "PaymentAdminAuthenticationInterceptor authorised as api key user with payment privileges", debugMap)
-			// Call the next handler
-			next.ServeHTTP(w, r)
-		default:
-			// If none of the above conditions above are met then the request is
-			// unauthorized
-			w.WriteHeader(http.StatusUnauthorized)
-			log.InfoR(r, "PaymentAdminAuthenticationInterceptor unauthorised", debugMap)
+			return
 		}
+		w.WriteHeader(http.StatusUnauthorized)
+		log.InfoR(r, "PaymentAdminAuthenticationInterceptor unauthorised", debugMap)
 	})
 }
