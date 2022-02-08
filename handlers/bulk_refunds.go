@@ -46,7 +46,7 @@ func HandleGovPayBulkRefund(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error parsing file: %w", err))
 		m := utils.NewMessageResponse("error parsing file")
-		utils.WriteJSONWithStatus(w, req, m, http.StatusInternalServerError)
+		utils.WriteJSONWithStatus(w, req, m, http.StatusUnprocessableEntity)
 		return
 	}
 
