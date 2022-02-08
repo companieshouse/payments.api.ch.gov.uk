@@ -75,7 +75,7 @@ func TestUnitHandleGovPayBulkRefund(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		HandleGovPayBulkRefund(w, req)
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Code, ShouldEqual, http.StatusUnprocessableEntity)
 	})
 
 	Convey("Success uploading bulk refund file", t, func() {

@@ -46,7 +46,7 @@ func HandleGovPayBulkRefund(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error parsing file: %w", err))
 		m := utils.NewMessageResponse("error parsing file")
-		utils.WriteJSONWithStatus(w, req, m, http.StatusUnprocessableEntity)
+		utils.WriteJSONWithStatus(w, req, m, http.StatusInternalServerError)
 		return
 	}
 
@@ -55,7 +55,7 @@ func HandleGovPayBulkRefund(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error validating request: %w", err))
 		m := utils.NewMessageResponse("error validating request")
-		utils.WriteJSONWithStatus(w, req, m, http.StatusBadRequest)
+		utils.WriteJSONWithStatus(w, req, m, http.StatusUnprocessableEntity)
 		return
 	}
 
