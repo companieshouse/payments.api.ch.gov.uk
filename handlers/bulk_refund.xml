@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE batchService PUBLIC "-//Worldpay//DTD Worldpay batchService v1//EN" "http://dtd/worldpay.com/batchService v1.dtd">
 <batchService version="1.0" merchantCode="28654064" batchCode="RF23122021">
 <refund reference="Rc7e01503-816b-4463-a0f8-da04600bf340" orderCode="c7e01503-816b-4463-a0f8-da04600bf340">
 <amount value="27.00" currencyCode="GBP" exponent="2"/>
