@@ -451,11 +451,8 @@ func TestUnitAdminUserPaymentInterceptor(t *testing.T) {
 		req, err := http.NewRequest("POST", path, nil)
 		So(err, ShouldBeNil)
 		req = mux.SetURLVars(req, map[string]string{})
-		req.Header.Set("Eric-Identity", "authorised_identity")
 		// identity type set to api key
 		req.Header.Set("Eric-Identity-Type", "key")
-		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
-		req.Header.Set("ERIC-Authorised-Roles", "noroles")
 
 		w := httptest.NewRecorder()
 		test := PaymentAdminAuthenticationIntercept(GetTestHandler())
@@ -468,9 +465,7 @@ func TestUnitAdminUserPaymentInterceptor(t *testing.T) {
 		req, err := http.NewRequest("GET", path, nil)
 		So(err, ShouldBeNil)
 		req = mux.SetURLVars(req, map[string]string{})
-		req.Header.Set("Eric-Identity", "identity")
 		req.Header.Set("Eric-Identity-Type", "oauth2")
-		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		// invalid role on request
 		req.Header.Set("ERIC-Authorised-Roles", "/test/payments-bulk-refunds")
 
@@ -488,9 +483,7 @@ func TestUnitAdminUserPaymentInterceptor(t *testing.T) {
 		req, err := http.NewRequest("GET", path, nil)
 		So(err, ShouldBeNil)
 		req = mux.SetURLVars(req, map[string]string{})
-		req.Header.Set("Eric-Identity", "identity")
 		req.Header.Set("Eric-Identity-Type", "oauth2")
-		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "/admin/payments-bulk-refunds")
 
 		w := httptest.NewRecorder()
@@ -507,9 +500,7 @@ func TestUnitAdminUserPaymentInterceptor(t *testing.T) {
 		req, err := http.NewRequest("POST", path, nil)
 		So(err, ShouldBeNil)
 		req = mux.SetURLVars(req, map[string]string{})
-		req.Header.Set("Eric-Identity", "identity")
 		req.Header.Set("Eric-Identity-Type", "oauth2")
-		req.Header.Set("ERIC-Authorised-User", "test@test.com;test;user")
 		req.Header.Set("ERIC-Authorised-Roles", "/admin/payments-bulk-refunds")
 		w := httptest.NewRecorder()
 		httpmock.Activate()
