@@ -8,12 +8,10 @@ import (
 	"mime/multipart"
 	"net/http"
 
+	"github.com/companieshouse/chs.go/log"
+	"github.com/companieshouse/chs.go/utils"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"gopkg.in/go-playground/validator.v9"
-
-	"github.com/companieshouse/chs.go/utils"
-
-	"github.com/companieshouse/chs.go/log"
 )
 
 // HandleGovPayBulkRefund accepts a bulk refunds file and adds and updates
