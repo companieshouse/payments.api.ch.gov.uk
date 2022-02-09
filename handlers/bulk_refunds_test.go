@@ -14,7 +14,9 @@ import (
 )
 
 const (
-	xmlFilePath = "bulk_refund.xml"
+	xmlFilePath    = "test_files/bulk_refund.xml"
+	errorXmlPath   = "test_files/bulk_refund_error.xml"
+	invalidXmlPath = "test_files/bulk_refund_invalid.xml"
 )
 
 func getBodyWithFile(filePath string) (*bytes.Buffer, error) {
@@ -48,13 +50,41 @@ func TestUnitHandleGovPayBulkRefund(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
+	Convey("Error bulk refund file", t, func() {
+		body, err := getBodyWithFile(errorXmlPath)
+		if err != nil {
+			t.Error(err)
+		}
+
+		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/govpay", bytes.NewReader(body.Bytes()))
+		req.Header.Set("Content-Type", "multipart/form-data; boundary=test_boundary")
+		w := httptest.NewRecorder()
+
+		HandleGovPayBulkRefund(w, req)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Invalid bulk refund file", t, func() {
+		body, err := getBodyWithFile(invalidXmlPath)
+		if err != nil {
+			t.Error(err)
+		}
+
+		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/govpay", bytes.NewReader(body.Bytes()))
+		req.Header.Set("Content-Type", "multipart/form-data; boundary=test_boundary")
+		w := httptest.NewRecorder()
+
+		HandleGovPayBulkRefund(w, req)
+		So(w.Code, ShouldEqual, http.StatusUnprocessableEntity)
+	})
+
 	Convey("Success uploading bulk refund file", t, func() {
 		body, err := getBodyWithFile(xmlFilePath)
 		if err != nil {
 			t.Error(err)
 		}
 
-		req := httptest.NewRequest("POST", "//admin/payments/bulk-refunds/govpay", bytes.NewReader(body.Bytes()))
+		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/govpay", bytes.NewReader(body.Bytes()))
 		req.Header.Set("Content-Type", "multipart/form-data; boundary=test_boundary")
 		w := httptest.NewRecorder()
 
