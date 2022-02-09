@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	xmlFilePath    = "bulk_refund.xml"
-	errorXmlPath   = "bulk_refund_error.xml"
-	invalidXmlPath = "bulk_refund_invalid.xml"
+	xmlFilePath    = "test_files/bulk_refund.xml"
+	errorXmlPath   = "test_files/bulk_refund_error.xml"
+	invalidXmlPath = "test_files/bulk_refund_invalid.xml"
 )
 
 func getBodyWithFile(filePath string) (*bytes.Buffer, error) {
