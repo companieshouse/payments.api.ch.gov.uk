@@ -10,6 +10,7 @@ import (
 	"github.com/companieshouse/chs.go/authentication"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
+	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/golang/mock/gomock"
@@ -436,6 +437,78 @@ func TestUnitUserPaymentInterceptor(t *testing.T) {
 
 		test := paymentAuthenticationInterceptor.PaymentAuthenticationIntercept(GetTestHandler())
 		test.ServeHTTP(w, req.WithContext(ctx))
+		So(w.Code, ShouldEqual, http.StatusOK)
+	})
+}
+
+func TestUnitAdminUserPaymentInterceptor(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	cfg, _ := config.Get()
+	cfg.DomainAllowList = resourceURL
+
+	Convey("No oauth2 identity type", t, func() {
+		path := "/admin/payments/bulk-refunds"
+		req, err := http.NewRequest("POST", path, nil)
+		So(err, ShouldBeNil)
+		req = mux.SetURLVars(req, map[string]string{})
+		// identity type set to api key
+		req.Header.Set("Eric-Identity-Type", "key")
+
+		w := httptest.NewRecorder()
+		test := PaymentAdminAuthenticationIntercept(GetTestHandler())
+		test.ServeHTTP(w, req)
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+	})
+
+	Convey("User does not have admin role and request is POST", t, func() {
+		path := "/admin/payments/bulk-refunds"
+		req, err := http.NewRequest("POST", path, nil)
+		So(err, ShouldBeNil)
+		req = mux.SetURLVars(req, map[string]string{})
+		req.Header.Set("Eric-Identity-Type", "oauth2")
+		// invalid role on request
+		req.Header.Set("ERIC-Authorised-Roles", "/test/payments-bulk-refunds")
+
+		w := httptest.NewRecorder()
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		test := PaymentAdminAuthenticationIntercept(GetTestHandler())
+		test.ServeHTTP(w, req)
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+	})
+
+	Convey("User has admin role and request is GET", t, func() {
+		path := "/admin/payments/bulk-refunds"
+		req, err := http.NewRequest("GET", path, nil)
+		So(err, ShouldBeNil)
+		req = mux.SetURLVars(req, map[string]string{})
+		req.Header.Set("Eric-Identity-Type", "oauth2")
+		req.Header.Set("ERIC-Authorised-Roles", helpers.AdminPaymentLookupRole)
+
+		w := httptest.NewRecorder()
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		test := PaymentAdminAuthenticationIntercept(GetTestHandler())
+		test.ServeHTTP(w, req)
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+	})
+
+	Convey("Success - User has admin role and request is POST", t, func() {
+		path := "/admin/payments/bulk-refunds"
+		req, err := http.NewRequest("POST", path, nil)
+		So(err, ShouldBeNil)
+		req = mux.SetURLVars(req, map[string]string{})
+		req.Header.Set("Eric-Identity-Type", "oauth2")
+		req.Header.Set("ERIC-Authorised-Roles", helpers.AdminBulkRefundRole)
+		w := httptest.NewRecorder()
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		test := PaymentAdminAuthenticationIntercept(GetTestHandler())
+		test.ServeHTTP(w, req)
 		So(w.Code, ShouldEqual, http.StatusOK)
 	})
 }

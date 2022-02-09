@@ -145,3 +145,35 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 		}
 	})
 }
+
+// PaymentAdminAuthenticationIntercept checks that the user is authenticated for payment admin priveleges
+func PaymentAdminAuthenticationIntercept(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		// Check identity type from request is Oauth2
+		identityType := authentication.GetAuthorisedIdentityType(r)
+		if identityType != authentication.Oauth2IdentityType {
+			log.Error(fmt.Errorf("authentication interceptor unauthorised: not oauth2 type"))
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		isPostRequest := http.MethodPost == r.Method
+		authUserHasBulkRefundRole := authentication.IsRoleAuthorised(r, helpers.AdminBulkRefundRole)
+
+		// Set up debug map for logging
+		debugMap := log.Data{
+			"auth_user_has_bulk_refund_role": authUserHasBulkRefundRole,
+			"request_method":                 r.Method,
+		}
+
+		// Check that user has bulk refund role and sends POST request
+		if authUserHasBulkRefundRole && isPostRequest {
+			log.InfoR(r, "PaymentAdminAuthenticationInterceptor authorised as bulk refund admin role on POST", debugMap)
+			next.ServeHTTP(w, r)
+			return
+		}
+		w.WriteHeader(http.StatusUnauthorized)
+		log.InfoR(r, "PaymentAdminAuthenticationInterceptor unauthorised", debugMap)
+	})
+}
