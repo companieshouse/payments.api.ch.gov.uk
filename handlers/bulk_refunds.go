@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
@@ -28,7 +29,7 @@ func HandleGovPayBulkRefund(w http.ResponseWriter, req *http.Request) {
 		utils.WriteJSONWithStatus(w, req, m, http.StatusInternalServerError)
 		return
 	}
-	defer file.Close()
+	defer closeFile(file)
 
 	// Copy file to bytes buffer
 	buf := bytes.NewBuffer(nil)
@@ -61,4 +62,11 @@ func HandleGovPayBulkRefund(w http.ResponseWriter, req *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+}
+
+func closeFile(file multipart.File) {
+	err := file.Close()
+	if err != nil {
+		log.Error(fmt.Errorf("error closing file: %w", err))
+	}
 }
