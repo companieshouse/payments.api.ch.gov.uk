@@ -463,12 +463,12 @@ func TestUnitAdminUserPaymentInterceptor(t *testing.T) {
 
 	Convey("User does not have admin role and request is POST", t, func() {
 		path := "/admin/payments/bulk-refunds"
-		req, err := http.NewRequest("GET", path, nil)
+		req, err := http.NewRequest("POST", path, nil)
 		So(err, ShouldBeNil)
 		req = mux.SetURLVars(req, map[string]string{})
 		req.Header.Set("Eric-Identity-Type", "oauth2")
 		// invalid role on request
-		req.Header.Set("ERIC-Authorised-Roles", helpers.AdminBulkRefundRole)
+		req.Header.Set("ERIC-Authorised-Roles", "/test/payments-bulk-refunds")
 
 		w := httptest.NewRecorder()
 		httpmock.Activate()
@@ -485,7 +485,7 @@ func TestUnitAdminUserPaymentInterceptor(t *testing.T) {
 		So(err, ShouldBeNil)
 		req = mux.SetURLVars(req, map[string]string{})
 		req.Header.Set("Eric-Identity-Type", "oauth2")
-		req.Header.Set("ERIC-Authorised-Roles", helpers.AdminBulkRefundRole)
+		req.Header.Set("ERIC-Authorised-Roles", helpers.AdminPaymentLookupRole)
 
 		w := httptest.NewRecorder()
 		httpmock.Activate()
@@ -502,7 +502,7 @@ func TestUnitAdminUserPaymentInterceptor(t *testing.T) {
 		So(err, ShouldBeNil)
 		req = mux.SetURLVars(req, map[string]string{})
 		req.Header.Set("Eric-Identity-Type", "oauth2")
-		req.Header.Set("ERIC-Authorised-Roles", helpers.AdminBulkRefundRole)
+		req.Header.Set("ERIC-Authorised-Roles", helpers.AdminPaymentLookupRole)
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
