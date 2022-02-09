@@ -10,6 +10,7 @@ import (
 	"github.com/companieshouse/chs.go/authentication"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
+	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/golang/mock/gomock"
@@ -467,7 +468,7 @@ func TestUnitAdminUserPaymentInterceptor(t *testing.T) {
 		req = mux.SetURLVars(req, map[string]string{})
 		req.Header.Set("Eric-Identity-Type", "oauth2")
 		// invalid role on request
-		req.Header.Set("ERIC-Authorised-Roles", "/test/payments-bulk-refunds")
+		req.Header.Set("ERIC-Authorised-Roles", helpers.AdminBulkRefundRole)
 
 		w := httptest.NewRecorder()
 		httpmock.Activate()
@@ -484,7 +485,7 @@ func TestUnitAdminUserPaymentInterceptor(t *testing.T) {
 		So(err, ShouldBeNil)
 		req = mux.SetURLVars(req, map[string]string{})
 		req.Header.Set("Eric-Identity-Type", "oauth2")
-		req.Header.Set("ERIC-Authorised-Roles", "/admin/payments-bulk-refunds")
+		req.Header.Set("ERIC-Authorised-Roles", helpers.AdminBulkRefundRole)
 
 		w := httptest.NewRecorder()
 		httpmock.Activate()
@@ -501,7 +502,7 @@ func TestUnitAdminUserPaymentInterceptor(t *testing.T) {
 		So(err, ShouldBeNil)
 		req = mux.SetURLVars(req, map[string]string{})
 		req.Header.Set("Eric-Identity-Type", "oauth2")
-		req.Header.Set("ERIC-Authorised-Roles", "/admin/payments-bulk-refunds")
+		req.Header.Set("ERIC-Authorised-Roles", helpers.AdminBulkRefundRole)
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
