@@ -2,8 +2,8 @@ package models
 
 import "encoding/xml"
 
-// BatchService is the overall model that consists of all of the refunds
-type BatchService struct {
+// GovPayRefundBatch is the overall model that consists of all of the refunds
+type GovPayRefundBatch struct {
 	XMLName      xml.Name `xml:"batchService"`
 	Version      string   `xml:"version,attr"`
 	MerchantCode string   `xml:"merchantCode,attr" validate:"required"`
@@ -11,7 +11,7 @@ type BatchService struct {
 	Refunds      []Refund `xml:"refund" validate:"required,dive,required"`
 }
 
-// Refund is an individual worldpay refund
+// Refund is an individual govpay refund
 type Refund struct {
 	XMLName   xml.Name `xml:"refund"`
 	Reference string   `xml:"reference,attr" validate:"required"`

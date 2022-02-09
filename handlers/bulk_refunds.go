@@ -40,9 +40,9 @@ func HandleGovPayBulkRefund(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var batchRefund models.BatchService
+	var batchRefund models.GovPayRefundBatch
 
-	// Unmarshal file to BatchService struct
+	// Unmarshal file to GovPayRefundBatch struct
 	err = xml.Unmarshal(buf.Bytes(), &batchRefund)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error parsing file: %w", err))
