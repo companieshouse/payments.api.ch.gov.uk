@@ -502,7 +502,7 @@ func TestUnitAdminUserPaymentInterceptor(t *testing.T) {
 		So(err, ShouldBeNil)
 		req = mux.SetURLVars(req, map[string]string{})
 		req.Header.Set("Eric-Identity-Type", "oauth2")
-		req.Header.Set("ERIC-Authorised-Roles", helpers.AdminPaymentLookupRole)
+		req.Header.Set("ERIC-Authorised-Roles", helpers.AdminBulkRefundRole)
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
