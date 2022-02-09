@@ -152,7 +152,7 @@ func PaymentAdminAuthenticationIntercept(next http.Handler) http.Handler {
 
 		// Check identity type from request is Oauth2
 		identityType := authentication.GetAuthorisedIdentityType(r)
-		if !(identityType == authentication.Oauth2IdentityType) {
+		if identityType != authentication.Oauth2IdentityType {
 			log.Error(fmt.Errorf("authentication interceptor unauthorised: not oauth2 type"))
 			w.WriteHeader(http.StatusUnauthorized)
 			return
