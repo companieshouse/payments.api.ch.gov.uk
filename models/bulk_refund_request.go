@@ -11,7 +11,7 @@ type GovPayRefundBatch struct {
 	Refunds      []Refund `xml:"refund" validate:"required,dive,required"`
 }
 
-// Refund is an individual govpay refund
+// Refund is an individual GovPay refund
 type Refund struct {
 	XMLName   xml.Name `xml:"refund"`
 	Reference string   `xml:"reference,attr" validate:"required"`
@@ -19,7 +19,7 @@ type Refund struct {
 	Amount    Amount   `xml:"amount" validate:"required,dive,required"`
 }
 
-// Amount is the worldpay refund amount
+// Amount is the GovPay refund amount
 type Amount struct {
 	XMLName      xml.Name `xml:"amount"`
 	Value        string   `xml:"value,attr" validate:"required"`
