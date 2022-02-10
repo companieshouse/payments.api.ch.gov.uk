@@ -120,6 +120,27 @@ func (service *RefundService) UpdateRefund(req *http.Request, paymentId string, 
 	return &paymentSession.Refunds[index], Success, nil
 }
 
+/*func (service *RefundService) ProcessGovPayBatchRefund(batchRefund models.GovPayRefundBatch) {
+	var refundProcessingGroup sync.WaitGroup
+	refundProcessingGroup.Add(len(batchRefund.Refunds))
+	for _, refund := range batchRefund.Refunds {
+		go func(currentRefund models.Refund) {
+			defer refundProcessingGroup.Wait()
+			paymentSession, err := service.DAO.GetPaymentResourceByExternalPaymentStatusID(refund.OrderCode)
+			if err != nil {
+				log.Error(fmt.Errorf("error retrieving payment session from DB: %w", err))
+				return
+			}
+		}(refund)
+		paymentSession, err := service.DAO.GetPaymentResourceByExternalPaymentStatusID(refund.OrderCode)
+
+		if paymentSession == nil {
+			return
+		}
+	}
+
+}*/
+
 func getRefundIndex(refunds []models.RefundResourceRest, refundId string) (int, error) {
 	for i, ref := range refunds {
 		if ref.RefundId == refundId {
