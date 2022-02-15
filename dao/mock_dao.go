@@ -70,9 +70,9 @@ func (mr *MockDAOMockRecorder) PatchPaymentResource(id, paymentUpdate interface{
 }
 
 // GetPaymentResourceByExternalPaymentStatusID mocks base method
-func (m *MockDAO) GetPaymentResourceByExternalPaymentStatusID(externalPaymentStatusID string) (*models.PaymentResourceDataDB, error) {
+func (m *MockDAO) GetPaymentResourceByExternalPaymentStatusID(externalPaymentStatusID string) (*models.PaymentResourceDB, error) {
 	ret := m.ctrl.Call(m, "GetPaymentResourceByExternalPaymentStatusID", externalPaymentStatusID)
-	ret0, _ := ret[0].(*models.PaymentResourceDataDB)
+	ret0, _ := ret[0].(*models.PaymentResourceDB)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

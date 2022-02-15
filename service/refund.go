@@ -3,14 +3,14 @@ package service
 import (
 	"errors"
 	"fmt"
-	"net/http"
-
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/mappers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/transformers"
+	"net/http"
+	"sync"
 )
 
 const (
@@ -120,27 +120,6 @@ func (service *RefundService) UpdateRefund(req *http.Request, paymentId string, 
 	return &paymentSession.Refunds[index], Success, nil
 }
 
-/*func (service *RefundService) ProcessGovPayBatchRefund(batchRefund models.GovPayRefundBatch) {
-	var refundProcessingGroup sync.WaitGroup
-	refundProcessingGroup.Add(len(batchRefund.Refunds))
-	for _, refund := range batchRefund.Refunds {
-		go func(currentRefund models.Refund) {
-			defer refundProcessingGroup.Wait()
-			paymentSession, err := service.DAO.GetPaymentResourceByExternalPaymentStatusID(refund.OrderCode)
-			if err != nil {
-				log.Error(fmt.Errorf("error retrieving payment session from DB: %w", err))
-				return
-			}
-		}(refund)
-		paymentSession, err := service.DAO.GetPaymentResourceByExternalPaymentStatusID(refund.OrderCode)
-
-		if paymentSession == nil {
-			return
-		}
-	}
-
-}*/
-
 func getRefundIndex(refunds []models.RefundResourceRest, refundId string) (int, error) {
 	for i, ref := range refunds {
 		if ref.RefundId == refundId {
@@ -148,4 +127,46 @@ func getRefundIndex(refunds []models.RefundResourceRest, refundId string) (int, 
 		}
 	}
 	return -1, errors.New("refund id not found in payment refunds")
+}
+
+// ProcessGovPayBatchRefund retrieves all the payments in the batch refund
+// and validates it before processing it
+func (service *RefundService) ProcessGovPayBatchRefund(batchRefund models.GovPayRefundBatch) []string {
+	var validationErrors []string
+	var refundProcessingGroup sync.WaitGroup
+	refundProcessingGroup.Add(len(batchRefund.GovPayRefunds))
+	for _, refund := range batchRefund.GovPayRefunds {
+		go func(currentRefund models.GovPayRefund) {
+			defer refundProcessingGroup.Wait()
+			paymentSession, err := service.DAO.GetPaymentResourceByExternalPaymentStatusID(refund.OrderCode)
+			if err != nil {
+				log.Error(fmt.Errorf("error retrieving payment session from DB: %w", err))
+				return
+			}
+			if paymentSession == nil {
+				validationError := fmt.Sprintf("payment session with id [%s] not found", refund.OrderCode)
+				log.Info(validationError)
+				validationErrors = append(validationErrors, validationError)
+			}
+			validationErrors = append(validationErrors, validateGovPayRefund(paymentSession, refund)...)
+		}(refund)
+	}
+
+	return validationErrors
+}
+
+func validateGovPayRefund(paymentSession *models.PaymentResourceDB, refund models.GovPayRefund) []string {
+	var validationErrors []string
+
+	if paymentSession.Data.PaymentMethod != "credit-card" {
+		validationError := fmt.Sprintf("payment with order code [%s] has not been made via Gov.Pay - refund not eligible", refund.OrderCode)
+		validationErrors = append(validationErrors, validationError)
+	}
+
+	if paymentSession.Data.Amount != refund.Amount.Value {
+		validationError := fmt.Sprintf("value of refund with order code [%s] does not match payment")
+		validationErrors = append(validationErrors, validationError)
+	}
+
+	return validationErrors
 }

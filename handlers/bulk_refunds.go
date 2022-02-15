@@ -7,11 +7,12 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"strings"
 
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/chs.go/utils"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
-	"gopkg.in/go-playground/validator.v9"
+	"github.com/go-playground/validator/v10"
 )
 
 // HandleGovPayBulkRefund accepts a bulk refunds file and adds and updates
@@ -49,12 +50,23 @@ func HandleGovPayBulkRefund(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Validate required fields in batch refund request
 	v := validator.New()
 	err = v.Struct(batchRefund)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error validating request: %w", err))
 		m := utils.NewMessageResponse("error validating request")
 		utils.WriteJSONWithStatus(w, req, m, http.StatusUnprocessableEntity)
+		return
+	}
+
+	// Validate batch refund request data against data in DB
+	validationErrors := refundService.ProcessGovPayBatchRefund(batchRefund)
+	if len(validationErrors) > 0 {
+		message := fmt.Sprintf("the batch refund has failed validation on the following: %s", strings.Join(validationErrors, ","))
+		log.Debug(message)
+		m := utils.NewMessageResponse(message)
+		utils.WriteJSONWithStatus(w, req, m, http.StatusBadRequest)
 		return
 	}
 

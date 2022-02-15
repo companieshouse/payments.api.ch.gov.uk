@@ -140,8 +140,8 @@ func (m *MongoService) PatchPaymentResource(id string, paymentUpdate *models.Pay
 
 // GetPaymentResourceByExternalPaymentStatusID retrieves a payment resource
 // associated with the externalPaymentStatusID provided
-func (m *MongoService) GetPaymentResourceByExternalPaymentStatusID(externalPaymentStatusID string) (*models.PaymentResourceDataDB, error) {
-	var resource models.PaymentResourceDataDB
+func (m *MongoService) GetPaymentResourceByExternalPaymentStatusID(externalPaymentStatusID string) (*models.PaymentResourceDB, error) {
+	var resource models.PaymentResourceDB
 
 	collection := m.db.Collection(m.CollectionName)
 	document := collection.FindOne(context.Background(), bson.M{"external_payment_status_id": externalPaymentStatusID})
