@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/companieshouse/chs.go/log"
@@ -9,8 +10,8 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/mappers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/transformers"
+	"golang.org/x/sync/errgroup"
 	"net/http"
-	"sync"
 )
 
 const (
@@ -131,28 +132,34 @@ func getRefundIndex(refunds []models.RefundResourceRest, refundId string) (int, 
 
 // ProcessGovPayBatchRefund retrieves all the payments in the batch refund
 // and validates it before processing it
-func (service *RefundService) ProcessGovPayBatchRefund(batchRefund models.GovPayRefundBatch) []string {
+func (service *RefundService) ProcessGovPayBatchRefund(ctx context.Context, batchRefund models.GovPayRefundBatch) ([]string, error) {
 	var validationErrors []string
-	var refundProcessingGroup sync.WaitGroup
-	refundProcessingGroup.Add(len(batchRefund.GovPayRefunds))
+	errs, ctx := errgroup.WithContext(ctx)
 	for _, refund := range batchRefund.GovPayRefunds {
-		go func(currentRefund models.GovPayRefund) {
-			defer refundProcessingGroup.Wait()
+		errs.Go(func() error {
 			paymentSession, err := service.DAO.GetPaymentResourceByExternalPaymentStatusID(refund.OrderCode)
 			if err != nil {
 				log.Error(fmt.Errorf("error retrieving payment session from DB: %w", err))
-				return
+				return err
 			}
+
 			if paymentSession == nil {
 				validationError := fmt.Sprintf("payment session with id [%s] not found", refund.OrderCode)
-				log.Info(validationError)
 				validationErrors = append(validationErrors, validationError)
 			}
 			validationErrors = append(validationErrors, validateGovPayRefund(paymentSession, refund)...)
-		}(refund)
+
+			return nil
+		})
 	}
 
-	return validationErrors
+	// Return early if the errgroup returned an error
+	// when fetching a paymentSession from the DB
+	if err := errs.Wait(); err != nil {
+		return nil, err
+	}
+
+	return validationErrors, nil
 }
 
 func validateGovPayRefund(paymentSession *models.PaymentResourceDB, refund models.GovPayRefund) []string {
