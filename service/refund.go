@@ -171,7 +171,7 @@ func validateGovPayRefund(paymentSession *models.PaymentResourceDB, refund model
 	}
 
 	if paymentSession.Data.Amount != refund.Amount.Value {
-		validationError := fmt.Sprintf("value of refund with order code [%s] does not match payment")
+		validationError := fmt.Sprintf("value of refund with order code [%s] does not match payment", refund.OrderCode)
 		validationErrors = append(validationErrors, validationError)
 	}
 

@@ -61,7 +61,13 @@ func HandleGovPayBulkRefund(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Validate batch refund request data against data in DB
-	validationErrors := refundService.ProcessGovPayBatchRefund(batchRefund)
+	validationErrors, err := refundService.ProcessGovPayBatchRefund(req.Context(), batchRefund)
+	if err != nil {
+		log.ErrorR(req, err)
+		m := utils.NewMessageResponse("error processing batch refund")
+		utils.WriteJSONWithStatus(w, req, m, http.StatusInternalServerError)
+		return
+	}
 	if len(validationErrors) > 0 {
 		message := fmt.Sprintf("the batch refund has failed validation on the following: %s", strings.Join(validationErrors, ","))
 		log.Debug(message)
