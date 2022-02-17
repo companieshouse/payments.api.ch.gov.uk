@@ -12,6 +12,7 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/transformers"
 	"golang.org/x/sync/errgroup"
 	"net/http"
+	"sync"
 )
 
 const (
@@ -134,20 +135,22 @@ func getRefundIndex(refunds []models.RefundResourceRest, refundId string) (int, 
 // and validates it before processing it
 func (service *RefundService) ProcessGovPayBatchRefund(ctx context.Context, batchRefund models.GovPayRefundBatch) ([]string, error) {
 	var validationErrors []string
+	var mu = sync.Mutex{}
 	errs, ctx := errgroup.WithContext(ctx)
 	for _, refund := range batchRefund.GovPayRefunds {
+		r := refund
 		errs.Go(func() error {
-			paymentSession, err := service.DAO.GetPaymentResourceByExternalPaymentStatusID(refund.OrderCode)
+			paymentSession, err := service.DAO.GetPaymentResourceByExternalPaymentStatusID(r.OrderCode)
 			if err != nil {
 				log.Error(fmt.Errorf("error retrieving payment session from DB: %w", err))
 				return err
 			}
 
-			if paymentSession == nil {
-				validationError := fmt.Sprintf("payment session with id [%s] not found", refund.OrderCode)
+			if validationError := validateGovPayRefund(paymentSession, r); validationError != "" {
+				mu.Lock()
 				validationErrors = append(validationErrors, validationError)
+				mu.Unlock()
 			}
-			validationErrors = append(validationErrors, validateGovPayRefund(paymentSession, refund)...)
 
 			return nil
 		})
@@ -162,18 +165,18 @@ func (service *RefundService) ProcessGovPayBatchRefund(ctx context.Context, batc
 	return validationErrors, nil
 }
 
-func validateGovPayRefund(paymentSession *models.PaymentResourceDB, refund models.GovPayRefund) []string {
-	var validationErrors []string
+func validateGovPayRefund(paymentSession *models.PaymentResourceDB, refund models.GovPayRefund) string {
+	if paymentSession == nil {
+		return fmt.Sprintf("payment session with id [%s] not found", refund.OrderCode)
+	}
 
 	if paymentSession.Data.PaymentMethod != "credit-card" {
-		validationError := fmt.Sprintf("payment with order code [%s] has not been made via Gov.Pay - refund not eligible", refund.OrderCode)
-		validationErrors = append(validationErrors, validationError)
+		return fmt.Sprintf("payment with order code [%s] has not been made via Gov.Pay - refund not eligible", refund.OrderCode)
 	}
 
 	if paymentSession.Data.Amount != refund.Amount.Value {
-		validationError := fmt.Sprintf("value of refund with order code [%s] does not match payment", refund.OrderCode)
-		validationErrors = append(validationErrors, validationError)
+		return fmt.Sprintf("value of refund with order code [%s] does not match payment", refund.OrderCode)
 	}
 
-	return validationErrors
+	return ""
 }

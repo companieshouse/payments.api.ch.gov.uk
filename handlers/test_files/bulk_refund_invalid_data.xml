@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<batchService version="1.0" merchantCode="28654064" batchCode="RF23122021">
+    <refund reference="Rc7e01503-816b-4463-a0f8-da04600bf340" orderCode="c7e01503-816b-4463-a0f8-da04600bf340">
+        <amount value="27.00" currencyCode="GBP" exponent="2"/>
+    </refund>
+    <refund reference="R6e8c13bd-c873-4b6c-a5b9-78f191aa6af4" orderCode="6e8c13bd-c873-4b6c-a5b9-78f191aa6af4">
+        <amount value="12.00" currencyCode="GBP" exponent="2"/>
+    </refund>
+    <refund reference="R4f4dc752-e307-46df-acf1-b44223335995" orderCode="4f4dc752-e307-46df-acf1-b44223335995">
+        <amount value="12.00" currencyCode="GBP" exponent="2"/>
+    </refund>
+    <refund reference="Rfd3caec0-91d9-42ee-80eb-9777b78ec103" orderCode="fd3caec0-91d9-42ee-80eb-9777b78ec103">
+        <amount value="12.00" currencyCode="GBP" exponent="2"/>
+    </refund>
+    <refund reference="R68125bcc-e704-4557-b851-2fa54bece0cf" orderCode="68125bcc-e704-4557-b851-2fa54bece0cf">
+        <amount value="12.00" currencyCode="GBP" exponent="2"/>
+    </refund>
+    <refund reference="R4e7ea0e9-cbea-49ca-86ec-89d69721003c" orderCode="4e7ea0e9-cbea-49ca-86ec-89d69721003c">
+        <amount value="12.00" currencyCode="GBP" exponent="2"/>
+    </refund>
+    <refund reference="Rc25519c2-c48e-44ea-9bd1-bf5c9c5d68e9" orderCode="c25519c2-c48e-44ea-9bd1-bf5c9c5d68e9">
+        <amount value="12.00" currencyCode="GBP" exponent="2"/>
+    </refund>
+    <refund reference="Reaf1e71a-596c-445c-9118-b7915dd94fd2" orderCode="eaf1e71a-596c-445c-9118-b7915dd94fd2">
+        <amount value="27.00" currencyCode="GBP" exponent="2"/>
+    </refund>
+</batchService>
