@@ -358,7 +358,7 @@ func TestUnitProcessGovPayBatchRefund(t *testing.T) {
 		So(err, ShouldNotBeNil)
 	})
 
-	Convey("Validation errors - payment session not founnd", t, func() {
+	Convey("Validation errors - payment session not found", t, func() {
 		mockCtrl := gomock.NewController(t)
 		defer mockCtrl.Finish()
 		service, mockDao := setUp(mockCtrl)
