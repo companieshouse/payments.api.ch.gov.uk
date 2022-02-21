@@ -138,7 +138,7 @@ func getRefundIndex(refunds []models.RefundResourceRest, refundId string) (int, 
 func (service *RefundService) ProcessGovPayBatchRefund(ctx context.Context, batchRefund models.GovPayRefundBatch) ([]string, error) {
 	var validationErrors []string
 	var mu = sync.Mutex{}
-	errs, ctx := errgroup.WithContext(ctx)
+	errs, _ := errgroup.WithContext(ctx)
 	for _, refund := range batchRefund.GovPayRefunds {
 		r := refund
 		errs.Go(func() error {
