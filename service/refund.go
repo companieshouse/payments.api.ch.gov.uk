@@ -1,9 +1,13 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
+	"sync"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
@@ -127,4 +131,54 @@ func getRefundIndex(refunds []models.RefundResourceRest, refundId string) (int, 
 		}
 	}
 	return -1, errors.New("refund id not found in payment refunds")
+}
+
+// ProcessGovPayBatchRefund retrieves all the payments in the batch refund
+// and validates it before processing it
+func (service *RefundService) ProcessGovPayBatchRefund(ctx context.Context, batchRefund models.GovPayRefundBatch) ([]string, error) {
+	var validationErrors []string
+	var mu = sync.Mutex{}
+	errs, _ := errgroup.WithContext(ctx)
+	for _, refund := range batchRefund.GovPayRefunds {
+		r := refund
+		errs.Go(func() error {
+			paymentSession, err := service.DAO.GetPaymentResourceByExternalPaymentStatusID(r.OrderCode)
+			if err != nil {
+				log.Error(fmt.Errorf("error retrieving payment session from DB: %w", err))
+				return err
+			}
+
+			if validationError := validateGovPayRefund(paymentSession, r); validationError != "" {
+				mu.Lock()
+				validationErrors = append(validationErrors, validationError)
+				mu.Unlock()
+			}
+
+			return nil
+		})
+	}
+
+	// Return early if the errgroup returned an error
+	// when fetching a paymentSession from the DB
+	if err := errs.Wait(); err != nil {
+		return nil, err
+	}
+
+	return validationErrors, nil
+}
+
+func validateGovPayRefund(paymentSession *models.PaymentResourceDB, refund models.GovPayRefund) string {
+	if paymentSession == nil {
+		return fmt.Sprintf("payment session with id [%s] not found", refund.OrderCode)
+	}
+
+	if paymentSession.Data.PaymentMethod != "credit-card" {
+		return fmt.Sprintf("payment with order code [%s] has not been made via Gov.Pay - refund not eligible", refund.OrderCode)
+	}
+
+	if paymentSession.Data.Amount != refund.Amount.Value {
+		return fmt.Sprintf("value of refund with order code [%s] does not match payment", refund.OrderCode)
+	}
+
+	return ""
 }

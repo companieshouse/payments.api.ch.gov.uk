@@ -4,22 +4,22 @@ import "encoding/xml"
 
 // GovPayRefundBatch is the overall model that consists of all of the refunds
 type GovPayRefundBatch struct {
-	XMLName      xml.Name `xml:"batchService"`
-	Version      string   `xml:"version,attr"`
-	MerchantCode string   `xml:"merchantCode,attr" validate:"required"`
-	BatchCode    string   `xml:"batchCode,attr" validate:"required"`
-	Refunds      []Refund `xml:"refund" validate:"required,dive,required"`
+	XMLName       xml.Name       `xml:"batchService"`
+	Version       string         `xml:"version,attr"`
+	MerchantCode  string         `xml:"merchantCode,attr" validate:"required"`
+	BatchCode     string         `xml:"batchCode,attr" validate:"required"`
+	GovPayRefunds []GovPayRefund `xml:"refund" validate:"required,dive,required"`
 }
 
-// Refund is an individual govpay refund
-type Refund struct {
+// GovPayRefund is an individual GovPay refund
+type GovPayRefund struct {
 	XMLName   xml.Name `xml:"refund"`
 	Reference string   `xml:"reference,attr" validate:"required"`
 	OrderCode string   `xml:"orderCode,attr" validate:"required"`
 	Amount    Amount   `xml:"amount" validate:"required,dive,required"`
 }
 
-// Amount is the worldpay refund amount
+// Amount is the GovPay refund amount
 type Amount struct {
 	XMLName      xml.Name `xml:"amount"`
 	Value        string   `xml:"value,attr" validate:"required"`

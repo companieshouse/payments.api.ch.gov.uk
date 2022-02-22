@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"time"
 
@@ -135,4 +136,29 @@ func (m *MongoService) PatchPaymentResource(id string, paymentUpdate *models.Pay
 	_, err := collection.UpdateOne(context.Background(), bson.M{"_id": id}, updateCall)
 
 	return err
+}
+
+// GetPaymentResourceByExternalPaymentStatusID retrieves a payment resource
+// associated with the externalPaymentStatusID provided
+func (m *MongoService) GetPaymentResourceByExternalPaymentStatusID(externalPaymentStatusID string) (*models.PaymentResourceDB, error) {
+	var resource models.PaymentResourceDB
+
+	collection := m.db.Collection(m.CollectionName)
+	document := collection.FindOne(context.Background(), bson.M{"external_payment_status_id": externalPaymentStatusID})
+
+	err := document.Err()
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			log.Info(fmt.Sprintf("no payment resource found for external status id: [%s]", externalPaymentStatusID))
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	err = document.Decode(&resource)
+	if err != nil {
+		return nil, err
+	}
+
+	return &resource, nil
 }

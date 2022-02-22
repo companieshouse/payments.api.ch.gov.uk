@@ -34,7 +34,6 @@ func (m *MockDAO) EXPECT() *MockDAOMockRecorder {
 
 // CreatePaymentResource mocks base method
 func (m *MockDAO) CreatePaymentResource(paymentResource *models.PaymentResourceDB) error {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePaymentResource", paymentResource)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -42,13 +41,11 @@ func (m *MockDAO) CreatePaymentResource(paymentResource *models.PaymentResourceD
 
 // CreatePaymentResource indicates an expected call of CreatePaymentResource
 func (mr *MockDAOMockRecorder) CreatePaymentResource(paymentResource interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePaymentResource", reflect.TypeOf((*MockDAO)(nil).CreatePaymentResource), paymentResource)
 }
 
 // GetPaymentResource mocks base method
 func (m *MockDAO) GetPaymentResource(arg0 string) (*models.PaymentResourceDB, error) {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPaymentResource", arg0)
 	ret0, _ := ret[0].(*models.PaymentResourceDB)
 	ret1, _ := ret[1].(error)
@@ -57,13 +54,11 @@ func (m *MockDAO) GetPaymentResource(arg0 string) (*models.PaymentResourceDB, er
 
 // GetPaymentResource indicates an expected call of GetPaymentResource
 func (mr *MockDAOMockRecorder) GetPaymentResource(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaymentResource", reflect.TypeOf((*MockDAO)(nil).GetPaymentResource), arg0)
 }
 
 // PatchPaymentResource mocks base method
 func (m *MockDAO) PatchPaymentResource(id string, paymentUpdate *models.PaymentResourceDB) error {
-	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PatchPaymentResource", id, paymentUpdate)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -71,6 +66,18 @@ func (m *MockDAO) PatchPaymentResource(id string, paymentUpdate *models.PaymentR
 
 // PatchPaymentResource indicates an expected call of PatchPaymentResource
 func (mr *MockDAOMockRecorder) PatchPaymentResource(id, paymentUpdate interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PatchPaymentResource", reflect.TypeOf((*MockDAO)(nil).PatchPaymentResource), id, paymentUpdate)
+}
+
+// GetPaymentResourceByExternalPaymentStatusID mocks base method
+func (m *MockDAO) GetPaymentResourceByExternalPaymentStatusID(externalPaymentStatusID string) (*models.PaymentResourceDB, error) {
+	ret := m.ctrl.Call(m, "GetPaymentResourceByExternalPaymentStatusID", externalPaymentStatusID)
+	ret0, _ := ret[0].(*models.PaymentResourceDB)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPaymentResourceByExternalPaymentStatusID indicates an expected call of GetPaymentResourceByExternalPaymentStatusID
+func (mr *MockDAOMockRecorder) GetPaymentResourceByExternalPaymentStatusID(externalPaymentStatusID interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaymentResourceByExternalPaymentStatusID", reflect.TypeOf((*MockDAO)(nil).GetPaymentResourceByExternalPaymentStatusID), externalPaymentStatusID)
 }

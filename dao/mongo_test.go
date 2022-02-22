@@ -56,3 +56,15 @@ func TestUnitPatchPaymentResource(t *testing.T) {
 		So(err.Error(), ShouldEqual, "the Update operation must have a Deployment set before Execute can be called")
 	})
 }
+
+func TestUnitGetPaymentResourceByExternalPaymentStatusID(t *testing.T) {
+	Convey("Get payment resource by external ID", t, func() {
+		cfg, _ := config.Get()
+		client = &mongo.Client{}
+		dao := NewDAO(cfg)
+
+		resource, err := dao.GetPaymentResourceByExternalPaymentStatusID("id123")
+		So(resource, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "the Find operation must have a Deployment set before Execute can be called")
+	})
+}

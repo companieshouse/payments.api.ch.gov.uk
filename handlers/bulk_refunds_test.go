@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -9,14 +10,20 @@ import (
 	"os"
 	"testing"
 
+	"github.com/companieshouse/payments.api.ch.gov.uk/config"
+	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
+	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/companieshouse/payments.api.ch.gov.uk/service"
+
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 const (
-	xmlFilePath    = "test_files/bulk_refund.xml"
-	errorXmlPath   = "test_files/bulk_refund_error.xml"
-	invalidXmlPath = "test_files/bulk_refund_invalid.xml"
+	xmlFilePath        = "test_files/bulk_refund.xml"
+	errorXmlPath       = "test_files/bulk_refund_error.xml"
+	invalidXmlPath     = "test_files/bulk_refund_invalid.xml"
+	invalidDataXmlPath = "test_files/bulk_refund_invalid_data.xml"
 )
 
 func getBodyWithFile(filePath string) (*bytes.Buffer, error) {
@@ -78,6 +85,63 @@ func TestUnitHandleGovPayBulkRefund(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusUnprocessableEntity)
 	})
 
+	Convey("Failed to upload bulk refund file - invalid data compared to paymentSession in DB", t, func() {
+		body, err := getBodyWithFile(invalidDataXmlPath)
+		if err != nil {
+			t.Error(err)
+		}
+
+		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/govpay", bytes.NewReader(body.Bytes()))
+		req.Header.Set("Content-Type", "multipart/form-data; boundary=test_boundary")
+		w := httptest.NewRecorder()
+
+		paymentSession := generatePaymentSession()
+		cfg, _ := config.Get()
+
+		mockDao := dao.NewMockDAO(mockCtrl)
+		mockGovPayService := service.NewMockPaymentProviderService(mockCtrl)
+		mockPaymentService := createMockPaymentService(mockDao, cfg)
+
+		refundService = &service.RefundService{
+			GovPayService:  mockGovPayService,
+			PaymentService: mockPaymentService,
+			DAO:            mockDao,
+			Config:         *cfg,
+		}
+		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+
+		HandleGovPayBulkRefund(w, req)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+	})
+
+	Convey("Failed to upload bulk refund file - error returned by service", t, func() {
+		body, err := getBodyWithFile(invalidDataXmlPath)
+		if err != nil {
+			t.Error(err)
+		}
+
+		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/govpay", bytes.NewReader(body.Bytes()))
+		req.Header.Set("Content-Type", "multipart/form-data; boundary=test_boundary")
+		w := httptest.NewRecorder()
+
+		cfg, _ := config.Get()
+
+		mockDao := dao.NewMockDAO(mockCtrl)
+		mockGovPayService := service.NewMockPaymentProviderService(mockCtrl)
+		mockPaymentService := createMockPaymentService(mockDao, cfg)
+
+		refundService = &service.RefundService{
+			GovPayService:  mockGovPayService,
+			PaymentService: mockPaymentService,
+			DAO:            mockDao,
+			Config:         *cfg,
+		}
+		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(nil, fmt.Errorf("error")).AnyTimes()
+
+		HandleGovPayBulkRefund(w, req)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
 	Convey("Success uploading bulk refund file", t, func() {
 		body, err := getBodyWithFile(xmlFilePath)
 		if err != nil {
@@ -88,7 +152,38 @@ func TestUnitHandleGovPayBulkRefund(t *testing.T) {
 		req.Header.Set("Content-Type", "multipart/form-data; boundary=test_boundary")
 		w := httptest.NewRecorder()
 
+		paymentSession := generatePaymentSession()
+		cfg, _ := config.Get()
+
+		mockDao := dao.NewMockDAO(mockCtrl)
+		mockGovPayService := service.NewMockPaymentProviderService(mockCtrl)
+		mockPaymentService := createMockPaymentService(mockDao, cfg)
+
+		refundService = &service.RefundService{
+			GovPayService:  mockGovPayService,
+			PaymentService: mockPaymentService,
+			DAO:            mockDao,
+			Config:         *cfg,
+		}
+		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+
 		HandleGovPayBulkRefund(w, req)
 		So(w.Code, ShouldEqual, http.StatusCreated)
 	})
+}
+
+func generatePaymentSession() models.PaymentResourceDB {
+	return models.PaymentResourceDB{
+		ID:                       "1234",
+		RedirectURI:              "/internal/redirect",
+		State:                    "state",
+		ExternalPaymentStatusURI: "/external/status",
+		ExternalPaymentStatusID:  "1122",
+		Data: models.PaymentResourceDataDB{
+			Amount:        "10.00",
+			PaymentMethod: "credit-card",
+		},
+		Refunds: nil,
+	}
+
 }
