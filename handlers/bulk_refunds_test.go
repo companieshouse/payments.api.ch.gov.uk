@@ -182,6 +182,7 @@ func generatePaymentSession() models.PaymentResourceDB {
 		Data: models.PaymentResourceDataDB{
 			Amount:        "10.00",
 			PaymentMethod: "credit-card",
+			Status:        service.Paid.String(),
 		},
 		Refunds: nil,
 	}

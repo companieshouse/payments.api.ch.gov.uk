@@ -180,5 +180,9 @@ func validateGovPayRefund(paymentSession *models.PaymentResourceDB, refund model
 		return fmt.Sprintf("value of refund with order code [%s] does not match payment", refund.OrderCode)
 	}
 
+	if paymentSession.Data.Status != Paid.String() {
+		return fmt.Sprintf("payment with order code [%s] has a status of [%s] - refund not eligible", refund.OrderCode, paymentSession.Data.Status)
+	}
+
 	return ""
 }
