@@ -404,6 +404,22 @@ func TestUnitProcessGovPayBatchRefund(t *testing.T) {
 		So(err, ShouldBeNil)
 	})
 
+	Convey("Validation errors - status is not paid", t, func() {
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		service, mockDao := setUp(mockCtrl)
+
+		batchRefund := generateXMLBatchRefund()
+		paymentSession := generatePaymentSession()
+		paymentSession.Data.Status = Pending.String()
+
+		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		validationErrors, err := service.ProcessGovPayBatchRefund(req.Context(), batchRefund)
+
+		So(len(validationErrors), ShouldEqual, 2)
+		So(err, ShouldBeNil)
+	})
+
 	Convey("Successfully validate XML refunds", t, func() {
 		mockCtrl := gomock.NewController(t)
 		defer mockCtrl.Finish()
@@ -448,6 +464,7 @@ func generatePaymentSession() models.PaymentResourceDB {
 		Data: models.PaymentResourceDataDB{
 			Amount:        "10.00",
 			PaymentMethod: "credit-card",
+			Status:        Paid.String(),
 		},
 		Refunds: nil,
 	}
