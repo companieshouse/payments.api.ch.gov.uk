@@ -161,16 +161,36 @@ func PaymentAdminAuthenticationIntercept(next http.Handler) http.Handler {
 		isPostRequest := http.MethodPost == r.Method
 		authUserHasBulkRefundRole := authentication.IsRoleAuthorised(r, helpers.AdminBulkRefundRole)
 
+		userEmail := ""
+
+		// Get user details from context, passed in by UserAuthenticationInterceptor
+		userDetails, ok := r.Context().Value(authentication.ContextKeyUserDetails).(authentication.AuthUserDetails)
+		if !ok {
+			log.ErrorR(r, fmt.Errorf("PaymentAuthenticationInterceptor error: invalid AuthUserDetails from UserAuthenticationInterceptor"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// Get user details from request
+		userEmail = userDetails.Email
+		if userEmail == "" {
+			log.Error(fmt.Errorf("PaymentAuthenticationInterceptor unauthorised: no authorised identity"))
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
 		// Set up debug map for logging
 		debugMap := log.Data{
 			"auth_user_has_bulk_refund_role": authUserHasBulkRefundRole,
 			"request_method":                 r.Method,
 		}
 
+		ctx := context.WithValue(r.Context(), helpers.ContextKeyUserID, userEmail)
+
 		// Check that user has bulk refund role and sends POST request
 		if authUserHasBulkRefundRole && isPostRequest {
 			log.InfoR(r, "PaymentAdminAuthenticationInterceptor authorised as bulk refund admin role on POST", debugMap)
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
 		w.WriteHeader(http.StatusUnauthorized)
