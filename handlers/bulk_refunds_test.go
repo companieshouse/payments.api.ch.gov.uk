@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
+	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 
@@ -142,6 +144,65 @@ func TestUnitHandleGovPayBulkRefund(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
+	Convey("Failed to upload bulk refund file - no userID in context", t, func() {
+		body, err := getBodyWithFile(xmlFilePath)
+		if err != nil {
+			t.Error(err)
+		}
+
+		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/govpay", bytes.NewReader(body.Bytes()))
+		req.Header.Set("Content-Type", "multipart/form-data; boundary=test_boundary")
+		w := httptest.NewRecorder()
+
+		cfg, _ := config.Get()
+		paymentSession := generatePaymentSession()
+
+		mockDao := dao.NewMockDAO(mockCtrl)
+		mockGovPayService := service.NewMockPaymentProviderService(mockCtrl)
+		mockPaymentService := createMockPaymentService(mockDao, cfg)
+
+		refundService = &service.RefundService{
+			GovPayService:  mockGovPayService,
+			PaymentService: mockPaymentService,
+			DAO:            mockDao,
+			Config:         *cfg,
+		}
+		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+
+		HandleGovPayBulkRefund(w, req)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Failed to upload bulk refund file - error returned from service when updating DB", t, func() {
+		body, err := getBodyWithFile(xmlFilePath)
+		if err != nil {
+			t.Error(err)
+		}
+
+		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/govpay", bytes.NewReader(body.Bytes()))
+		req.Header.Set("Content-Type", "multipart/form-data; boundary=test_boundary")
+		w := httptest.NewRecorder()
+
+		cfg, _ := config.Get()
+		paymentSession := generatePaymentSession()
+
+		mockDao := dao.NewMockDAO(mockCtrl)
+		mockGovPayService := service.NewMockPaymentProviderService(mockCtrl)
+		mockPaymentService := createMockPaymentService(mockDao, cfg)
+
+		refundService = &service.RefundService{
+			GovPayService:  mockGovPayService,
+			PaymentService: mockPaymentService,
+			DAO:            mockDao,
+			Config:         *cfg,
+		}
+		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any(), gomock.Any()).Return(fmt.Errorf("error")).AnyTimes()
+
+		HandleGovPayBulkRefund(w, req)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
 	Convey("Success uploading bulk refund file", t, func() {
 		body, err := getBodyWithFile(xmlFilePath)
 		if err != nil {
@@ -149,6 +210,9 @@ func TestUnitHandleGovPayBulkRefund(t *testing.T) {
 		}
 
 		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/govpay", bytes.NewReader(body.Bytes()))
+		ctx := req.Context()
+		ctx = context.WithValue(ctx, helpers.ContextKeyUserID, "userID")
+		req = req.WithContext(ctx)
 		req.Header.Set("Content-Type", "multipart/form-data; boundary=test_boundary")
 		w := httptest.NewRecorder()
 
@@ -165,7 +229,9 @@ func TestUnitHandleGovPayBulkRefund(t *testing.T) {
 			DAO:            mockDao,
 			Config:         *cfg,
 		}
+
 		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 		HandleGovPayBulkRefund(w, req)
 		So(w.Code, ShouldEqual, http.StatusCreated)

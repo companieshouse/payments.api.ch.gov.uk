@@ -11,6 +11,7 @@ import (
 
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/chs.go/utils"
+	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/go-playground/validator/v10"
 )
@@ -21,7 +22,7 @@ func HandleGovPayBulkRefund(w http.ResponseWriter, req *http.Request) {
 
 	log.InfoR(req, "start POST request for bulk refunds")
 
-	file, _, err := req.FormFile("file")
+	file, header, err := req.FormFile("file")
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error reading file from request: %w", err))
 		m := utils.NewMessageResponse("error reading file from request")
@@ -61,7 +62,7 @@ func HandleGovPayBulkRefund(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Validate batch refund request data against data in DB
-	validationErrors, err := refundService.ProcessGovPayBatchRefund(req.Context(), batchRefund)
+	validationErrors, err := refundService.ValidateGovPayBatchRefund(req.Context(), batchRefund)
 	if err != nil {
 		log.ErrorR(req, err)
 		m := utils.NewMessageResponse("error processing batch refund")
@@ -73,6 +74,20 @@ func HandleGovPayBulkRefund(w http.ResponseWriter, req *http.Request) {
 		log.Debug(message)
 		m := utils.NewMessageResponse(message)
 		utils.WriteJSONWithStatus(w, req, m, http.StatusBadRequest)
+		return
+	}
+
+	userID, ok := req.Context().Value(helpers.ContextKeyUserID).(string)
+	if !ok {
+		log.ErrorR(req, fmt.Errorf("error user details not found in context"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = refundService.UpdateGovPayBatchRefund(req.Context(), batchRefund, header.Filename, userID)
+	if err != nil {
+		m := utils.NewMessageResponse("error updating request")
+		utils.WriteJSONWithStatus(w, req, m, http.StatusInternalServerError)
 		return
 	}
 
