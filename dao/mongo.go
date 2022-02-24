@@ -162,3 +162,22 @@ func (m *MongoService) GetPaymentResourceByExternalPaymentStatusID(externalPayme
 
 	return &resource, nil
 }
+
+// CreateBulkRefund creates or adds to the array of bulk refunds on a payment resource
+func (m *MongoService) CreateBulkRefund(externalPaymentStatusID string, status string, bulkRefund models.BulkRefundDB) error {
+	collection := m.db.Collection(m.CollectionName)
+
+	filter := bson.M{"external_payment_status_id": externalPaymentStatusID}
+	setStatus := bson.M{"data.status": status}
+	pushQuery := bson.M{"$push": bson.M{"bulk_refunds": bulkRefund}, "$set": setStatus}
+
+	update, err := collection.UpdateOne(context.Background(), filter, pushQuery)
+	if err != nil {
+		return fmt.Errorf("error updating bulk refund for payment with external status id [%s]: %w", externalPaymentStatusID, err)
+	}
+	if update.ModifiedCount == 0 {
+		return fmt.Errorf("payment with external status id [%s] not found", externalPaymentStatusID)
+	}
+
+	return nil
+}

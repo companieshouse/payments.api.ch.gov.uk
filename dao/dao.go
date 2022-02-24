@@ -11,6 +11,7 @@ type DAO interface {
 	GetPaymentResource(string) (*models.PaymentResourceDB, error)
 	PatchPaymentResource(id string, paymentUpdate *models.PaymentResourceDB) error
 	GetPaymentResourceByExternalPaymentStatusID(externalPaymentStatusID string) (*models.PaymentResourceDB, error)
+	CreateBulkRefund(externalPaymentStatusID string, status string, bulkRefund models.BulkRefundDB) error
 }
 
 // NewDAO will create a new instance of the DAO interface.

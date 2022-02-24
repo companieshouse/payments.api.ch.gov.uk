@@ -68,3 +68,16 @@ func TestUnitGetPaymentResourceByExternalPaymentStatusID(t *testing.T) {
 		So(err.Error(), ShouldEqual, "the Find operation must have a Deployment set before Execute can be called")
 	})
 }
+
+func TestUnitCreateBulkRefund(t *testing.T) {
+	Convey("Create bulk refund", t, func() {
+		cfg, _ := config.Get()
+		client = &mongo.Client{}
+		dao := NewDAO(cfg)
+
+		bulkRefund := models.BulkRefundDB{}
+
+		err := dao.CreateBulkRefund("id123", "status", bulkRefund)
+		So(err.Error(), ShouldEqual, "error updating bulk refund for payment with external status id [id123]: the Update operation must have a Deployment set before Execute can be called")
+	})
+}
