@@ -199,7 +199,7 @@ func (service *RefundService) UpdateGovPayBatchRefund(ctx context.Context, batch
 			bulkRefundDB := models.BulkRefundDB{
 				Status:            RefundPending,
 				UploadedFilename:  filename,
-				UploadedAt:        time.Now().String(),
+				UploadedAt:        time.Now().Truncate(time.Millisecond).String(),
 				UploadedBy:        user,
 				Amount:            r.Amount.Value,
 				RefundID:          "",
