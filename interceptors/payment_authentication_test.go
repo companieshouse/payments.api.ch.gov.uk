@@ -476,7 +476,7 @@ func TestUnitAdminUserPaymentInterceptor(t *testing.T) {
 
 		test := PaymentAdminAuthenticationIntercept(GetTestHandler())
 		test.ServeHTTP(w, req)
-		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
 	Convey("User has admin role and request is GET", t, func() {
@@ -486,6 +486,60 @@ func TestUnitAdminUserPaymentInterceptor(t *testing.T) {
 		req = mux.SetURLVars(req, map[string]string{})
 		req.Header.Set("Eric-Identity-Type", "oauth2")
 		req.Header.Set("ERIC-Authorised-Roles", helpers.AdminPaymentLookupRole)
+
+		userDetails := authentication.AuthUserDetails{
+			Email:    "userID",
+			Forename: "forename",
+			Surname:  "surname",
+			ID:       "123",
+		}
+		ctx := req.Context()
+		ctx = context.WithValue(ctx, authentication.ContextKeyUserDetails, userDetails)
+		req = req.WithContext(ctx)
+
+		w := httptest.NewRecorder()
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		test := PaymentAdminAuthenticationIntercept(GetTestHandler())
+		test.ServeHTTP(w, req)
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+	})
+
+	Convey("User details not in context", t, func() {
+		path := "/admin/payments/bulk-refunds"
+		req, err := http.NewRequest("POST", path, nil)
+		So(err, ShouldBeNil)
+		req = mux.SetURLVars(req, map[string]string{})
+		req.Header.Set("Eric-Identity-Type", "oauth2")
+		req.Header.Set("ERIC-Authorised-Roles", helpers.AdminPaymentLookupRole)
+
+		w := httptest.NewRecorder()
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		test := PaymentAdminAuthenticationIntercept(GetTestHandler())
+		test.ServeHTTP(w, req)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("User details with blank email in context", t, func() {
+		path := "/admin/payments/bulk-refunds"
+		req, err := http.NewRequest("POST", path, nil)
+		So(err, ShouldBeNil)
+		req = mux.SetURLVars(req, map[string]string{})
+		req.Header.Set("Eric-Identity-Type", "oauth2")
+		req.Header.Set("ERIC-Authorised-Roles", helpers.AdminPaymentLookupRole)
+
+		userDetails := authentication.AuthUserDetails{
+			Email:    "",
+			Forename: "forename",
+			Surname:  "surname",
+			ID:       "123",
+		}
+		ctx := req.Context()
+		ctx = context.WithValue(ctx, authentication.ContextKeyUserDetails, userDetails)
+		req = req.WithContext(ctx)
 
 		w := httptest.NewRecorder()
 		httpmock.Activate()
@@ -503,6 +557,16 @@ func TestUnitAdminUserPaymentInterceptor(t *testing.T) {
 		req = mux.SetURLVars(req, map[string]string{})
 		req.Header.Set("Eric-Identity-Type", "oauth2")
 		req.Header.Set("ERIC-Authorised-Roles", helpers.AdminBulkRefundRole)
+
+		userDetails := authentication.AuthUserDetails{
+			Email:    "userID",
+			Forename: "forename",
+			Surname:  "surname",
+			ID:       "123",
+		}
+		ctx := req.Context()
+		ctx = context.WithValue(ctx, authentication.ContextKeyUserDetails, userDetails)
+		req = req.WithContext(ctx)
 		w := httptest.NewRecorder()
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()

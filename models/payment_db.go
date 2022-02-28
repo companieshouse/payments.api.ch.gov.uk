@@ -11,6 +11,7 @@ type PaymentResourceDB struct {
 	ExternalPaymentStatusID  string                `bson:"external_payment_status_id"`
 	Data                     PaymentResourceDataDB `bson:"data"`
 	Refunds                  []RefundResourceDB    `bson:"refunds"`
+	BulkRefund               []BulkRefundDB        `bson:"bulk_refunds,omitempty"`
 }
 
 // PaymentResourceDataDB is public facing payment details to be returned in the response

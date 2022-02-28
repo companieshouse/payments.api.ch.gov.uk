@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 
@@ -133,9 +134,9 @@ func getRefundIndex(refunds []models.RefundResourceRest, refundId string) (int, 
 	return -1, errors.New("refund id not found in payment refunds")
 }
 
-// ProcessGovPayBatchRefund retrieves all the payments in the batch refund
+// ValidateGovPayBatchRefund retrieves all the payments in the batch refund
 // and validates it before processing it
-func (service *RefundService) ProcessGovPayBatchRefund(ctx context.Context, batchRefund models.GovPayRefundBatch) ([]string, error) {
+func (service *RefundService) ValidateGovPayBatchRefund(ctx context.Context, batchRefund models.GovPayRefundBatch) ([]string, error) {
 	var validationErrors []string
 	var mu = sync.Mutex{}
 	errs, _ := errgroup.WithContext(ctx)
@@ -185,4 +186,40 @@ func validateGovPayRefund(paymentSession *models.PaymentResourceDB, refund model
 	}
 
 	return ""
+}
+
+// UpdateGovPayBatchRefund updates each paymentSession in the DB corresponding
+// to the refunds in the batch refund file with the necessary refund information
+func (service *RefundService) UpdateGovPayBatchRefund(ctx context.Context, batchRefund models.GovPayRefundBatch, filename string, user string) error {
+	errs, _ := errgroup.WithContext(ctx)
+	for _, refund := range batchRefund.GovPayRefunds {
+		r := refund
+		errs.Go(func() error {
+
+			bulkRefundDB := models.BulkRefundDB{
+				Status:            RefundPending,
+				UploadedFilename:  filename,
+				UploadedAt:        time.Now().Truncate(time.Millisecond).String(),
+				UploadedBy:        user,
+				Amount:            r.Amount.Value,
+				RefundID:          "",
+				ProcessedAt:       "",
+				ExternalRefundURL: "",
+			}
+
+			err := service.DAO.CreateBulkRefund(r.OrderCode, PendingRefund.String(), bulkRefundDB)
+			if err != nil {
+				log.Error(fmt.Errorf("error updating payment session in DB: %w", err))
+				return err
+			}
+
+			return nil
+		})
+	}
+
+	if err := errs.Wait(); err != nil {
+		return err
+	}
+
+	return nil
 }

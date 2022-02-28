@@ -47,6 +47,7 @@ const (
 	NoFunds
 	Failed
 	Expired
+	PendingRefund
 )
 
 // String representation of payment statuses
@@ -57,6 +58,7 @@ var paymentStatuses = [...]string{
 	"no-funds",
 	"failed",
 	"expired",
+	"refund-pending",
 }
 
 func (paymentStatus PaymentStatus) String() string {
