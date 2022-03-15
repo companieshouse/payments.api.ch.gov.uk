@@ -93,3 +93,16 @@ func (m *MockDAO) CreateBulkRefund(externalPaymentStatusID, status string, bulkR
 func (mr *MockDAOMockRecorder) CreateBulkRefund(externalPaymentStatusID, status, bulkRefund interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBulkRefund", reflect.TypeOf((*MockDAO)(nil).CreateBulkRefund), externalPaymentStatusID, status, bulkRefund)
 }
+
+// GetPaymentsWithRefundStatus mocks base method
+func (m *MockDAO) GetPaymentsWithRefundStatus() ([]models.PaymentResourceDB, error) {
+	ret := m.ctrl.Call(m, "GetPaymentsWithRefundStatus")
+	ret0, _ := ret[0].([]models.PaymentResourceDB)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPaymentsWithRefundStatus indicates an expected call of GetPaymentsWithRefundStatus
+func (mr *MockDAOMockRecorder) GetPaymentsWithRefundStatus() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaymentsWithRefundStatus", reflect.TypeOf((*MockDAO)(nil).GetPaymentsWithRefundStatus))
+}

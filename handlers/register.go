@@ -97,6 +97,7 @@ func Register(mainRouter *mux.Router, cfg config.Config, paymentsDao dao.DAO) {
 	// and will be intercepted to check for the admin role
 	adminRouter := mainRouter.PathPrefix("/admin/payments/bulk-refunds").Subrouter()
 	adminRouter.HandleFunc("/govpay", HandleGovPayBulkRefund).Methods("POST").Name("bulk-refund-govpay")
+	adminRouter.HandleFunc("/process-pending", HandleProcessPendingRefunds).Methods("POST").Name("process-bulk-refund")
 
 	// callback endpoints should not be intercepted by the paymentauth or userauth interceptors, so needs to be it's own subrouter
 	callbackRouter := mainRouter.PathPrefix("/callback").Subrouter()
