@@ -18,6 +18,8 @@ const deadline = 5 * time.Second
 
 var client *mongo.Client
 
+const paymentStatus = "data.status"
+
 // MongoService is an implementation of the Service interface using MongoDB as the backend driver.
 type MongoService struct {
 	db             MongoDatabaseInterface
@@ -113,7 +115,7 @@ func (m *MongoService) PatchPaymentResource(id string, paymentUpdate *models.Pay
 		patchUpdate["data.payment_method"] = paymentUpdate.Data.PaymentMethod
 	}
 	if paymentUpdate.Data.Status != "" {
-		patchUpdate["data.status"] = paymentUpdate.Data.Status
+		patchUpdate[paymentStatus] = paymentUpdate.Data.Status
 	}
 	if !paymentUpdate.Data.CompletedAt.IsZero() {
 		patchUpdate["data.completed_at"] = paymentUpdate.Data.CompletedAt
@@ -168,7 +170,7 @@ func (m *MongoService) CreateBulkRefund(externalPaymentStatusID string, status s
 	collection := m.db.Collection(m.CollectionName)
 
 	filter := bson.M{"external_payment_status_id": externalPaymentStatusID}
-	setStatus := bson.M{"data.status": status}
+	setStatus := bson.M{paymentStatus: status}
 	pushQuery := bson.M{"$push": bson.M{"bulk_refunds": bulkRefund}, "$set": setStatus}
 
 	update, err := collection.UpdateOne(context.Background(), filter, pushQuery)
@@ -180,4 +182,26 @@ func (m *MongoService) CreateBulkRefund(externalPaymentStatusID string, status s
 	}
 
 	return nil
+}
+
+// GetPaymentsWithRefundStatus retrieves a list of all payments in the DB with a status of
+// refund-pending
+func (m *MongoService) GetPaymentsWithRefundStatus() ([]models.PaymentResourceDB, error) {
+	var payments []models.PaymentResourceDB
+
+	collection := m.db.Collection(m.CollectionName)
+	statusFilter := bson.M{paymentStatus: "refund-pending"}
+	bulkRefundsFilter := bson.M{"bulk_refunds.0": bson.M{"$exists": true}}
+
+	paymentDBResources, err := collection.Find(context.Background(), bson.M{"$and": bson.A{statusFilter, bulkRefundsFilter}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = paymentDBResources.All(context.Background(), &payments)
+	if err != nil {
+		return nil, err
+	}
+
+	return payments, nil
 }
