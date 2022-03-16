@@ -95,7 +95,7 @@ func HandleGovPayBulkRefund(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-// HandleProcessPendingRefund retrieves a list of payments in the DB with
+// HandleProcessPendingRefunds retrieves a list of payments in the DB with
 // a refund-pending status and fires a request to the payment provider to
 // issue a refund
 func HandleProcessPendingRefunds(w http.ResponseWriter, req *http.Request) {
