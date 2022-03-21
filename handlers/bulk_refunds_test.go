@@ -197,7 +197,7 @@ func TestUnitHandleGovPayBulkRefund(t *testing.T) {
 			Config:         *cfg,
 		}
 		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
-		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any(), gomock.Any()).Return(fmt.Errorf("error")).AnyTimes()
+		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error")).AnyTimes()
 
 		HandleGovPayBulkRefund(w, req)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -231,7 +231,7 @@ func TestUnitHandleGovPayBulkRefund(t *testing.T) {
 		}
 
 		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
-		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 		HandleGovPayBulkRefund(w, req)
 		So(w.Code, ShouldEqual, http.StatusCreated)
