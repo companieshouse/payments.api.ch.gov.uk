@@ -33,7 +33,7 @@ type BulkRefundStatus int
 
 // Enumeration containing all possible bulk refund statuses
 const (
-	BulkRefundPending PaymentStatus = 1 + iota
+	BulkRefundPending BulkRefundStatus = 1 + iota
 	BulkRefundRequested
 )
 
@@ -41,6 +41,11 @@ const (
 var bulkRefundStatuses = [...]string{
 	"refund-pending",
 	"refund-requested",
+}
+
+// String returns the string representation of the bulk refund status
+func (bulkRefundStatus BulkRefundStatus) String() string {
+	return bulkRefundStatuses[bulkRefundStatus-1]
 }
 
 type RefundService struct {
