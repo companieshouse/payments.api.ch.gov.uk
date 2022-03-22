@@ -96,6 +96,29 @@ func HandleGovPayBulkRefund(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+// HandleProcessPendingRefunds retrieves a list of payments in the DB with
+// a refund-pending status and fires a request to the payment provider to
+// issue a refund
+func HandleProcessPendingRefunds(w http.ResponseWriter, req *http.Request) {
+	log.InfoR(req, "Start POST request for processing pending refunds")
+
+	payments, err := refundService.DAO.GetPaymentsWithRefundStatus()
+	if err != nil {
+		log.ErrorR(req, err)
+		m := utils.NewMessageResponse("error retrieving payments with refund-pending status")
+		utils.WriteJSONWithStatus(w, req, m, http.StatusInternalServerError)
+		return
+	}
+	if len(payments) == 0 {
+		log.InfoR(req, "no payments with refund-pending status found")
+		m := utils.NewMessageResponse("no payments with refund-pending status found")
+		utils.WriteJSONWithStatus(w, req, m, http.StatusNotFound)
+		return
+	}
+
+	utils.WriteJSONWithStatus(w, req, payments, http.StatusOK)
+}
+
 func closeFile(file multipart.File) {
 	err := file.Close()
 	if err != nil {

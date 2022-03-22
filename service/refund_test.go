@@ -449,7 +449,7 @@ func TestUnitUpdateGovPayBatchRefund(t *testing.T) {
 
 		batchRefund := generateXMLBatchRefund()
 
-		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any(), gomock.Any()).Return(fmt.Errorf("error")).AnyTimes()
+		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error")).AnyTimes()
 		err := service.UpdateGovPayBatchRefund(req.Context(), batchRefund, "filename", "userID")
 
 		So(err, ShouldNotBeNil)
@@ -462,7 +462,7 @@ func TestUnitUpdateGovPayBatchRefund(t *testing.T) {
 
 		batchRefund := generateXMLBatchRefund()
 
-		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 		err := service.UpdateGovPayBatchRefund(req.Context(), batchRefund, "filename", "userID")
 
 		So(err, ShouldBeNil)
