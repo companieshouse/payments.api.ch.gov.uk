@@ -13,6 +13,7 @@ import (
 	"github.com/companieshouse/chs.go/utils"
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -101,21 +102,18 @@ func HandleGovPayBulkRefund(w http.ResponseWriter, req *http.Request) {
 func HandleProcessPendingRefunds(w http.ResponseWriter, req *http.Request) {
 	log.InfoR(req, "Start POST request for processing pending refunds")
 
-	payments, err := refundService.DAO.GetPaymentsWithRefundStatus()
+	res, err := refundService.ProcessBatchRefund(req)
 	if err != nil {
 		log.ErrorR(req, err)
-		m := utils.NewMessageResponse("error retrieving payments with refund-pending status")
+		m := utils.NewMessageResponse("error processing batch refund")
 		utils.WriteJSONWithStatus(w, req, m, http.StatusInternalServerError)
-		return
 	}
-	if len(payments) == 0 {
-		log.InfoR(req, "no payments with refund-pending status found")
-		m := utils.NewMessageResponse("no payments with refund-pending status found")
+	if res == service.NotFound {
+		m := utils.NewMessageResponse("there are no payments with a refund-pending status")
 		utils.WriteJSONWithStatus(w, req, m, http.StatusNotFound)
-		return
 	}
 
-	utils.WriteJSONWithStatus(w, req, payments, http.StatusOK)
+	utils.WriteJSONWithStatus(w, req, nil, http.StatusCreated)
 }
 
 func closeFile(file multipart.File) {
