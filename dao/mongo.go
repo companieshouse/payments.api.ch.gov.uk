@@ -166,12 +166,11 @@ func (m *MongoService) GetPaymentResourceByExternalPaymentStatusID(externalPayme
 }
 
 // CreateBulkRefund creates or adds to the array of bulk refunds on a payment resource
-func (m *MongoService) CreateBulkRefund(externalPaymentStatusID string, status string, bulkRefund models.BulkRefundDB) error {
+func (m *MongoService) CreateBulkRefund(externalPaymentStatusID string, bulkRefund models.BulkRefundDB) error {
 	collection := m.db.Collection(m.CollectionName)
 
 	filter := bson.M{"external_payment_status_id": externalPaymentStatusID}
-	setStatus := bson.M{paymentStatus: status}
-	pushQuery := bson.M{"$push": bson.M{"bulk_refunds": bulkRefund}, "$set": setStatus}
+	pushQuery := bson.M{"$push": bson.M{"bulk_refunds": bulkRefund}}
 
 	update, err := collection.UpdateOne(context.Background(), filter, pushQuery)
 	if err != nil {
@@ -190,7 +189,7 @@ func (m *MongoService) GetPaymentsWithRefundStatus() ([]models.PaymentResourceDB
 	var payments []models.PaymentResourceDB
 
 	collection := m.db.Collection(m.CollectionName)
-	statusFilter := bson.M{paymentStatus: "refund-pending"}
+	statusFilter := bson.M{"bulk_refunds.status": "refund-pending"}
 	bulkRefundsFilter := bson.M{"bulk_refunds.0": bson.M{"$exists": true}}
 
 	paymentDBResources, err := collection.Find(context.Background(), bson.M{"$and": bson.A{statusFilter, bulkRefundsFilter}})

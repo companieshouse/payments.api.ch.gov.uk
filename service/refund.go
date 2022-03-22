@@ -28,6 +28,26 @@ const (
 	RefundsStatusError     = "error"
 )
 
+// BulkRefundStatus Enum Type
+type BulkRefundStatus int
+
+// Enumeration containing all possible bulk refund statuses
+const (
+	BulkRefundPending BulkRefundStatus = 1 + iota
+	BulkRefundRequested
+)
+
+// String representation of bulk refund statuses
+var bulkRefundStatuses = [...]string{
+	"refund-pending",
+	"refund-requested",
+}
+
+// String returns the string representation of the bulk refund status
+func (bulkRefundStatus BulkRefundStatus) String() string {
+	return bulkRefundStatuses[bulkRefundStatus-1]
+}
+
 type RefundService struct {
 	GovPayService  PaymentProviderService
 	PaymentService *PaymentService
@@ -197,7 +217,7 @@ func (service *RefundService) UpdateGovPayBatchRefund(ctx context.Context, batch
 		errs.Go(func() error {
 
 			bulkRefundDB := models.BulkRefundDB{
-				Status:            RefundPending,
+				Status:            BulkRefundPending.String(),
 				UploadedFilename:  filename,
 				UploadedAt:        time.Now().Truncate(time.Millisecond).String(),
 				UploadedBy:        user,
@@ -207,7 +227,7 @@ func (service *RefundService) UpdateGovPayBatchRefund(ctx context.Context, batch
 				ExternalRefundURL: "",
 			}
 
-			err := service.DAO.CreateBulkRefund(r.OrderCode, PendingRefund.String(), bulkRefundDB)
+			err := service.DAO.CreateBulkRefund(r.OrderCode, bulkRefundDB)
 			if err != nil {
 				log.Error(fmt.Errorf("error updating payment session in DB: %w", err))
 				return err

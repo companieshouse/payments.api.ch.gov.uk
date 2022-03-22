@@ -77,7 +77,7 @@ func TestUnitCreateBulkRefund(t *testing.T) {
 
 		bulkRefund := models.BulkRefundDB{}
 
-		err := dao.CreateBulkRefund("id123", "status", bulkRefund)
+		err := dao.CreateBulkRefund("id123", bulkRefund)
 		So(err.Error(), ShouldEqual, "error updating bulk refund for payment with external status id [id123]: the Update operation must have a Deployment set before Execute can be called")
 	})
 }
