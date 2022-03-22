@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -246,7 +247,8 @@ func (service *RefundService) ProcessBatchRefund(req *http.Request) (ResponseTyp
 
 func (service *RefundService) processGovPayBatchRefund(req *http.Request, payment models.PaymentResourceDB) (ResponseType, error) {
 	recentRefund := payment.BulkRefund[len(payment.BulkRefund)-1]
-	amount, err := strconv.Atoi(recentRefund.Amount)
+	a := strings.Replace(recentRefund.Amount, ".", "", -1)
+	amount, err := strconv.Atoi(a)
 	if err != nil {
 		return Error, fmt.Errorf("error converting amount string to int [%w]", err)
 	}
