@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -100,4 +101,27 @@ func closeFile(file multipart.File) {
 	if err != nil {
 		log.Error(fmt.Errorf("error closing file: %w", err))
 	}
+}
+
+// HandleGetRefundStatuses retreives payments that are pending refund
+func HandleGetRefundStatuses(w http.ResponseWriter, req *http.Request) {
+
+	log.InfoR(req, "start GET request for payments with pending refund statuses")
+	pendingRefundPaymentSessions, err := refundService.GetPaymentsWithPendingRefundStatus()
+	if err != nil {
+		log.ErrorR(req, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(pendingRefundPaymentSessions)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	log.InfoR(req, "Successful GET request for payments with pending refund statuses")
 }

@@ -223,3 +223,23 @@ func (service *RefundService) UpdateGovPayBatchRefund(ctx context.Context, batch
 
 	return nil
 }
+
+// GetPaymentsWithPendingRefundStatus gets all payment sessions in the DB that
+// have the pending refund status
+func (service *RefundService) GetPaymentsWithPendingRefundStatus() (*models.PendingRefundPaymentsResourceRest, error) {
+	paymentSessions, err := service.DAO.GetPaymentsWithRefundStatus()
+	if err != nil {
+		err = fmt.Errorf("error getting payment resources with pending refund status: [%v]", err)
+		log.Error(err)
+		return nil, err
+	}
+
+	paymentSessionsRest := []models.PaymentResourceRest{}
+	for _, paymentSession := range paymentSessions {
+		paymentSessionsRest = append(paymentSessionsRest, transformers.PaymentTransformer{}.TransformToRest(paymentSession))
+	}
+
+	pendingRefundPayments := models.PendingRefundPaymentsResourceRest{Payments: paymentSessionsRest, Total: len(paymentSessionsRest)}
+
+	return &pendingRefundPayments, nil
+}

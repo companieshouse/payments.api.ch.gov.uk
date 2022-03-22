@@ -78,3 +78,8 @@ type CostResourceRest struct {
 	ProductType             string            `json:"product_type"              validate:"required"`
 	DescriptionValues       map[string]string `json:"description_values"`
 }
+
+type PendingRefundPaymentsResourceRest struct {
+	Payments []PaymentResourceRest `json:"payments"`
+	Total    int                   `json:"total"`
+}
