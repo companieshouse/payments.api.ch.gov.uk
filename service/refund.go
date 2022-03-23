@@ -278,8 +278,8 @@ func (service *RefundService) processGovPayBatchRefund(req *http.Request, paymen
 	}
 	recentRefund.RefundID = refund.RefundId
 	recentRefund.ProcessedAt = refund.CreatedDateTime
-	recentRefund.Status = RefundsStatusSubmitted                                  // TODO: confirm with team if this is okay
-	recentRefund.ExternalRefundURL = payment.ExternalPaymentStatusURI + "/refund" // TODO: confirm this
+	recentRefund.Status = RefundRequested.String()
+	recentRefund.ExternalRefundURL = payment.ExternalPaymentStatusURI + "/refund"
 	payment.BulkRefund[len(payment.BulkRefund)-1] = recentRefund
 	err = service.DAO.PatchPaymentResource(payment.ID, &payment)
 	if err != nil {
