@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -242,4 +244,47 @@ func (service *RefundService) UpdateGovPayBatchRefund(ctx context.Context, batch
 	}
 
 	return nil
+}
+
+// ProcessBatchRefund processes all refunds in the DB with a refund-pending status
+func (service *RefundService) ProcessBatchRefund(req *http.Request) (ResponseType, error) {
+	payments, err := service.DAO.GetPaymentsWithRefundStatus()
+	if err != nil {
+		return Error, err
+	}
+	if len(payments) == 0 {
+		return NotFound, nil
+	}
+
+	for _, p := range payments {
+		if p.Data.PaymentMethod == "credit-card" {
+			return service.processGovPayBatchRefund(req, p)
+		}
+	}
+
+	return Success, nil
+}
+
+func (service *RefundService) processGovPayBatchRefund(req *http.Request, payment models.PaymentResourceDB) (ResponseType, error) {
+	recentRefund := payment.BulkRefund[len(payment.BulkRefund)-1]
+	a := strings.Replace(recentRefund.Amount, ".", "", -1)
+	amount, err := strconv.Atoi(a)
+	if err != nil {
+		return Error, fmt.Errorf("error converting amount string to int [%w]", err)
+	}
+	_, refund, res, err := service.CreateRefund(req, payment.ID, models.CreateRefundRequest{Amount: amount})
+	if err != nil {
+		return res, err
+	}
+	recentRefund.RefundID = refund.RefundId
+	recentRefund.ProcessedAt = refund.CreatedDateTime
+	recentRefund.Status = RefundRequested.String()
+	recentRefund.ExternalRefundURL = payment.ExternalPaymentStatusURI + "/refund"
+	payment.BulkRefund[len(payment.BulkRefund)-1] = recentRefund
+	err = service.DAO.PatchPaymentResource(payment.ID, &payment)
+	if err != nil {
+		return Error, err
+	}
+
+	return Success, nil
 }
