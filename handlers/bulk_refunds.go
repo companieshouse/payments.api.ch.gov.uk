@@ -126,7 +126,7 @@ func closeFile(file multipart.File) {
 	}
 }
 
-// HandleGetRefundStatuses retreives payments that are pending refund
+// HandleGetRefundStatuses retrieves payments that are pending refund
 func HandleGetRefundStatuses(w http.ResponseWriter, req *http.Request) {
 
 	log.InfoR(req, "start GET request for payments with pending refund statuses")
