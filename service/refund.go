@@ -247,44 +247,76 @@ func (service *RefundService) UpdateGovPayBatchRefund(ctx context.Context, batch
 }
 
 // ProcessBatchRefund processes all refunds in the DB with a refund-pending status
-func (service *RefundService) ProcessBatchRefund(req *http.Request) (ResponseType, error) {
+func (service *RefundService) ProcessBatchRefund(req *http.Request) []string {
+	var errorList []string
 	payments, err := service.DAO.GetPaymentsWithRefundStatus()
 	if err != nil {
-		return Error, err
+		log.ErrorR(req, fmt.Errorf("error retrieving payments with refund-pending status: %w", err))
+		errorList = append(errorList, "error retrieving payments with refund-pending status")
+		return errorList
 	}
 	if len(payments) == 0 {
-		return NotFound, nil
+		log.DebugR(req, "no payments with refund-pending status found")
+		errorList = append(errorList, "no payments with refund-pending status found")
+		return errorList
 	}
 
 	for _, p := range payments {
 		if p.Data.PaymentMethod == "credit-card" {
-			return service.processGovPayBatchRefund(req, p)
+			err := service.processGovPayBatchRefund(req, p)
+			if err != "" {
+				errorList = append(errorList, err)
+			}
 		}
 	}
 
-	return Success, nil
+	return errorList
 }
 
-func (service *RefundService) processGovPayBatchRefund(req *http.Request, payment models.PaymentResourceDB) (ResponseType, error) {
+func (service *RefundService) processGovPayBatchRefund(req *http.Request, payment models.PaymentResourceDB) string {
 	recentRefund := payment.BulkRefund[len(payment.BulkRefund)-1]
 	a := strings.Replace(recentRefund.Amount, ".", "", -1)
 	amount, err := strconv.Atoi(a)
 	if err != nil {
-		return Error, fmt.Errorf("error converting amount string to int [%w]", err)
+		log.ErrorR(req, fmt.Errorf("error converting amount string to int [%w]", err))
+		return fmt.Sprintf("error converting amount string to int for payment with id [%s]", payment.ID)
 	}
-	_, refund, res, err := service.CreateRefund(req, payment.ID, models.CreateRefundRequest{Amount: amount})
+	// Get RefundSummary from GovPay to check the available amount
+	paymentSession, refundSummary, _, err := service.GovPayService.GetRefundSummary(req, payment.ID)
 	if err != nil {
-		return res, err
+		log.ErrorR(req, fmt.Errorf("error getting refund summary from govpay: [%w]", err))
+		return fmt.Sprintf("error getting refund summary from govpay for payment with id [%s]", payment.ID)
 	}
-	recentRefund.RefundID = refund.RefundId
-	recentRefund.ProcessedAt = refund.CreatedDateTime
+
+	if refundSummary.AmountAvailable != amount {
+		err := fmt.Sprintf("refund amount is not equal than available amount for payment with id [%s]", payment.ID)
+		log.DebugR(req, err)
+		return err
+	}
+
+	refundRequest := &models.CreateRefundGovPayRequest{
+		Amount:                amount,
+		RefundAmountAvailable: refundSummary.AmountAvailable,
+	}
+	// Call GovPay to initiate a Refund
+	refund, _, err := service.GovPayService.CreateRefund(paymentSession, refundRequest)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error creating refund in govpay: [%w]", err))
+		return fmt.Sprintf("error creating refund in govpay for payment with id [%s]", payment.ID)
+	}
+
+	refundResource := mappers.MapGovPayToRefundResponse(*refund)
+
+	recentRefund.RefundID = refundResource.RefundId
+	recentRefund.ProcessedAt = refundResource.CreatedDateTime
 	recentRefund.Status = RefundRequested.String()
 	recentRefund.ExternalRefundURL = payment.ExternalPaymentStatusURI + "/refund"
 	payment.BulkRefund[len(payment.BulkRefund)-1] = recentRefund
 	err = service.DAO.PatchPaymentResource(payment.ID, &payment)
 	if err != nil {
-		return Error, err
+		log.ErrorR(req, fmt.Errorf("error patching payment [%w]", err))
+		return fmt.Sprintf("error patching payment with id [%s]", payment.ID)
 	}
 
-	return Success, nil
+	return ""
 }
