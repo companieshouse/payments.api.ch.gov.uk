@@ -305,20 +305,33 @@ func TestUnitHandleProcessPendingRefunds(t *testing.T) {
 			Config:         *cfg,
 		}
 
-		payments := []models.PaymentResourceDB{
-			{
-				ID: "1",
-			},
-		}
+		body := fixtures.GetRefundRequest(1000)
+		refundSummary := fixtures.GetRefundSummary(1000)
+		paymentResource := &models.PaymentResourceRest{}
+		refundRequest := fixtures.GetCreateRefundGovPayRequest(body.Amount, refundSummary.AmountAvailable)
+		paymentSession := generatePaymentSession()
+		response := fixtures.GetCreateRefundGovPayResponse()
 
-		mockDao.EXPECT().GetPaymentsWithRefundStatus().Return(payments, nil)
+		bulkRefund := models.BulkRefundDB{
+			Status:           "refund-pending",
+			UploadedFilename: "name",
+			UploadedAt:       "time",
+			UploadedBy:       "Name",
+			Amount:           "10.00",
+		}
+		paymentSession.BulkRefund = append(paymentSession.BulkRefund, bulkRefund)
+		pList := []models.PaymentResourceDB{paymentSession}
+		mockDao.EXPECT().GetPaymentsWithRefundStatus().Return(pList, nil)
+		mockGovPayService.EXPECT().GetRefundSummary(gomock.Any(), gomock.Any()).Return(paymentResource, refundSummary, service.Success, nil)
+		mockGovPayService.EXPECT().CreateRefund(paymentResource, refundRequest).Return(response, service.Success, nil)
+		mockDao.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/process-pending", nil)
 		w := httptest.NewRecorder()
 
 		HandleProcessPendingRefunds(w, req)
 
-		So(w.Code, ShouldEqual, http.StatusOK)
+		So(w.Code, ShouldEqual, http.StatusCreated)
 	})
 }
 
