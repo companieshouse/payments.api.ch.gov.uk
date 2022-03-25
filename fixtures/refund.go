@@ -14,6 +14,7 @@ func GetRefundSummary(amount int) *models.RefundSummary {
 	}
 }
 
+// GetPendingRefundPayments returns an array of PaymentResourceDB with refund-pending status
 func GetPendingRefundPayments() []models.PaymentResourceDB {
 	data1 := models.PaymentResourceDataDB{
 		Amount:        "150.00",
@@ -42,6 +43,7 @@ func GetPendingRefundPayments() []models.PaymentResourceDB {
 	return paymentResources
 }
 
+// GetPendingRefundPayments returns an array of PendingRefundPaymentsResourceRest with refund-pending status
 func GetPendingRefundsResponse() *models.PendingRefundPaymentsResourceRest {
 	paymentResource1 := models.PaymentResourceRest{
 		Amount:        "150.00",

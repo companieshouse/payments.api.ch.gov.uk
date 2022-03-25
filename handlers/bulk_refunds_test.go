@@ -350,6 +350,30 @@ func TestUnitHandleGetRefundStatuses(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
+	Convey("Error encoding response", t, func() {
+		cfg, _ := config.Get()
+
+		mockDao := dao.NewMockDAO(mockCtrl)
+		mockGovPayService := service.NewMockPaymentProviderService(mockCtrl)
+		mockPaymentService := createMockPaymentService(mockDao, cfg)
+
+		refundService = &service.RefundService{
+			GovPayService:  mockGovPayService,
+			PaymentService: mockPaymentService,
+			DAO:            mockDao,
+			Config:         *cfg,
+		}
+
+		mockDao.EXPECT().GetPaymentsWithRefundStatus().Return(nil, nil)
+
+		req := httptest.NewRequest("GET", "/admin/payments/bulk-refunds", nil)
+		w := httptest.NewRecorder()
+
+		HandleGetRefundStatuses(w, req)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
 	Convey("Successful request getting payments with pending refund status from DB", t, func() {
 		cfg, _ := config.Get()
 		pendingRefunds := fixtures.GetPendingRefundPayments()

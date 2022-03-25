@@ -186,7 +186,7 @@ func PaymentAdminAuthenticationIntercept(next http.Handler) http.Handler {
 
 		ctx := context.WithValue(r.Context(), helpers.ContextKeyUserID, userEmail)
 
-		// Check that user has bulk refund role and sends POST request
+		// Check that user has bulk refund role
 		if authUserHasBulkRefundRole {
 			log.InfoR(r, "PaymentAdminAuthenticationInterceptor authorised as bulk refund admin role on POST", debugMap)
 			next.ServeHTTP(w, r.WithContext(ctx))

@@ -79,6 +79,7 @@ type CostResourceRest struct {
 	DescriptionValues       map[string]string `json:"description_values"`
 }
 
+// PendingRefundPaymentsResourceRest contains a list of PaymentResourceRest with pending refund status and a total count
 type PendingRefundPaymentsResourceRest struct {
 	Payments []PaymentResourceRest `json:"payments"`
 	Total    int                   `json:"total"`
