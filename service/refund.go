@@ -264,6 +264,7 @@ func (service *RefundService) GetPaymentsWithPendingRefundStatus() (*models.Pend
 	pendingRefundPayments := models.PendingRefundPaymentsResourceRest{Payments: paymentSessionsRest, Total: len(paymentSessionsRest)}
 
 	return &pendingRefundPayments, nil
+}
 
 // ProcessBatchRefund processes all refunds in the DB with a refund-pending status
 func (service *RefundService) ProcessBatchRefund(req *http.Request) []error {
