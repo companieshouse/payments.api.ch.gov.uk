@@ -103,7 +103,13 @@ func HandleProcessPendingRefunds(w http.ResponseWriter, req *http.Request) {
 
 	errList := refundService.ProcessBatchRefund(req)
 
-	utils.WriteJSONWithStatus(w, req, strings.Join(errList, ","), http.StatusAccepted)
+	var res []string
+
+	for _, e := range errList {
+		res = append(res, e.Error())
+	}
+
+	utils.WriteJSONWithStatus(w, req, strings.Join(res, ","), http.StatusAccepted)
 }
 
 func closeFile(file multipart.File) {

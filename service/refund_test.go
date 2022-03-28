@@ -493,7 +493,7 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 			res := service.ProcessBatchRefund(req)
 
 			So(len(res), ShouldEqual, 1)
-			So(res[0], ShouldEqual, "error retrieving payments with refund-pending status")
+			So(res[0].Error(), ShouldEqual, "error retrieving payments with refund-pending status")
 		})
 
 		Convey("No payments with refund-pending status found in DB", func() {
@@ -502,7 +502,7 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 			res := service.ProcessBatchRefund(req)
 
 			So(len(res), ShouldEqual, 1)
-			So(res[0], ShouldEqual, "no payments with refund-pending status found")
+			So(res[0].Error(), ShouldEqual, "no payments with refund-pending status found")
 		})
 
 		Convey("Error converting amount string to integer", func() {
@@ -520,7 +520,7 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 			res := service.ProcessBatchRefund(req)
 
 			So(len(res), ShouldEqual, 1)
-			So(res[0], ShouldContainSubstring, "error converting amount string to int")
+			So(res[0].Error(), ShouldContainSubstring, "error converting amount string to int")
 		})
 
 		Convey("Multiple errors converting amount string to integer", func() {
@@ -540,8 +540,8 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 			res := service.ProcessBatchRefund(req)
 
 			So(len(res), ShouldEqual, 2)
-			So(res[0], ShouldContainSubstring, "error converting amount string to int")
-			So(res[1], ShouldContainSubstring, "error converting amount string to int")
+			So(res[0].Error(), ShouldContainSubstring, "error converting amount string to int")
+			So(res[1].Error(), ShouldContainSubstring, "error converting amount string to int")
 		})
 
 		Convey("Error retrieved from calling GetRefundSummary", func() {
@@ -561,7 +561,7 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 			res := service.ProcessBatchRefund(req)
 
 			So(len(res), ShouldEqual, 1)
-			So(res[0], ShouldContainSubstring, "error getting refund summary from govpay")
+			So(res[0].Error(), ShouldContainSubstring, "error getting refund summary from govpay")
 		})
 
 		Convey("Amount available in refund summary is not equal to amount in database", func() {
@@ -583,7 +583,7 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 			res := service.ProcessBatchRefund(req)
 
 			So(len(res), ShouldEqual, 1)
-			So(res[0], ShouldContainSubstring, "refund amount is not equal than available amount")
+			So(res[0].Error(), ShouldContainSubstring, "refund amount is not equal than available amount")
 		})
 
 		Convey("Error retrieved from calling GovPay service CreateRefund", func() {
@@ -608,7 +608,7 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 			res := service.ProcessBatchRefund(req)
 
 			So(len(res), ShouldEqual, 1)
-			So(res[0], ShouldContainSubstring, "error creating refund in govpay")
+			So(res[0].Error(), ShouldContainSubstring, "error creating refund in govpay")
 		})
 
 		Convey("Error patching payment resource in DB", func() {
@@ -635,7 +635,7 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 			res := service.ProcessBatchRefund(req)
 
 			So(len(res), ShouldEqual, 1)
-			So(res[0], ShouldContainSubstring, "error patching payment")
+			So(res[0].Error(), ShouldContainSubstring, "error patching payment")
 		})
 
 		Convey("Successfully create bulk refund", func() {
