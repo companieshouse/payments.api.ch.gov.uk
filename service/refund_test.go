@@ -490,19 +490,19 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 		Convey("Error getting payments with refund-pending status from DB", func() {
 			mockDao.EXPECT().GetPaymentsWithRefundStatus().Return(nil, fmt.Errorf("error"))
 
-			res, err := service.ProcessBatchRefund(req)
+			res := service.ProcessBatchRefund(req)
 
-			So(res, ShouldEqual, Error)
-			So(err.Error(), ShouldEqual, "error")
+			So(len(res), ShouldEqual, 1)
+			So(res[0].Error(), ShouldEqual, "error retrieving payments with refund-pending status")
 		})
 
 		Convey("No payments with refund-pending status found in DB", func() {
 			mockDao.EXPECT().GetPaymentsWithRefundStatus().Return([]models.PaymentResourceDB{}, nil)
 
-			res, err := service.ProcessBatchRefund(req)
+			res := service.ProcessBatchRefund(req)
 
-			So(res, ShouldEqual, NotFound)
-			So(err, ShouldEqual, nil)
+			So(len(res), ShouldEqual, 1)
+			So(res[0].Error(), ShouldEqual, "no payments with refund-pending status found")
 		})
 
 		Convey("Error converting amount string to integer", func() {
@@ -517,13 +517,34 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 			pList := []models.PaymentResourceDB{paymentSession}
 			mockDao.EXPECT().GetPaymentsWithRefundStatus().Return(pList, nil)
 
-			res, err := service.ProcessBatchRefund(req)
+			res := service.ProcessBatchRefund(req)
 
-			So(res, ShouldEqual, Error)
-			So(err.Error(), ShouldContainSubstring, "error converting amount string to int")
+			So(len(res), ShouldEqual, 1)
+			So(res[0].Error(), ShouldContainSubstring, "error converting amount string to int")
 		})
 
-		Convey("Error retrieved from calling CreateRefund method - GovPay service GetRefundSummary", func() {
+		Convey("Multiple errors converting amount string to integer", func() {
+			paymentSession := generatePaymentSession()
+			bulkRefund := models.BulkRefundDB{
+				Status:           "refund-pending",
+				UploadedFilename: "name",
+				UploadedAt:       "time",
+				UploadedBy:       "Name",
+			}
+			paymentSession.BulkRefund = append(paymentSession.BulkRefund, bulkRefund)
+			paymentSession1 := generatePaymentSession()
+			paymentSession1.BulkRefund = append(paymentSession1.BulkRefund, bulkRefund)
+			pList := []models.PaymentResourceDB{paymentSession, paymentSession1}
+			mockDao.EXPECT().GetPaymentsWithRefundStatus().Return(pList, nil)
+
+			res := service.ProcessBatchRefund(req)
+
+			So(len(res), ShouldEqual, 2)
+			So(res[0].Error(), ShouldContainSubstring, "error converting amount string to int")
+			So(res[1].Error(), ShouldContainSubstring, "error converting amount string to int")
+		})
+
+		Convey("Error retrieved from calling GetRefundSummary", func() {
 			paymentSession := generatePaymentSession()
 			bulkRefund := models.BulkRefundDB{
 				Status:           "refund-pending",
@@ -537,13 +558,35 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 			mockDao.EXPECT().GetPaymentsWithRefundStatus().Return(pList, nil)
 			mockGovPayService.EXPECT().GetRefundSummary(req, gomock.Any()).Return(nil, nil, Error, fmt.Errorf("error"))
 
-			res, err := service.ProcessBatchRefund(req)
+			res := service.ProcessBatchRefund(req)
 
-			So(res, ShouldEqual, Error)
-			So(err, ShouldNotBeNil)
+			So(len(res), ShouldEqual, 1)
+			So(res[0].Error(), ShouldContainSubstring, "error getting refund summary from govpay")
 		})
 
-		Convey("Error retrieved from calling CreateRefund method - GovPay service CreateRefund", func() {
+		Convey("Amount available in refund summary is not equal to amount in database", func() {
+			refundSummary := fixtures.GetRefundSummary(2)
+			paymentResource := &models.PaymentResourceRest{}
+			paymentSession := generatePaymentSession()
+			bulkRefund := models.BulkRefundDB{
+				Status:           "refund-pending",
+				UploadedFilename: "name",
+				UploadedAt:       "time",
+				UploadedBy:       "Name",
+				Amount:           "10.00",
+			}
+			paymentSession.BulkRefund = append(paymentSession.BulkRefund, bulkRefund)
+			pList := []models.PaymentResourceDB{paymentSession}
+			mockDao.EXPECT().GetPaymentsWithRefundStatus().Return(pList, nil)
+			mockGovPayService.EXPECT().GetRefundSummary(req, gomock.Any()).Return(paymentResource, refundSummary, Success, nil)
+
+			res := service.ProcessBatchRefund(req)
+
+			So(len(res), ShouldEqual, 1)
+			So(res[0].Error(), ShouldContainSubstring, "refund amount is not equal than available amount")
+		})
+
+		Convey("Error retrieved from calling GovPay service CreateRefund", func() {
 			body := fixtures.GetRefundRequest(1000)
 			refundSummary := fixtures.GetRefundSummary(1000)
 			paymentResource := &models.PaymentResourceRest{}
@@ -562,10 +605,37 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 			mockGovPayService.EXPECT().GetRefundSummary(gomock.Any(), gomock.Any()).Return(paymentResource, refundSummary, Success, nil)
 			mockGovPayService.EXPECT().CreateRefund(paymentResource, refundRequest).Return(nil, Error, fmt.Errorf("error"))
 
-			res, err := service.ProcessBatchRefund(req)
+			res := service.ProcessBatchRefund(req)
 
-			So(res, ShouldEqual, Error)
-			So(err.Error(), ShouldContainSubstring, "error creating refund in govpay")
+			So(len(res), ShouldEqual, 1)
+			So(res[0].Error(), ShouldContainSubstring, "error creating refund in govpay")
+		})
+
+		Convey("Error patching payment resource in DB", func() {
+			body := fixtures.GetRefundRequest(1000)
+			refundSummary := fixtures.GetRefundSummary(1000)
+			paymentResource := &models.PaymentResourceRest{}
+			refundRequest := fixtures.GetCreateRefundGovPayRequest(body.Amount, refundSummary.AmountAvailable)
+			response := fixtures.GetCreateRefundGovPayResponse()
+			paymentSession := generatePaymentSession()
+			bulkRefund := models.BulkRefundDB{
+				Status:           "refund-pending",
+				UploadedFilename: "name",
+				UploadedAt:       "time",
+				UploadedBy:       "Name",
+				Amount:           "10.00",
+			}
+			paymentSession.BulkRefund = append(paymentSession.BulkRefund, bulkRefund)
+			pList := []models.PaymentResourceDB{paymentSession}
+			mockDao.EXPECT().GetPaymentsWithRefundStatus().Return(pList, nil)
+			mockGovPayService.EXPECT().GetRefundSummary(gomock.Any(), gomock.Any()).Return(paymentResource, refundSummary, Success, nil)
+			mockGovPayService.EXPECT().CreateRefund(paymentResource, refundRequest).Return(response, Success, nil)
+			mockDao.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
+
+			res := service.ProcessBatchRefund(req)
+
+			So(len(res), ShouldEqual, 1)
+			So(res[0].Error(), ShouldContainSubstring, "error patching payment")
 		})
 
 		Convey("Successfully create bulk refund", func() {
@@ -588,12 +658,39 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 			mockDao.EXPECT().GetPaymentsWithRefundStatus().Return(pList, nil)
 			mockGovPayService.EXPECT().GetRefundSummary(gomock.Any(), gomock.Any()).Return(paymentResource, refundSummary, Success, nil)
 			mockGovPayService.EXPECT().CreateRefund(paymentResource, refundRequest).Return(response, Success, nil)
-			mockDao.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+			mockDao.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
 
-			res, err := service.ProcessBatchRefund(req)
+			res := service.ProcessBatchRefund(req)
 
-			So(res, ShouldEqual, Success)
-			So(err, ShouldBeNil)
+			So(len(res), ShouldEqual, 0)
+		})
+
+		Convey("Successfully create multiple bulk refunds", func() {
+			body := fixtures.GetRefundRequest(1000)
+			refundSummary := fixtures.GetRefundSummary(1000)
+			paymentResource := &models.PaymentResourceRest{}
+			refundRequest := fixtures.GetCreateRefundGovPayRequest(body.Amount, refundSummary.AmountAvailable)
+			paymentSession := generatePaymentSession()
+			response := fixtures.GetCreateRefundGovPayResponse()
+			paymentSession1 := generatePaymentSession()
+			bulkRefund := models.BulkRefundDB{
+				Status:           "refund-pending",
+				UploadedFilename: "name",
+				UploadedAt:       "time",
+				UploadedBy:       "Name",
+				Amount:           "10.00",
+			}
+			paymentSession.BulkRefund = append(paymentSession.BulkRefund, bulkRefund)
+			paymentSession1.BulkRefund = append(paymentSession.BulkRefund, bulkRefund)
+			pList := []models.PaymentResourceDB{paymentSession, paymentSession1}
+			mockDao.EXPECT().GetPaymentsWithRefundStatus().Return(pList, nil)
+			mockGovPayService.EXPECT().GetRefundSummary(gomock.Any(), gomock.Any()).Return(paymentResource, refundSummary, Success, nil).Times(2)
+			mockGovPayService.EXPECT().CreateRefund(paymentResource, refundRequest).Return(response, Success, nil).Times(2)
+			mockDao.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil).Times(2)
+
+			res := service.ProcessBatchRefund(req)
+
+			So(len(res), ShouldEqual, 0)
 		})
 	})
 }

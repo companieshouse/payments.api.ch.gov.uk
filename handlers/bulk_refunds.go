@@ -13,7 +13,6 @@ import (
 	"github.com/companieshouse/chs.go/utils"
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
-	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -102,18 +101,15 @@ func HandleGovPayBulkRefund(w http.ResponseWriter, req *http.Request) {
 func HandleProcessPendingRefunds(w http.ResponseWriter, req *http.Request) {
 	log.InfoR(req, "Start POST request for processing pending refunds")
 
-	res, err := refundService.ProcessBatchRefund(req)
-	if err != nil {
-		log.ErrorR(req, err)
-		m := utils.NewMessageResponse("error processing batch refund")
-		utils.WriteJSONWithStatus(w, req, m, http.StatusInternalServerError)
-	}
-	if res == service.NotFound {
-		m := utils.NewMessageResponse("there are no payments with a refund-pending status")
-		utils.WriteJSONWithStatus(w, req, m, http.StatusNotFound)
+	errList := refundService.ProcessBatchRefund(req)
+
+	var res []string
+
+	for _, e := range errList {
+		res = append(res, e.Error())
 	}
 
-	utils.WriteJSONWithStatus(w, req, nil, http.StatusCreated)
+	utils.WriteJSONWithStatus(w, req, strings.Join(res, ","), http.StatusAccepted)
 }
 
 func closeFile(file multipart.File) {
