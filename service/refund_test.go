@@ -469,6 +469,40 @@ func TestUnitUpdateGovPayBatchRefund(t *testing.T) {
 	})
 }
 
+func TestUnitGetRefundPendingPayments(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	cfg, _ := config.Get()
+
+	mockDao := dao.NewMockDAO(mockCtrl)
+
+	service := RefundService{
+		DAO:    mockDao,
+		Config: *cfg,
+	}
+
+	Convey("Error when getting payment session", t, func() {
+		mockDao.EXPECT().GetPaymentsWithRefundStatus().Return([]models.PaymentResourceDB{}, fmt.Errorf("error"))
+
+		pendingRefundPayments, err := service.GetPaymentsWithPendingRefundStatus()
+
+		So(pendingRefundPayments, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "error getting payment resources with pending refund status: [error]")
+	})
+
+	Convey("Return successful response", t, func() {
+		pendingRefunds := fixtures.GetPendingRefundPayments()
+
+		mockDao.EXPECT().
+			GetPaymentsWithRefundStatus().
+			Return(pendingRefunds, nil)
+
+		paymentResources, err := service.GetPaymentsWithPendingRefundStatus()
+
+		So(paymentResources, ShouldNotBeNil)
+		So(err, ShouldBeNil)
+	})
+}
 func TestUnitProcessBatchRefund(t *testing.T) {
 	Convey("Set up unit tests", t, func() {
 		req := httptest.NewRequest("POST", "/test", nil)

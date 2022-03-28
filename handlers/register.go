@@ -96,6 +96,7 @@ func Register(mainRouter *mux.Router, cfg config.Config, paymentsDao dao.DAO) {
 	// Admin router will handle all the routes with an admin prefix
 	// and will be intercepted to check for the admin role
 	adminRouter := mainRouter.PathPrefix("/admin/payments/bulk-refunds").Subrouter()
+	adminRouter.HandleFunc("", HandleGetRefundStatuses).Methods("GET").Name("get-refund-statuses")
 	adminRouter.HandleFunc("/govpay", HandleGovPayBulkRefund).Methods("POST").Name("bulk-refund-govpay")
 	adminRouter.HandleFunc("/process-pending", HandleProcessPendingRefunds).Methods("POST").Name("process-bulk-refund")
 

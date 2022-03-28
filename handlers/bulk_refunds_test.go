@@ -396,6 +396,60 @@ func TestUnitHandleProcessPendingRefunds(t *testing.T) {
 	})
 }
 
+func TestUnitHandleGetRefundStatuses(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	Convey("Error retrieving payments with pending refund status from DB", t, func() {
+		cfg, _ := config.Get()
+
+		mockDao := dao.NewMockDAO(mockCtrl)
+		mockGovPayService := service.NewMockPaymentProviderService(mockCtrl)
+		mockPaymentService := createMockPaymentService(mockDao, cfg)
+
+		refundService = &service.RefundService{
+			GovPayService:  mockGovPayService,
+			PaymentService: mockPaymentService,
+			DAO:            mockDao,
+			Config:         *cfg,
+		}
+
+		mockDao.EXPECT().GetPaymentsWithRefundStatus().Return(nil, fmt.Errorf("error"))
+
+		req := httptest.NewRequest("GET", "/admin/payments/bulk-refunds", nil)
+		w := httptest.NewRecorder()
+
+		HandleGetRefundStatuses(w, req)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Successful request getting payments with pending refund status from DB", t, func() {
+		cfg, _ := config.Get()
+		pendingRefunds := fixtures.GetPendingRefundPayments()
+
+		mockDao := dao.NewMockDAO(mockCtrl)
+		mockGovPayService := service.NewMockPaymentProviderService(mockCtrl)
+		mockPaymentService := createMockPaymentService(mockDao, cfg)
+
+		refundService = &service.RefundService{
+			GovPayService:  mockGovPayService,
+			PaymentService: mockPaymentService,
+			DAO:            mockDao,
+			Config:         *cfg,
+		}
+
+		mockDao.EXPECT().GetPaymentsWithRefundStatus().Return(pendingRefunds, nil)
+
+		req := httptest.NewRequest("GET", "/admin/payments/bulk-refunds", nil)
+		w := httptest.NewRecorder()
+
+		HandleGetRefundStatuses(w, req)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+	})
+}
+
 func generatePaymentSession() models.PaymentResourceDB {
 	return models.PaymentResourceDB{
 		ID:                       "1234",
