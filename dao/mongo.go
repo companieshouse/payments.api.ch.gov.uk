@@ -202,9 +202,8 @@ func (m *MongoService) GetPaymentsWithRefundStatus() ([]models.PaymentResourceDB
 
 	collection := m.db.Collection(m.CollectionName)
 	statusFilter := bson.M{"bulk_refunds.status": "refund-pending"}
-	bulkRefundsFilter := bson.M{"bulk_refunds.0": bson.M{"$exists": true}}
 
-	paymentDBResources, err := collection.Find(context.Background(), bson.M{"$and": bson.A{statusFilter, bulkRefundsFilter}})
+	paymentDBResources, err := collection.Find(context.Background(), statusFilter)
 	if err != nil {
 		return nil, err
 	}
