@@ -18,7 +18,10 @@ const deadline = 5 * time.Second
 
 var client *mongo.Client
 
-const paymentStatus = "data.status"
+const (
+	paymentStatus    = "data.status"
+	bulkRefundStatus = "bulk_refunds.status"
+)
 
 // MongoService is an implementation of the Service interface using MongoDB as the backend driver.
 type MongoService struct {
@@ -177,8 +180,8 @@ func (m *MongoService) CreateBulkRefund(externalPaymentStatusID string, bulkRefu
 
 	IDFilter := bson.M{"external_payment_status_id": externalPaymentStatusID}
 
-	pendingFilter := bson.M{"bulk_refunds.status": "refund-pending"}
-	requestedFilter := bson.M{"bulk_refunds.status": "refund-requested"}
+	pendingFilter := bson.M{bulkRefundStatus: "refund-pending"}
+	requestedFilter := bson.M{bulkRefundStatus: "refund-requested"}
 	statusFilter := bson.M{"$nor": bson.A{pendingFilter, requestedFilter}}
 
 	filter := bson.M{"$and": bson.A{IDFilter, statusFilter}}
@@ -201,7 +204,7 @@ func (m *MongoService) GetPaymentsWithRefundStatus() ([]models.PaymentResourceDB
 	var payments []models.PaymentResourceDB
 
 	collection := m.db.Collection(m.CollectionName)
-	statusFilter := bson.M{"bulk_refunds.status": "refund-pending"}
+	statusFilter := bson.M{bulkRefundStatus: "refund-pending"}
 
 	paymentDBResources, err := collection.Find(context.Background(), statusFilter)
 	if err != nil {
