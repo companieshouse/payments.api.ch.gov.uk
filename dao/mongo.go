@@ -18,7 +18,10 @@ const deadline = 5 * time.Second
 
 var client *mongo.Client
 
-const paymentStatus = "data.status"
+const (
+	paymentStatus    = "data.status"
+	bulkRefundStatus = "bulk_refunds.status"
+)
 
 // MongoService is an implementation of the Service interface using MongoDB as the backend driver.
 type MongoService struct {
@@ -169,10 +172,19 @@ func (m *MongoService) GetPaymentResourceByExternalPaymentStatusID(externalPayme
 }
 
 // CreateBulkRefund creates or adds to the array of bulk refunds on a payment resource
+// The query only updates those payments in the DB with the specified external payment
+// status ID that do not have an existing bulk refund with the status of refund-pending
+// or refund-requested
 func (m *MongoService) CreateBulkRefund(externalPaymentStatusID string, bulkRefund models.BulkRefundDB) error {
 	collection := m.db.Collection(m.CollectionName)
 
-	filter := bson.M{"external_payment_status_id": externalPaymentStatusID}
+	IDFilter := bson.M{"external_payment_status_id": externalPaymentStatusID}
+
+	pendingFilter := bson.M{bulkRefundStatus: "refund-pending"}
+	requestedFilter := bson.M{bulkRefundStatus: "refund-requested"}
+	statusFilter := bson.M{"$nor": bson.A{pendingFilter, requestedFilter}}
+
+	filter := bson.M{"$and": bson.A{IDFilter, statusFilter}}
 	pushQuery := bson.M{"$push": bson.M{"bulk_refunds": bulkRefund}}
 
 	update, err := collection.UpdateOne(context.Background(), filter, pushQuery)
@@ -180,7 +192,7 @@ func (m *MongoService) CreateBulkRefund(externalPaymentStatusID string, bulkRefu
 		return fmt.Errorf("error updating bulk refund for payment with external status id [%s]: %w", externalPaymentStatusID, err)
 	}
 	if update.ModifiedCount == 0 {
-		return fmt.Errorf("payment with external status id [%s] not found", externalPaymentStatusID)
+		log.Error(fmt.Errorf("payment with external status id [%s] not found or has an existing refund that is pending or requested", externalPaymentStatusID))
 	}
 
 	return nil
@@ -192,10 +204,9 @@ func (m *MongoService) GetPaymentsWithRefundStatus() ([]models.PaymentResourceDB
 	var payments []models.PaymentResourceDB
 
 	collection := m.db.Collection(m.CollectionName)
-	statusFilter := bson.M{"bulk_refunds.status": "refund-pending"}
-	bulkRefundsFilter := bson.M{"bulk_refunds.0": bson.M{"$exists": true}}
+	statusFilter := bson.M{bulkRefundStatus: "refund-pending"}
 
-	paymentDBResources, err := collection.Find(context.Background(), bson.M{"$and": bson.A{statusFilter, bulkRefundsFilter}})
+	paymentDBResources, err := collection.Find(context.Background(), statusFilter)
 	if err != nil {
 		return nil, err
 	}
