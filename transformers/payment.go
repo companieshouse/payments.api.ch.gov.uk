@@ -34,8 +34,9 @@ func (pt PaymentTransformer) TransformToDB(rest models.PaymentResourceRest) mode
 	paymentResourceData.Links = models.PaymentLinksDB(rest.Links)
 
 	paymentResource := models.PaymentResourceDB{
-		Data:    paymentResourceData,
-		Refunds: getRefundsDB(rest.Refunds),
+		ExternalPaymentTransactionID: rest.MetaData.ExternalPaymentTransactionID,
+		Data:                         paymentResourceData,
+		Refunds:                      getRefundsDB(rest.Refunds),
 	}
 
 	return paymentResource
