@@ -33,11 +33,12 @@ type PaymentResourceRest struct {
 
 // PaymentResourceMetaDataRest contains all metadata fields that are relevant to the payment resource but not part of the Rest resource
 type PaymentResourceMetaDataRest struct {
-	ID                       string
-	RedirectURI              string
-	State                    string
-	ExternalPaymentStatusURI string
-	ExternalPaymentStatusID  string
+	ID                           string
+	RedirectURI                  string
+	State                        string
+	ExternalPaymentStatusURI     string
+	ExternalPaymentStatusID      string
+	ExternalPaymentTransactionID string
 }
 
 // CreatedByRest is the user who is creating the payment session

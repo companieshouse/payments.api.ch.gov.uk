@@ -199,6 +199,9 @@ func HandlePayPalCallback(externalPaymentSvc service.PaymentProviderService) htt
 			default:
 				paymentSession.Status = service.Failed.String()
 			}
+
+			// Add external transaction ID to paymentSession metadata
+			paymentSession.MetaData.ExternalPaymentTransactionID = response.PurchaseUnits[0].Payments.Captures[0].ID
 		}
 
 		// If order status is created, then the payment has been cancelled

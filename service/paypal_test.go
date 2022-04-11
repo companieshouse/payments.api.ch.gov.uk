@@ -345,6 +345,17 @@ func TestUnitGetPaymentDetails(t *testing.T) {
 			ID:         "ABC123",
 			Status:     "COMPLETED",
 			CreateTime: &createTime,
+			PurchaseUnits: []paypal.PurchaseUnit{
+				{
+					Payments: &paypal.CapturedPayments{
+						Captures: []paypal.CaptureAmount{
+							{
+								ID: "1122",
+							},
+						},
+					},
+				},
+			},
 		}
 
 		mockPayPalSDK.EXPECT().GetOrder(gomock.Any(), gomock.Any()).Return(&paypalOrder, nil)
@@ -358,7 +369,7 @@ func TestUnitGetPaymentDetails(t *testing.T) {
 		paymentDetails, responseType, err := mockPayPalService.GetPaymentDetails(&resource)
 
 		So(paymentDetails.CardType, ShouldBeEmpty)
-		So(paymentDetails.ExternalPaymentID, ShouldEqual, "ABC123")
+		So(paymentDetails.ExternalPaymentID, ShouldEqual, "1122")
 		So(paymentDetails.TransactionDate, ShouldEqual, "2003-02-01 00:00:00 +0000 UTC")
 		So(paymentDetails.PaymentStatus, ShouldEqual, "COMPLETED")
 		So(responseType, ShouldEqual, Success)

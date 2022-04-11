@@ -399,8 +399,20 @@ func TestUnitHandleGetPaymentDetails(t *testing.T) {
 
 		createTime, _ := time.Parse("2006-01-02", "2003-02-01")
 		paypalStatus := paypal.Order{
-			CreateTime: &createTime,
+			ID:         "ABC123",
 			Status:     "COMPLETED",
+			CreateTime: &createTime,
+			PurchaseUnits: []paypal.PurchaseUnit{
+				{
+					Payments: &paypal.CapturedPayments{
+						Captures: []paypal.CaptureAmount{
+							{
+								ID: "1122",
+							},
+						},
+					},
+				},
+			},
 		}
 
 		mockPayPalSDK.EXPECT().GetOrder(gomock.Any(), "123456").Return(&paypalStatus, nil)

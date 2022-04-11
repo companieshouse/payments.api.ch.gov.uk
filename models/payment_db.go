@@ -4,14 +4,15 @@ import "time"
 
 // PaymentResourceDB contains all payment details to be stored in the DB
 type PaymentResourceDB struct {
-	ID                       string                `bson:"_id"`
-	RedirectURI              string                `bson:"redirect_uri"`
-	State                    string                `bson:"state"`
-	ExternalPaymentStatusURI string                `bson:"external_payment_status_url"`
-	ExternalPaymentStatusID  string                `bson:"external_payment_status_id"`
-	Data                     PaymentResourceDataDB `bson:"data"`
-	Refunds                  []RefundResourceDB    `bson:"refunds"`
-	BulkRefund               []BulkRefundDB        `bson:"bulk_refunds,omitempty"`
+	ID                           string                `bson:"_id"`
+	RedirectURI                  string                `bson:"redirect_uri"`
+	State                        string                `bson:"state"`
+	ExternalPaymentStatusURI     string                `bson:"external_payment_status_url"`
+	ExternalPaymentStatusID      string                `bson:"external_payment_status_id"`
+	ExternalPaymentTransactionID string                `bson:"external_payment_transaction_id`
+	Data                         PaymentResourceDataDB `bson:"data"`
+	Refunds                      []RefundResourceDB    `bson:"refunds"`
+	BulkRefund                   []BulkRefundDB        `bson:"bulk_refunds,omitempty"`
 }
 
 // PaymentResourceDataDB is public facing payment details to be returned in the response
