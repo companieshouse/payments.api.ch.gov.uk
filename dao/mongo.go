@@ -129,6 +129,9 @@ func (m *MongoService) PatchPaymentResource(id string, paymentUpdate *models.Pay
 	if paymentUpdate.ExternalPaymentStatusID != "" {
 		patchUpdate["external_payment_status_id"] = paymentUpdate.ExternalPaymentStatusID
 	}
+	if paymentUpdate.ExternalPaymentTransactionID != "" {
+		patchUpdate["external_payment_transaction_id"] = paymentUpdate.ExternalPaymentTransactionID
+	}
 	if paymentUpdate.Refunds != nil {
 		patchUpdate["refunds"] = paymentUpdate.Refunds
 	}

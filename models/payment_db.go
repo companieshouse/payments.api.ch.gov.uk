@@ -9,7 +9,7 @@ type PaymentResourceDB struct {
 	State                        string                `bson:"state"`
 	ExternalPaymentStatusURI     string                `bson:"external_payment_status_url"`
 	ExternalPaymentStatusID      string                `bson:"external_payment_status_id"`
-	ExternalPaymentTransactionID string                `bson:"external_payment_transaction_id`
+	ExternalPaymentTransactionID string                `bson:"external_payment_transaction_id"`
 	Data                         PaymentResourceDataDB `bson:"data"`
 	Refunds                      []RefundResourceDB    `bson:"refunds"`
 	BulkRefund                   []BulkRefundDB        `bson:"bulk_refunds,omitempty"`
