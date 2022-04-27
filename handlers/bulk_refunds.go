@@ -5,9 +5,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
-	"github.com/companieshouse/payments.api.ch.gov.uk/models"
-	"github.com/go-playground/validator/v10"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -15,6 +12,9 @@ import (
 
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/chs.go/utils"
+	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
+	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/go-playground/validator/v10"
 )
 
 const (
