@@ -91,18 +91,19 @@ func handleRefundFile(w http.ResponseWriter, req *http.Request, paymentProvider 
 			utils.WriteJSONWithStatus(w, req, m, http.StatusInternalServerError)
 			return
 		}
-		if len(validationErrors) > 0 {
-			message := fmt.Sprintf("the batch refund has failed validation on the following: %s", strings.Join(validationErrors, ","))
-			log.Debug(message)
-			m := utils.NewMessageResponse(message)
-			utils.WriteJSONWithStatus(w, req, m, http.StatusBadRequest)
-			return
-		}
 	default:
 		message := fmt.Sprintf("invalid payment provider: %s", paymentProvider)
 		log.Debug(message)
 		m := utils.NewMessageResponse(message)
 		utils.WriteJSONWithStatus(w, req, m, http.StatusInternalServerError)
+		return
+	}
+
+	if len(validationErrors) > 0 {
+		message := fmt.Sprintf("the batch refund has failed validation on the following: %s", strings.Join(validationErrors, ","))
+		log.Debug(message)
+		m := utils.NewMessageResponse(message)
+		utils.WriteJSONWithStatus(w, req, m, http.StatusBadRequest)
 		return
 	}
 
