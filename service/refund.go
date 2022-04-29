@@ -194,11 +194,9 @@ func (service *RefundService) ValidateBatchRefund(ctx context.Context, batchRefu
 
 	// Return early if the errgroup returned an error
 	// when fetching a paymentSession from the DB
-	if err := errs.Wait(); err != nil {
-		return nil, err
-	}
+	err := errs.Wait()
 
-	return validationErrors, nil
+	return validationErrors, err
 }
 
 func validateGovPayRefund(paymentSession *models.PaymentResourceDB, refund models.RefundDetails) string {
