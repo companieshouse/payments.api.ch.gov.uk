@@ -122,7 +122,7 @@ type PaymentDetails struct {
 	ProviderID        string `json:"provider_id,omitempty"`
 }
 
-// GovPayRefund
+// RefundDetails
 type CreateRefundGovPayResponse struct {
 	RefundId    string            `json:"refund_id"`
 	CreatedDate string            `json:"created_date"`
