@@ -4,11 +4,12 @@ import "encoding/xml"
 
 // RefundBatch is the overall model that consists of all of the refunds
 type RefundBatch struct {
-	XMLName       xml.Name        `xml:"batchService"`
-	Version       string          `xml:"version,attr"`
-	MerchantCode  string          `xml:"merchantCode,attr" validate:"required"`
-	BatchCode     string          `xml:"batchCode,attr" validate:"required"`
-	RefundDetails []RefundDetails `xml:"refund" validate:"required,dive,required"`
+	XMLName         xml.Name        `xml:"batchService"`
+	Version         string          `xml:"version,attr"`
+	MerchantCode    string          `xml:"merchantCode,attr" validate:"required"`
+	BatchCode       string          `xml:"batchCode,attr" validate:"required"`
+	RefundDetails   []RefundDetails `xml:"refund" validate:"required,dive,required"`
+	PaymentProvider string
 }
 
 // RefundDetails is an individual GovPay refund
