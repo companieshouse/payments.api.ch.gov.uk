@@ -162,7 +162,7 @@ func (pp *PayPalService) GetPaymentDetails(paymentResource *models.PaymentResour
 
 	paymentDetails := &models.PaymentDetails{
 		CardType:          "",
-		ExternalPaymentID: order.PurchaseUnits[0].Payments.Captures[0].ID,
+		ExternalPaymentID: order.ID,
 		TransactionDate:   order.CreateTime.String(),
 		PaymentStatus:     order.Status,
 	}
