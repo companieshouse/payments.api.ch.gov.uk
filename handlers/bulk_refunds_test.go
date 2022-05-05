@@ -49,7 +49,7 @@ func getBodyWithFile(filePath string) (*bytes.Buffer, error) {
 	return body, nil
 }
 
-func TestUnitHandleBulkRefund(t *testing.T) {
+func TestUnitHandleGovPayBulkRefund(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
@@ -204,41 +204,7 @@ func TestUnitHandleBulkRefund(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
-	Convey("Error updating DB", t, func() {
-		body, err := getBodyWithFile(xmlFilePath)
-		if err != nil {
-			t.Error(err)
-		}
-
-		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/govpay", bytes.NewReader(body.Bytes()))
-		ctx := req.Context()
-		ctx = context.WithValue(ctx, helpers.ContextKeyUserID, "userID")
-		req = req.WithContext(ctx)
-		req.Header.Set("Content-Type", "multipart/form-data; boundary=test_boundary")
-		w := httptest.NewRecorder()
-
-		paymentSession := generatePaymentSession()
-		cfg, _ := config.Get()
-
-		mockDao := dao.NewMockDAO(mockCtrl)
-		mockGovPayService := service.NewMockPaymentProviderService(mockCtrl)
-		mockPaymentService := createMockPaymentService(mockDao, cfg)
-
-		refundService = &service.RefundService{
-			GovPayService:  mockGovPayService,
-			PaymentService: mockPaymentService,
-			DAO:            mockDao,
-			Config:         *cfg,
-		}
-
-		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
-		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any()).Return(fmt.Errorf("err")).AnyTimes()
-
-		HandleGovPayBulkRefund(w, req)
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-	})
-
-	Convey("Success uploading bulk refund file - Gov Pay", t, func() {
+	Convey("Success uploading bulk refund file", t, func() {
 		body, err := getBodyWithFile(xmlFilePath)
 		if err != nil {
 			t.Error(err)
@@ -271,14 +237,113 @@ func TestUnitHandleBulkRefund(t *testing.T) {
 		HandleGovPayBulkRefund(w, req)
 		So(w.Code, ShouldEqual, http.StatusCreated)
 	})
+}
 
-	Convey("Success uploading bulk refund file - PayPal", t, func() {
+func TestUnitHandlePayPalBulkRefund(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	Convey("File not supplied", t, func() {
+		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/govpay", nil)
+		w := httptest.NewRecorder()
+		HandlePayPalBulkRefund(w, req)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Error bulk refund file", t, func() {
+		body, err := getBodyWithFile(errorXmlPath)
+		if err != nil {
+			t.Error(err)
+		}
+
+		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/govpay", bytes.NewReader(body.Bytes()))
+		req.Header.Set("Content-Type", "multipart/form-data; boundary=test_boundary")
+		w := httptest.NewRecorder()
+
+		HandlePayPalBulkRefund(w, req)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Invalid bulk refund file", t, func() {
+		body, err := getBodyWithFile(invalidXmlPath)
+		if err != nil {
+			t.Error(err)
+		}
+
+		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/govpay", bytes.NewReader(body.Bytes()))
+		req.Header.Set("Content-Type", "multipart/form-data; boundary=test_boundary")
+		w := httptest.NewRecorder()
+
+		HandlePayPalBulkRefund(w, req)
+		So(w.Code, ShouldEqual, http.StatusUnprocessableEntity)
+	})
+
+	Convey("Failed to upload bulk refund file - no userID in context", t, func() {
 		body, err := getBodyWithFile(xmlFilePath)
 		if err != nil {
 			t.Error(err)
 		}
 
-		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/paypal", bytes.NewReader(body.Bytes()))
+		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/govpay", bytes.NewReader(body.Bytes()))
+		req.Header.Set("Content-Type", "multipart/form-data; boundary=test_boundary")
+		w := httptest.NewRecorder()
+
+		cfg, _ := config.Get()
+		paymentSession := generatePaymentSession()
+
+		mockDao := dao.NewMockDAO(mockCtrl)
+		mockGovPayService := service.NewMockPaymentProviderService(mockCtrl)
+		mockPaymentService := createMockPaymentService(mockDao, cfg)
+
+		refundService = &service.RefundService{
+			GovPayService:  mockGovPayService,
+			PaymentService: mockPaymentService,
+			DAO:            mockDao,
+			Config:         *cfg,
+		}
+		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+
+		HandlePayPalBulkRefund(w, req)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Failed to upload bulk refund file - error returned from service when updating DB", t, func() {
+		body, err := getBodyWithFile(xmlFilePath)
+		if err != nil {
+			t.Error(err)
+		}
+
+		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/govpay", bytes.NewReader(body.Bytes()))
+		req.Header.Set("Content-Type", "multipart/form-data; boundary=test_boundary")
+		w := httptest.NewRecorder()
+
+		cfg, _ := config.Get()
+		paymentSession := generatePaymentSession()
+
+		mockDao := dao.NewMockDAO(mockCtrl)
+		mockGovPayService := service.NewMockPaymentProviderService(mockCtrl)
+		mockPaymentService := createMockPaymentService(mockDao, cfg)
+
+		refundService = &service.RefundService{
+			GovPayService:  mockGovPayService,
+			PaymentService: mockPaymentService,
+			DAO:            mockDao,
+			Config:         *cfg,
+		}
+		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error")).AnyTimes()
+
+		HandlePayPalBulkRefund(w, req)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("Success uploading bulk refund file", t, func() {
+		body, err := getBodyWithFile(xmlFilePath)
+		if err != nil {
+			t.Error(err)
+		}
+
+		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/govpay", bytes.NewReader(body.Bytes()))
 		ctx := req.Context()
 		ctx = context.WithValue(ctx, helpers.ContextKeyUserID, "userID")
 		req = req.WithContext(ctx)
@@ -286,7 +351,6 @@ func TestUnitHandleBulkRefund(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		paymentSession := generatePaymentSession()
-		paymentSession.Data.PaymentMethod = "PayPal"
 		cfg, _ := config.Get()
 
 		mockDao := dao.NewMockDAO(mockCtrl)
