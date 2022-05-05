@@ -165,7 +165,7 @@ func (service *RefundService) ValidateGovPayBatchRefund(ctx context.Context, bat
 	for _, refund := range batchRefund.GovPayRefunds {
 		r := refund
 		errs.Go(func() error {
-			paymentSession, err := service.DAO.GetPaymentResourceByExternalPaymentStatusID(r.OrderCode)
+			paymentSession, err := service.DAO.GetPaymentResourceByProviderID(r.OrderCode)
 			if err != nil {
 				log.Error(fmt.Errorf("error retrieving payment session from DB: %w", err))
 				return err

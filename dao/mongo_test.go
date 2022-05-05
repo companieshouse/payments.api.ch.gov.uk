@@ -63,7 +63,7 @@ func TestUnitGetPaymentResourceByExternalPaymentStatusID(t *testing.T) {
 		client = &mongo.Client{}
 		dao := NewDAO(cfg)
 
-		resource, err := dao.GetPaymentResourceByExternalPaymentStatusID("id123")
+		resource, err := dao.GetPaymentResourceByProviderID("id123")
 		So(resource, ShouldBeNil)
 		So(err.Error(), ShouldEqual, "the Find operation must have a Deployment set before Execute can be called")
 	})
