@@ -10,14 +10,13 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
 	"github.com/companieshouse/payments.api.ch.gov.uk/mappers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/transformers"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -52,12 +51,13 @@ func (bulkRefundStatus BulkRefundStatus) String() string {
 
 type RefundService struct {
 	GovPayService  PaymentProviderService
+	PayPalService  PaymentProviderService
 	PaymentService *PaymentService
 	DAO            dao.DAO
 	Config         config.Config
 }
 
-// CreateRefund creates refund in GovPay and saves refund information to payment object in mongo
+// CreateRefund creates refund in GovPay and saves refund information to payment object in database
 func (service *RefundService) CreateRefund(req *http.Request, id string, createRefundResource models.CreateRefundRequest) (*models.PaymentResourceRest, *models.RefundResponse, ResponseType, error) {
 
 	// Get RefundSummary from GovPay to check the available amount
@@ -92,7 +92,7 @@ func (service *RefundService) CreateRefund(req *http.Request, id string, createR
 	paymentSession.Refunds = append(paymentSession.Refunds, mappers.MapToRefundRest(*refund))
 	paymentResourceUpdate := transformers.PaymentTransformer{}.TransformToDB(*paymentSession)
 
-	// Save refund information to mongoDB
+	// Save refund information to database
 	err = service.DAO.PatchPaymentResource(id, &paymentResourceUpdate)
 	if err != nil {
 		err = fmt.Errorf("error patching payment session on database: [%v]", err)
@@ -103,7 +103,7 @@ func (service *RefundService) CreateRefund(req *http.Request, id string, createR
 	return paymentSession, &refundResource, Success, nil
 }
 
-// UpdateRefund checks refund status in GovPay and if status is successful saves it to payment object in mongo
+// UpdateRefund checks refund status in GovPay and if status is successful saves it to payment object in database
 func (service *RefundService) UpdateRefund(req *http.Request, paymentId string, refundId string) (*models.RefundResourceRest, ResponseType, error) {
 	paymentSession, response, err := service.PaymentService.GetPaymentSession(req, paymentId)
 	if err != nil {
@@ -311,11 +311,20 @@ func (service *RefundService) ProcessBatchRefund(req *http.Request) []error {
 	}
 
 	for _, p := range payments {
-		if p.Data.PaymentMethod == "credit-card" {
+		switch p.Data.PaymentMethod {
+		case "credit-card":
 			err := service.processGovPayBatchRefund(req, p)
 			if err != nil {
 				errorList = append(errorList, err)
 			}
+		case "PayPal":
+			err := service.processPayPalBatchRefund(req, p)
+			if err != nil {
+				errorList = append(errorList, err)
+			}
+		default:
+			err := fmt.Errorf("invalid payment method [%s] for Payment ID %s", p.Data.PaymentMethod, p.ID)
+			errorList = append(errorList, err)
 		}
 	}
 
@@ -338,7 +347,7 @@ func (service *RefundService) processGovPayBatchRefund(req *http.Request, paymen
 	}
 
 	if refundSummary.AmountAvailable != amount {
-		err := fmt.Errorf("refund amount is not equal than available amount for payment with id [%s]", payment.ID)
+		err := fmt.Errorf("refund amount is not equal to available amount for payment with id [%s]", payment.ID)
 		log.ErrorR(req, err)
 		return err
 	}
@@ -360,6 +369,57 @@ func (service *RefundService) processGovPayBatchRefund(req *http.Request, paymen
 	recentRefund.ProcessedAt = refundResource.CreatedDateTime
 	recentRefund.Status = RefundRequested.String()
 	recentRefund.ExternalRefundURL = payment.ExternalPaymentStatusURI + "/refund"
+	payment.BulkRefund[len(payment.BulkRefund)-1] = recentRefund
+	err = service.DAO.PatchPaymentResource(payment.ID, &payment)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error patching payment [%w]", err))
+		return fmt.Errorf("error patching payment with id [%s]", payment.ID)
+	}
+
+	return nil
+}
+
+func (service *RefundService) processPayPalBatchRefund(req *http.Request, payment models.PaymentResourceDB) error {
+	recentRefund := payment.BulkRefund[len(payment.BulkRefund)-1]
+	captureID := payment.ExternalPaymentTransactionID
+
+	// Get Captured Details Response from PayPal to check the status and  available amount
+	captureDetailsResponse, err := service.PayPalService.GetCapturedPaymentDetails(captureID)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error getting capture details from paypal: [%w]", err))
+		return fmt.Errorf("error getting capture details from paypal for payment ID [%s]", payment.ID)
+	}
+
+	if captureDetailsResponse.Status != "COMPLETED" {
+		err := fmt.Errorf("captured payment status [%s] is not complete for payment ID [%s]", captureDetailsResponse.Status, payment.ID)
+		log.ErrorR(req, err)
+		return err
+	}
+
+	if captureDetailsResponse.Amount.Value != payment.Data.Amount {
+		err := fmt.Errorf("refund amount is not equal to available amount for payment ID [%s]", payment.ID)
+		log.ErrorR(req, err)
+		return err
+	}
+
+	// Send Refund Capture request to PayPal
+	refundResponse, err := service.PayPalService.RefundCapture(captureID)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error creating refund in PayPal: [%w]", err))
+		return fmt.Errorf("error creating refund in PayPal for payment with id [%s]", payment.ID)
+	}
+
+	if refundResponse.Status != "COMPLETED" {
+		log.ErrorR(req, fmt.Errorf("refund incomplete. Status [%s] returned from PayPal for Payment ID [%s]", refundResponse.Status, payment.ID))
+		return fmt.Errorf("error completing refund in PayPal for payment with id [%s]", payment.ID)
+	}
+
+	// Patch refund details to DB
+	recentRefund.RefundID = refundResponse.ID
+	recentRefund.ProcessedAt = time.Now().String()
+	recentRefund.Status = RefundRequested.String()
+	recentRefund.ExternalRefundURL = payment.ExternalPaymentStatusURI + "/refund"
+
 	payment.BulkRefund[len(payment.BulkRefund)-1] = recentRefund
 	err = service.DAO.PatchPaymentResource(payment.ID, &payment)
 	if err != nil {

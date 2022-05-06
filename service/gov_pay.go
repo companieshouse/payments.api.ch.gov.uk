@@ -10,10 +10,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/plutov/paypal/v4"
-
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
+	"github.com/plutov/paypal/v4"
 )
 
 // GovPayService handles the specific functionality of integrating GovPay provider into Payment Sessions
@@ -323,5 +322,20 @@ func addGovPayHeaders(request *http.Request, paymentResource *models.PaymentReso
 // CapturePayment is a paypal specific implementation
 // so it does not need to be implemented by the govpay svc
 func (gp GovPayService) CapturePayment(_ string) (*paypal.CaptureOrderResponse, error) {
+	// not implemented
+	return nil, nil
+}
+
+// GetCapturedPaymentDetails is a PayPal specific implementation
+// so it does not need to be implemented by the GOV.UK Pay svc
+func (gp GovPayService) GetCapturedPaymentDetails(id string) (*paypal.CaptureDetailsResponse, error) {
+	// not implemented
+	return nil, nil
+}
+
+// RefundCapture is a PayPal specific implementation
+// so it does not need to be implemented by the GOV.UK Pay svc
+func (gp GovPayService) RefundCapture(captureID string) (*paypal.RefundResponse, error) {
+	// not implemented
 	return nil, nil
 }

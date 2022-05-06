@@ -52,6 +52,7 @@ func Register(mainRouter *mux.Router, cfg config.Config, paymentsDao dao.DAO) {
 
 	refundService = &service.RefundService{
 		GovPayService:  govPayService,
+		PayPalService:  payPalService,
 		PaymentService: paymentService,
 		DAO:            paymentsDao,
 		Config:         cfg,
