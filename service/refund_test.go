@@ -351,7 +351,7 @@ func TestUnitValidateGovPayBatchRefund(t *testing.T) {
 
 		batchRefund := generateXMLBatchRefund()
 
-		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(nil, fmt.Errorf("error")).AnyTimes()
+		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(nil, fmt.Errorf("error")).AnyTimes()
 		validationErrors, err := service.ValidateGovPayBatchRefund(req.Context(), batchRefund)
 
 		So(len(validationErrors), ShouldEqual, 0)
@@ -365,7 +365,7 @@ func TestUnitValidateGovPayBatchRefund(t *testing.T) {
 
 		batchRefund := generateXMLBatchRefund()
 
-		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(nil, nil).AnyTimes()
+		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(nil, nil).AnyTimes()
 		validationErrors, err := service.ValidateGovPayBatchRefund(req.Context(), batchRefund)
 
 		So(len(validationErrors), ShouldEqual, 2)
@@ -381,7 +381,7 @@ func TestUnitValidateGovPayBatchRefund(t *testing.T) {
 		paymentSession := generatePaymentSession()
 		paymentSession.Data.PaymentMethod = "paypal"
 
-		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 		validationErrors, err := service.ValidateGovPayBatchRefund(req.Context(), batchRefund)
 
 		So(len(validationErrors), ShouldEqual, 2)
@@ -397,7 +397,7 @@ func TestUnitValidateGovPayBatchRefund(t *testing.T) {
 		paymentSession := generatePaymentSession()
 		paymentSession.Data.Amount = "1.00"
 
-		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 		validationErrors, err := service.ValidateGovPayBatchRefund(req.Context(), batchRefund)
 
 		So(len(validationErrors), ShouldEqual, 2)
@@ -413,7 +413,7 @@ func TestUnitValidateGovPayBatchRefund(t *testing.T) {
 		paymentSession := generatePaymentSession()
 		paymentSession.Data.Status = Pending.String()
 
-		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 		validationErrors, err := service.ValidateGovPayBatchRefund(req.Context(), batchRefund)
 
 		So(len(validationErrors), ShouldEqual, 2)
@@ -430,8 +430,8 @@ func TestUnitValidateGovPayBatchRefund(t *testing.T) {
 		paymentSession2 := generatePaymentSession()
 		paymentSession2.ExternalPaymentStatusID = "1212"
 
-		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(batchRefund.GovPayRefunds[0].OrderCode).Return(&paymentSession, nil).AnyTimes()
-		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(batchRefund.GovPayRefunds[1].OrderCode).Return(&paymentSession2, nil).AnyTimes()
+		mockDao.EXPECT().GetPaymentResourceByProviderID(batchRefund.GovPayRefunds[0].OrderCode).Return(&paymentSession, nil).AnyTimes()
+		mockDao.EXPECT().GetPaymentResourceByProviderID(batchRefund.GovPayRefunds[1].OrderCode).Return(&paymentSession2, nil).AnyTimes()
 		validationErrors, err := service.ValidateGovPayBatchRefund(req.Context(), batchRefund)
 
 		So(len(validationErrors), ShouldEqual, 0)

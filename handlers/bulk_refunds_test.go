@@ -111,7 +111,7 @@ func TestUnitHandleGovPayBulkRefund(t *testing.T) {
 			DAO:            mockDao,
 			Config:         *cfg,
 		}
-		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 
 		HandleGovPayBulkRefund(w, req)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -139,7 +139,7 @@ func TestUnitHandleGovPayBulkRefund(t *testing.T) {
 			DAO:            mockDao,
 			Config:         *cfg,
 		}
-		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(nil, fmt.Errorf("error")).AnyTimes()
+		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(nil, fmt.Errorf("error")).AnyTimes()
 
 		HandleGovPayBulkRefund(w, req)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -168,7 +168,7 @@ func TestUnitHandleGovPayBulkRefund(t *testing.T) {
 			DAO:            mockDao,
 			Config:         *cfg,
 		}
-		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 
 		HandleGovPayBulkRefund(w, req)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -197,7 +197,7 @@ func TestUnitHandleGovPayBulkRefund(t *testing.T) {
 			DAO:            mockDao,
 			Config:         *cfg,
 		}
-		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error")).AnyTimes()
 
 		HandleGovPayBulkRefund(w, req)
@@ -231,7 +231,7 @@ func TestUnitHandleGovPayBulkRefund(t *testing.T) {
 			Config:         *cfg,
 		}
 
-		mockDao.EXPECT().GetPaymentResourceByExternalPaymentStatusID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 		HandleGovPayBulkRefund(w, req)
