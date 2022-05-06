@@ -78,15 +78,23 @@ func handleRefundFile(w http.ResponseWriter, req *http.Request, paymentProvider 
 		return
 	}
 
-	batchRefund.PaymentProvider = paymentProvider
-
 	var validationErrors []string
 
 	// Validate batch refund request data against data in DB
-	validationErrors, err = refundService.ValidateBatchRefund(req.Context(), batchRefund)
-	if err != nil {
-		log.ErrorR(req, err)
-		m := utils.NewMessageResponse("error processing batch refund")
+	switch paymentProvider {
+	case paypalProvider:
+	case govpayProvider:
+		validationErrors, err = refundService.ValidateGovPayBatchRefund(req.Context(), batchRefund)
+		if err != nil {
+			log.ErrorR(req, err)
+			m := utils.NewMessageResponse("error processing batch refund")
+			utils.WriteJSONWithStatus(w, req, m, http.StatusInternalServerError)
+			return
+		}
+	default:
+		message := fmt.Sprintf("invalid payment provider: %s", paymentProvider)
+		log.Debug(message)
+		m := utils.NewMessageResponse(message)
 		utils.WriteJSONWithStatus(w, req, m, http.StatusInternalServerError)
 		return
 	}
