@@ -49,7 +49,6 @@ type PayPalSDK interface {
 	CreateOrder(ctx context.Context, intent string, purchaseUnits []paypal.PurchaseUnitRequest, payer *paypal.CreateOrderPayer, appContext *paypal.ApplicationContext) (*paypal.Order, error)
 	GetOrder(ctx context.Context, orderID string) (*paypal.Order, error)
 	CaptureOrder(ctx context.Context, orderID string, captureOrderRequest paypal.CaptureOrderRequest) (*paypal.CaptureOrderResponse, error)
-	// GetCapturedPaymentDetails(ctx context.Context, id string) (*paypal.Capture, error)
 	CapturedDetail(ctx context.Context, captureID string) (*paypal.CaptureDetailsResponse, error)
 	RefundCapture(ctx context.Context, captureID string, refundCaptureRequest paypal.RefundCaptureRequest) (*paypal.RefundResponse, error)
 }
@@ -173,7 +172,7 @@ func (pp *PayPalService) GetPaymentDetails(paymentResource *models.PaymentResour
 	return paymentDetails, Success, nil
 }
 
-// GetRefundSummary gets refund summary of a payment
+// GetRefundSummary gets refund summary of a PayPal payment
 func (pp *PayPalService) GetRefundSummary(_ *http.Request, _ string) (*models.PaymentResourceRest, *models.RefundSummary, ResponseType, error) {
 
 	// not implemented

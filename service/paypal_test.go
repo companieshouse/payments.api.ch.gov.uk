@@ -408,7 +408,7 @@ func TestUnitUnimplementedFunctions(t *testing.T) {
 	})
 }
 
-func TestUnitCaptureOrder(t *testing.T) {
+func TestUnitPayPalCaptures(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	cfg, _ := config.Get()
@@ -426,6 +426,34 @@ func TestUnitCaptureOrder(t *testing.T) {
 		mockPayPalSDK.EXPECT().CaptureOrder(gomock.Any(), gomock.Any(), gomock.Any()).Return(&captureOrder, fmt.Errorf("error"))
 
 		res, err := mockPayPalService.CapturePayment("123")
+
+		So(res, ShouldEqual, &captureOrder)
+		So(err.Error(), ShouldEqual, "error")
+	})
+
+	Convey("Get captures payment details", t, func() {
+		captureOrder := paypal.CaptureDetailsResponse{
+			ID:     "123",
+			Status: paypal.OrderStatusCompleted,
+		}
+
+		mockPayPalSDK.EXPECT().CapturedDetail(gomock.Any(), gomock.Any()).Return(&captureOrder, fmt.Errorf("error"))
+
+		res, err := mockPayPalService.GetCapturedPaymentDetails("123")
+
+		So(res, ShouldEqual, &captureOrder)
+		So(err.Error(), ShouldEqual, "error")
+	})
+
+	Convey("Refund captured payment", t, func() {
+		captureOrder := paypal.RefundResponse{
+			ID:     "123",
+			Status: paypal.OrderStatusCompleted,
+		}
+
+		mockPayPalSDK.EXPECT().RefundCapture(gomock.Any(), gomock.Any(), gomock.Any()).Return(&captureOrder, fmt.Errorf("error"))
+
+		res, err := mockPayPalService.RefundCapture("123")
 
 		So(res, ShouldEqual, &captureOrder)
 		So(err.Error(), ShouldEqual, "error")
