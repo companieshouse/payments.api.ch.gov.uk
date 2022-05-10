@@ -345,7 +345,7 @@ func TestUnitUpdateRefund(t *testing.T) {
 func TestUnitValidateBatchRefund(t *testing.T) {
 	req := httptest.NewRequest("POST", "/test", nil)
 
-	Convey("Error getting payment session", t, func() {
+	Convey("Error getting payment session GOV.UK Pay", t, func() {
 		mockCtrl := gomock.NewController(t)
 		defer mockCtrl.Finish()
 		service, mockDao := setUp(mockCtrl)
@@ -353,6 +353,20 @@ func TestUnitValidateBatchRefund(t *testing.T) {
 		batchRefund := generateXMLBatchRefundGovPay()
 
 		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(nil, fmt.Errorf("error")).AnyTimes()
+		validationErrors, err := service.ValidateBatchRefund(req.Context(), batchRefund)
+
+		So(len(validationErrors), ShouldEqual, 0)
+		So(err, ShouldNotBeNil)
+	})
+
+	Convey("Error getting payment session - PayPal", t, func() {
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		service, mockDao := setUp(mockCtrl)
+
+		batchRefund := generateXMLBatchRefundPayPal()
+
+		mockDao.EXPECT().GetPaymentResourceByExternalPaymentTransactionID(gomock.Any()).Return(nil, fmt.Errorf("error")).AnyTimes()
 		validationErrors, err := service.ValidateBatchRefund(req.Context(), batchRefund)
 
 		So(len(validationErrors), ShouldEqual, 0)
@@ -548,7 +562,20 @@ func TestUnitUpdateBatchRefund(t *testing.T) {
 		So(err, ShouldNotBeNil)
 	})
 
-	Convey("Successfully update batch refund", t, func() {
+	Convey("Invalid payment provider", t, func() {
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		service, mockDao := setUp(mockCtrl)
+
+		batchRefund := generateXMLBatchRefund("invalid")
+
+		mockDao.EXPECT().CreateBulkRefundByProviderID(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+		err := service.UpdateBatchRefund(req.Context(), batchRefund, "filename", "userID")
+
+		So(err.Error(), ShouldEqual, "invalid payment provider: [invalid]")
+	})
+
+	Convey("Successfully update batch refund - GOV.UK Pay", t, func() {
 		mockCtrl := gomock.NewController(t)
 		defer mockCtrl.Finish()
 		service, mockDao := setUp(mockCtrl)
@@ -556,6 +583,19 @@ func TestUnitUpdateBatchRefund(t *testing.T) {
 		batchRefund := generateXMLBatchRefundGovPay()
 
 		mockDao.EXPECT().CreateBulkRefundByProviderID(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+		err := service.UpdateBatchRefund(req.Context(), batchRefund, "filename", "userID")
+
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Successfully update batch refund - PayPal", t, func() {
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		service, mockDao := setUp(mockCtrl)
+
+		batchRefund := generateXMLBatchRefundPayPal()
+
+		mockDao.EXPECT().CreateBulkRefundByExternalPaymentTransactionID(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 		err := service.UpdateBatchRefund(req.Context(), batchRefund, "filename", "userID")
 
 		So(err, ShouldBeNil)

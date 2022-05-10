@@ -52,6 +52,7 @@ func TestUnitPatchPaymentResource(t *testing.T) {
 			ExternalPaymentStatusID:      "id123",
 			ExternalPaymentTransactionID: "id456",
 			Refunds:                      []models.RefundResourceDB{},
+			BulkRefund:                   []models.BulkRefundDB{{}},
 		}
 		err := dao.PatchPaymentResource("id123", &resource)
 		So(err.Error(), ShouldEqual, "the Update operation must have a Deployment set before Execute can be called")
