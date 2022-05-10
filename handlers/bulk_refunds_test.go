@@ -198,7 +198,7 @@ func TestUnitHandleBulkRefund(t *testing.T) {
 			Config:         *cfg,
 		}
 		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
-		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error")).AnyTimes()
+		mockDao.EXPECT().CreateBulkRefundByProviderID(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error")).AnyTimes()
 
 		HandleGovPayBulkRefund(w, req)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -232,7 +232,7 @@ func TestUnitHandleBulkRefund(t *testing.T) {
 		}
 
 		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
-		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any()).Return(fmt.Errorf("err")).AnyTimes()
+		mockDao.EXPECT().CreateBulkRefundByProviderID(gomock.Any(), gomock.Any()).Return(fmt.Errorf("err")).AnyTimes()
 
 		HandleGovPayBulkRefund(w, req)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -265,7 +265,7 @@ func TestUnitHandleBulkRefund(t *testing.T) {
 			Config:         *cfg,
 		}
 		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
-		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+		mockDao.EXPECT().CreateBulkRefundByProviderID(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 		HandleGovPayBulkRefund(w, req)
 		So(w.Code, ShouldEqual, http.StatusCreated)
@@ -299,8 +299,8 @@ func TestUnitHandleBulkRefund(t *testing.T) {
 			Config:         *cfg,
 		}
 
-		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
-		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+		mockDao.EXPECT().GetPaymentResourceByExternalPaymentTransactionID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mockDao.EXPECT().CreateBulkRefundByExternalPaymentTransactionID(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 		HandlePayPalBulkRefund(w, req)
 		So(w.Code, ShouldEqual, http.StatusCreated)

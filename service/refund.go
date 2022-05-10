@@ -165,20 +165,27 @@ func (service *RefundService) ValidateBatchRefund(ctx context.Context, batchRefu
 	for _, refund := range batchRefund.RefundDetails {
 		r := refund
 		errs.Go(func() error {
-			paymentSession, err := service.DAO.GetPaymentResourceByProviderID(r.OrderCode)
-			if err != nil {
-				log.Error(fmt.Errorf("error retrieving payment session from DB: %w", err))
-				return err
-			}
 
 			switch batchRefund.PaymentProvider {
 			case "govpay":
+				paymentSession, err := service.DAO.GetPaymentResourceByProviderID(r.OrderCode)
+				if err != nil {
+					log.Error(fmt.Errorf("error retrieving payment session from DB: %w", err))
+					return err
+				}
+
 				if validationError := validateGovPayRefund(paymentSession, r); validationError != "" {
 					mu.Lock()
 					validationErrors = append(validationErrors, validationError)
 					mu.Unlock()
 				}
 			case "paypal":
+				paymentSession, err := service.DAO.GetPaymentResourceByExternalPaymentTransactionID(r.OrderCode)
+				if err != nil {
+					log.Error(fmt.Errorf("error retrieving payment session from DB: %w", err))
+					return err
+				}
+
 				if validationError := validatePayPalRefund(paymentSession, r); validationError != "" {
 					mu.Lock()
 					validationErrors = append(validationErrors, validationError)
@@ -258,7 +265,16 @@ func (service *RefundService) UpdateBatchRefund(ctx context.Context, batchRefund
 				ExternalRefundURL: "",
 			}
 
-			err := service.DAO.CreateBulkRefund(r.OrderCode, bulkRefundDB)
+			var err error
+			switch batchRefund.PaymentProvider {
+			case "govpay":
+				err = service.DAO.CreateBulkRefundByProviderID(r.OrderCode, bulkRefundDB)
+			case "paypal":
+				err = service.DAO.CreateBulkRefundByExternalPaymentTransactionID(r.OrderCode, bulkRefundDB)
+			default:
+				err = fmt.Errorf("invalid payment provider: [%s]", batchRefund.PaymentProvider)
+			}
+
 			if err != nil {
 				log.Error(fmt.Errorf("error updating payment session in DB: %w", err))
 				return err
