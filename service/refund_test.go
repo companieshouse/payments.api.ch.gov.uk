@@ -341,7 +341,7 @@ func TestUnitUpdateRefund(t *testing.T) {
 	})
 }
 
-func TestUnitValidateGovPayBatchRefund(t *testing.T) {
+func TestUnitValidateBatchRefund(t *testing.T) {
 	req := httptest.NewRequest("POST", "/test", nil)
 
 	Convey("Error getting payment session", t, func() {
@@ -349,27 +349,55 @@ func TestUnitValidateGovPayBatchRefund(t *testing.T) {
 		defer mockCtrl.Finish()
 		service, mockDao := setUp(mockCtrl)
 
-		batchRefund := generateXMLBatchRefund()
+		batchRefund := generateXMLBatchRefundGovPay()
 
 		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(nil, fmt.Errorf("error")).AnyTimes()
-		validationErrors, err := service.ValidateGovPayBatchRefund(req.Context(), batchRefund)
+		validationErrors, err := service.ValidateBatchRefund(req.Context(), batchRefund)
 
 		So(len(validationErrors), ShouldEqual, 0)
 		So(err, ShouldNotBeNil)
 	})
 
-	Convey("Validation errors - payment session not found", t, func() {
+	Convey("Validation errors - payment session not found - GOV.UK Pay", t, func() {
 		mockCtrl := gomock.NewController(t)
 		defer mockCtrl.Finish()
 		service, mockDao := setUp(mockCtrl)
 
-		batchRefund := generateXMLBatchRefund()
+		batchRefund := generateXMLBatchRefundGovPay()
 
 		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(nil, nil).AnyTimes()
-		validationErrors, err := service.ValidateGovPayBatchRefund(req.Context(), batchRefund)
+		validationErrors, err := service.ValidateBatchRefund(req.Context(), batchRefund)
 
 		So(len(validationErrors), ShouldEqual, 2)
 		So(err, ShouldBeNil)
+	})
+
+	Convey("Validation errors - payment session not found - PayPal", t, func() {
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		service, mockDao := setUp(mockCtrl)
+
+		batchRefund := generateXMLBatchRefundPayPal()
+
+		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(nil, nil).AnyTimes()
+		validationErrors, err := service.ValidateBatchRefund(req.Context(), batchRefund)
+
+		So(len(validationErrors), ShouldEqual, 2)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Validation errors - invalid payment provider", t, func() {
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		service, mockDao := setUp(mockCtrl)
+
+		batchRefund := generateXMLBatchRefund("invalid")
+
+		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(nil, nil).AnyTimes()
+		validationErrors, err := service.ValidateBatchRefund(req.Context(), batchRefund)
+
+		So(len(validationErrors), ShouldEqual, 0)
+		So(err.Error(), ShouldEqual, "invalid payment provider supplied: invalid")
 	})
 
 	Convey("Validation errors - payment method is not GovPay (credit-card)", t, func() {
@@ -377,77 +405,141 @@ func TestUnitValidateGovPayBatchRefund(t *testing.T) {
 		defer mockCtrl.Finish()
 		service, mockDao := setUp(mockCtrl)
 
-		batchRefund := generateXMLBatchRefund()
-		paymentSession := generatePaymentSession()
-		paymentSession.Data.PaymentMethod = "paypal"
+		batchRefund := generateXMLBatchRefundGovPay()
+		paymentSession := generatePaymentSessionPayPal()
 
 		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
-		validationErrors, err := service.ValidateGovPayBatchRefund(req.Context(), batchRefund)
+		validationErrors, err := service.ValidateBatchRefund(req.Context(), batchRefund)
 
 		So(len(validationErrors), ShouldEqual, 2)
 		So(err, ShouldBeNil)
 	})
 
-	Convey("Validation errors - amount does not match", t, func() {
+	Convey("Validation errors - payment method is not PayPal", t, func() {
 		mockCtrl := gomock.NewController(t)
 		defer mockCtrl.Finish()
 		service, mockDao := setUp(mockCtrl)
 
-		batchRefund := generateXMLBatchRefund()
-		paymentSession := generatePaymentSession()
+		batchRefund := generateXMLBatchRefundPayPal()
+		paymentSession := generatePaymentSessionGovPay()
+
+		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		validationErrors, err := service.ValidateBatchRefund(req.Context(), batchRefund)
+
+		So(len(validationErrors), ShouldEqual, 2)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Validation errors - amount does not match - GOV.UK Pay", t, func() {
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		service, mockDao := setUp(mockCtrl)
+
+		batchRefund := generateXMLBatchRefundGovPay()
+		paymentSession := generatePaymentSessionGovPay()
 		paymentSession.Data.Amount = "1.00"
 
 		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
-		validationErrors, err := service.ValidateGovPayBatchRefund(req.Context(), batchRefund)
+		validationErrors, err := service.ValidateBatchRefund(req.Context(), batchRefund)
 
 		So(len(validationErrors), ShouldEqual, 2)
 		So(err, ShouldBeNil)
 	})
 
-	Convey("Validation errors - status is not paid", t, func() {
+	Convey("Validation errors - amount does not match - GOV.UK Pay", t, func() {
 		mockCtrl := gomock.NewController(t)
 		defer mockCtrl.Finish()
 		service, mockDao := setUp(mockCtrl)
 
-		batchRefund := generateXMLBatchRefund()
-		paymentSession := generatePaymentSession()
+		batchRefund := generateXMLBatchRefundPayPal()
+		paymentSession := generatePaymentSessionPayPal()
+		paymentSession.Data.Amount = "1.00"
+
+		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		validationErrors, err := service.ValidateBatchRefund(req.Context(), batchRefund)
+
+		So(len(validationErrors), ShouldEqual, 2)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Validation errors - status is not paid - GOV.UK Pay", t, func() {
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		service, mockDao := setUp(mockCtrl)
+
+		batchRefund := generateXMLBatchRefundGovPay()
+		paymentSession := generatePaymentSessionGovPay()
 		paymentSession.Data.Status = Pending.String()
 
 		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
-		validationErrors, err := service.ValidateGovPayBatchRefund(req.Context(), batchRefund)
+		validationErrors, err := service.ValidateBatchRefund(req.Context(), batchRefund)
 
 		So(len(validationErrors), ShouldEqual, 2)
 		So(err, ShouldBeNil)
 	})
 
-	Convey("Successfully validate XML refunds", t, func() {
+	Convey("Validation errors - status is not paid - PayPal", t, func() {
 		mockCtrl := gomock.NewController(t)
 		defer mockCtrl.Finish()
 		service, mockDao := setUp(mockCtrl)
 
-		batchRefund := generateXMLBatchRefund()
-		paymentSession := generatePaymentSession()
-		paymentSession2 := generatePaymentSession()
+		batchRefund := generateXMLBatchRefundPayPal()
+		paymentSession := generatePaymentSessionPayPal()
+		paymentSession.Data.Status = Pending.String()
+
+		mockDao.EXPECT().GetPaymentResourceByProviderID(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		validationErrors, err := service.ValidateBatchRefund(req.Context(), batchRefund)
+
+		So(len(validationErrors), ShouldEqual, 2)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Successfully validate XML refunds - GOV.UK Pay", t, func() {
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		service, mockDao := setUp(mockCtrl)
+
+		batchRefund := generateXMLBatchRefundGovPay()
+		paymentSession := generatePaymentSessionGovPay()
+		paymentSession2 := generatePaymentSessionGovPay()
 		paymentSession2.ExternalPaymentStatusID = "1212"
 
 		mockDao.EXPECT().GetPaymentResourceByProviderID(batchRefund.RefundDetails[0].OrderCode).Return(&paymentSession, nil).AnyTimes()
 		mockDao.EXPECT().GetPaymentResourceByProviderID(batchRefund.RefundDetails[1].OrderCode).Return(&paymentSession2, nil).AnyTimes()
-		validationErrors, err := service.ValidateGovPayBatchRefund(req.Context(), batchRefund)
+		validationErrors, err := service.ValidateBatchRefund(req.Context(), batchRefund)
+
+		So(len(validationErrors), ShouldEqual, 0)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Successfully validate XML refunds - PayPal", t, func() {
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		service, mockDao := setUp(mockCtrl)
+
+		batchRefund := generateXMLBatchRefundPayPal()
+		paymentSession := generatePaymentSessionPayPal()
+		paymentSession2 := generatePaymentSessionPayPal()
+		paymentSession2.ExternalPaymentStatusID = "1212"
+
+		mockDao.EXPECT().GetPaymentResourceByProviderID(batchRefund.RefundDetails[0].OrderCode).Return(&paymentSession, nil).AnyTimes()
+		mockDao.EXPECT().GetPaymentResourceByProviderID(batchRefund.RefundDetails[1].OrderCode).Return(&paymentSession2, nil).AnyTimes()
+		validationErrors, err := service.ValidateBatchRefund(req.Context(), batchRefund)
 
 		So(len(validationErrors), ShouldEqual, 0)
 		So(err, ShouldBeNil)
 	})
 }
 
-func TestUnitUpdateGovPayBatchRefund(t *testing.T) {
+func TestUnitUpdateBatchRefund(t *testing.T) {
 	req := httptest.NewRequest("POST", "/test", nil)
 
-	Convey("Error updating GovPay batch refund", t, func() {
+	Convey("Error updating batch refund", t, func() {
 		mockCtrl := gomock.NewController(t)
 		defer mockCtrl.Finish()
 		service, mockDao := setUp(mockCtrl)
 
-		batchRefund := generateXMLBatchRefund()
+		batchRefund := generateXMLBatchRefundGovPay()
 
 		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error")).AnyTimes()
 		err := service.UpdateBatchRefund(req.Context(), batchRefund, "filename", "userID")
@@ -455,12 +547,12 @@ func TestUnitUpdateGovPayBatchRefund(t *testing.T) {
 		So(err, ShouldNotBeNil)
 	})
 
-	Convey("Successfully update GovPay batch refund", t, func() {
+	Convey("Successfully update batch refund", t, func() {
 		mockCtrl := gomock.NewController(t)
 		defer mockCtrl.Finish()
 		service, mockDao := setUp(mockCtrl)
 
-		batchRefund := generateXMLBatchRefund()
+		batchRefund := generateXMLBatchRefundGovPay()
 
 		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 		err := service.UpdateBatchRefund(req.Context(), batchRefund, "filename", "userID")
@@ -540,7 +632,7 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 		})
 
 		Convey("Error converting amount string to integer", func() {
-			paymentSession := generatePaymentSession()
+			paymentSession := generatePaymentSessionGovPay()
 			bulkRefund := models.BulkRefundDB{
 				Status:           "refund-pending",
 				UploadedFilename: "name",
@@ -558,7 +650,7 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 		})
 
 		Convey("Multiple errors converting amount string to integer", func() {
-			paymentSession := generatePaymentSession()
+			paymentSession := generatePaymentSessionGovPay()
 			bulkRefund := models.BulkRefundDB{
 				Status:           "refund-pending",
 				UploadedFilename: "name",
@@ -566,7 +658,7 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 				UploadedBy:       "Name",
 			}
 			paymentSession.BulkRefund = append(paymentSession.BulkRefund, bulkRefund)
-			paymentSession1 := generatePaymentSession()
+			paymentSession1 := generatePaymentSessionGovPay()
 			paymentSession1.BulkRefund = append(paymentSession1.BulkRefund, bulkRefund)
 			pList := []models.PaymentResourceDB{paymentSession, paymentSession1}
 			mockDao.EXPECT().GetPaymentsWithRefundStatus().Return(pList, nil)
@@ -579,7 +671,7 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 		})
 
 		Convey("Error retrieved from calling GetRefundSummary", func() {
-			paymentSession := generatePaymentSession()
+			paymentSession := generatePaymentSessionGovPay()
 			bulkRefund := models.BulkRefundDB{
 				Status:           "refund-pending",
 				UploadedFilename: "name",
@@ -601,7 +693,7 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 		Convey("Amount available in refund summary is not equal to amount in database", func() {
 			refundSummary := fixtures.GetRefundSummary(2)
 			paymentResource := &models.PaymentResourceRest{}
-			paymentSession := generatePaymentSession()
+			paymentSession := generatePaymentSessionGovPay()
 			bulkRefund := models.BulkRefundDB{
 				Status:           "refund-pending",
 				UploadedFilename: "name",
@@ -625,7 +717,7 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 			refundSummary := fixtures.GetRefundSummary(1000)
 			paymentResource := &models.PaymentResourceRest{}
 			refundRequest := fixtures.GetCreateRefundGovPayRequest(body.Amount, refundSummary.AmountAvailable)
-			paymentSession := generatePaymentSession()
+			paymentSession := generatePaymentSessionGovPay()
 			bulkRefund := models.BulkRefundDB{
 				Status:           "refund-pending",
 				UploadedFilename: "name",
@@ -651,7 +743,7 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 			paymentResource := &models.PaymentResourceRest{}
 			refundRequest := fixtures.GetCreateRefundGovPayRequest(body.Amount, refundSummary.AmountAvailable)
 			response := fixtures.GetCreateRefundGovPayResponse()
-			paymentSession := generatePaymentSession()
+			paymentSession := generatePaymentSessionGovPay()
 			bulkRefund := models.BulkRefundDB{
 				Status:           "refund-pending",
 				UploadedFilename: "name",
@@ -677,7 +769,7 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 			refundSummary := fixtures.GetRefundSummary(1000)
 			paymentResource := &models.PaymentResourceRest{}
 			refundRequest := fixtures.GetCreateRefundGovPayRequest(body.Amount, refundSummary.AmountAvailable)
-			paymentSession := generatePaymentSession()
+			paymentSession := generatePaymentSessionGovPay()
 			response := fixtures.GetCreateRefundGovPayResponse()
 
 			bulkRefund := models.BulkRefundDB{
@@ -704,9 +796,9 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 			refundSummary := fixtures.GetRefundSummary(1000)
 			paymentResource := &models.PaymentResourceRest{}
 			refundRequest := fixtures.GetCreateRefundGovPayRequest(body.Amount, refundSummary.AmountAvailable)
-			paymentSession := generatePaymentSession()
+			paymentSession := generatePaymentSessionGovPay()
 			response := fixtures.GetCreateRefundGovPayResponse()
-			paymentSession1 := generatePaymentSession()
+			paymentSession1 := generatePaymentSessionGovPay()
 			bulkRefund := models.BulkRefundDB{
 				Status:           "refund-pending",
 				UploadedFilename: "name",
@@ -744,7 +836,15 @@ func setUp(controller *gomock.Controller) (RefundService, *dao.MockDAO) {
 	}, mockDao
 }
 
-func generatePaymentSession() models.PaymentResourceDB {
+func generatePaymentSessionGovPay() models.PaymentResourceDB {
+	return generatePaymentSession("credit-card")
+}
+
+func generatePaymentSessionPayPal() models.PaymentResourceDB {
+	return generatePaymentSession("PayPal")
+}
+
+func generatePaymentSession(method string) models.PaymentResourceDB {
 	return models.PaymentResourceDB{
 		ID:                       "1234",
 		RedirectURI:              "/internal/redirect",
@@ -753,7 +853,7 @@ func generatePaymentSession() models.PaymentResourceDB {
 		ExternalPaymentStatusID:  "1122",
 		Data: models.PaymentResourceDataDB{
 			Amount:        "10.00",
-			PaymentMethod: "credit-card",
+			PaymentMethod: method,
 			Status:        Paid.String(),
 		},
 		Refunds: nil,
@@ -761,8 +861,16 @@ func generatePaymentSession() models.PaymentResourceDB {
 
 }
 
-func generateXMLBatchRefund() models.RefundBatch {
-	var govPayRefunds []models.RefundDetails
+func generateXMLBatchRefundGovPay() models.RefundBatch {
+	return generateXMLBatchRefund("govpay")
+}
+
+func generateXMLBatchRefundPayPal() models.RefundBatch {
+	return generateXMLBatchRefund("paypal")
+}
+
+func generateXMLBatchRefund(provider string) models.RefundBatch {
+	var refunds []models.RefundDetails
 
 	refund := models.RefundDetails{
 		XMLName:   xml.Name{"", "refund"},
@@ -788,14 +896,15 @@ func generateXMLBatchRefund() models.RefundBatch {
 		},
 	}
 
-	govPayRefunds = append(govPayRefunds, refund)
-	govPayRefunds = append(govPayRefunds, refund2)
+	refunds = append(refunds, refund)
+	refunds = append(refunds, refund2)
 
 	return models.RefundBatch{
-		XMLName:       xml.Name{"", "batchService"},
-		Version:       "1.0",
-		MerchantCode:  "1234",
-		BatchCode:     "1234",
-		RefundDetails: govPayRefunds,
+		XMLName:         xml.Name{"", "batchService"},
+		Version:         "1.0",
+		MerchantCode:    "1234",
+		BatchCode:       "1234",
+		RefundDetails:   refunds,
+		PaymentProvider: provider,
 	}
 }

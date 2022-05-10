@@ -156,9 +156,9 @@ func getRefundIndex(refunds []models.RefundResourceRest, refundId string) (int, 
 	return -1, errors.New("refund id not found in payment refunds")
 }
 
-// ValidateGovPayBatchRefund retrieves all the payments in the batch refund
+// ValidateBatchRefund retrieves all the payments in the batch refund
 // and validates it before processing it
-func (service *RefundService) ValidateGovPayBatchRefund(ctx context.Context, batchRefund models.RefundBatch) ([]string, error) {
+func (service *RefundService) ValidateBatchRefund(ctx context.Context, batchRefund models.RefundBatch) ([]string, error) {
 	var validationErrors []string
 	var mu = sync.Mutex{}
 	errs, _ := errgroup.WithContext(ctx)
@@ -171,10 +171,21 @@ func (service *RefundService) ValidateGovPayBatchRefund(ctx context.Context, bat
 				return err
 			}
 
-			if validationError := validateGovPayRefund(paymentSession, r); validationError != "" {
-				mu.Lock()
-				validationErrors = append(validationErrors, validationError)
-				mu.Unlock()
+			switch batchRefund.PaymentProvider {
+			case "govpay":
+				if validationError := validateGovPayRefund(paymentSession, r); validationError != "" {
+					mu.Lock()
+					validationErrors = append(validationErrors, validationError)
+					mu.Unlock()
+				}
+			case "paypal":
+				if validationError := validatePayPalRefund(paymentSession, r); validationError != "" {
+					mu.Lock()
+					validationErrors = append(validationErrors, validationError)
+					mu.Unlock()
+				}
+			default:
+				return fmt.Errorf("invalid payment provider supplied: %s", batchRefund.PaymentProvider)
 			}
 
 			return nil
@@ -183,11 +194,9 @@ func (service *RefundService) ValidateGovPayBatchRefund(ctx context.Context, bat
 
 	// Return early if the errgroup returned an error
 	// when fetching a paymentSession from the DB
-	if err := errs.Wait(); err != nil {
-		return nil, err
-	}
+	err := errs.Wait()
 
-	return validationErrors, nil
+	return validationErrors, err
 }
 
 func validateGovPayRefund(paymentSession *models.PaymentResourceDB, refund models.RefundDetails) string {
@@ -197,6 +206,26 @@ func validateGovPayRefund(paymentSession *models.PaymentResourceDB, refund model
 
 	if paymentSession.Data.PaymentMethod != "credit-card" {
 		return fmt.Sprintf("payment with order code [%s] has not been made via Gov.Pay - refund not eligible", refund.OrderCode)
+	}
+
+	if paymentSession.Data.Amount != refund.Amount.Value {
+		return fmt.Sprintf("value of refund with order code [%s] does not match payment", refund.OrderCode)
+	}
+
+	if paymentSession.Data.Status != Paid.String() {
+		return fmt.Sprintf("payment with order code [%s] has a status of [%s] - refund not eligible", refund.OrderCode, paymentSession.Data.Status)
+	}
+
+	return ""
+}
+
+func validatePayPalRefund(paymentSession *models.PaymentResourceDB, refund models.RefundDetails) string {
+	if paymentSession == nil {
+		return fmt.Sprintf("payment session with id [%s] not found", refund.OrderCode)
+	}
+
+	if paymentSession.Data.PaymentMethod != "PayPal" {
+		return fmt.Sprintf("payment with order code [%s] has not been made via PayPal - refund not eligible", refund.OrderCode)
 	}
 
 	if paymentSession.Data.Amount != refund.Amount.Value {
