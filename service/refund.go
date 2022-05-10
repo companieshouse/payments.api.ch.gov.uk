@@ -166,33 +166,33 @@ func (service *RefundService) ValidateBatchRefund(ctx context.Context, batchRefu
 		r := refund
 		errs.Go(func() error {
 
+			var paymentSession *models.PaymentResourceDB
+			var validationError string
+			var err error
+
 			switch batchRefund.PaymentProvider {
 			case "govpay":
-				paymentSession, err := service.DAO.GetPaymentResourceByProviderID(r.OrderCode)
+				paymentSession, err = service.DAO.GetPaymentResourceByProviderID(r.OrderCode)
 				if err != nil {
 					log.Error(fmt.Errorf("error retrieving payment session from DB: %w", err))
 					return err
 				}
-
-				if validationError := validateGovPayRefund(paymentSession, r); validationError != "" {
-					mu.Lock()
-					validationErrors = append(validationErrors, validationError)
-					mu.Unlock()
-				}
+				validationError = validateGovPayRefund(paymentSession, r)
 			case "paypal":
 				paymentSession, err := service.DAO.GetPaymentResourceByExternalPaymentTransactionID(r.OrderCode)
 				if err != nil {
 					log.Error(fmt.Errorf("error retrieving payment session from DB: %w", err))
 					return err
 				}
-
-				if validationError := validatePayPalRefund(paymentSession, r); validationError != "" {
-					mu.Lock()
-					validationErrors = append(validationErrors, validationError)
-					mu.Unlock()
-				}
+				validationError = validatePayPalRefund(paymentSession, r)
 			default:
 				return fmt.Errorf("invalid payment provider supplied: %s", batchRefund.PaymentProvider)
+			}
+
+			if validationError != "" {
+				mu.Lock()
+				validationErrors = append(validationErrors, validationError)
+				mu.Unlock()
 			}
 
 			return nil
