@@ -158,11 +158,11 @@ func getRefundIndex(refunds []models.RefundResourceRest, refundId string) (int, 
 
 // ValidateGovPayBatchRefund retrieves all the payments in the batch refund
 // and validates it before processing it
-func (service *RefundService) ValidateGovPayBatchRefund(ctx context.Context, batchRefund models.GovPayRefundBatch) ([]string, error) {
+func (service *RefundService) ValidateGovPayBatchRefund(ctx context.Context, batchRefund models.RefundBatch) ([]string, error) {
 	var validationErrors []string
 	var mu = sync.Mutex{}
 	errs, _ := errgroup.WithContext(ctx)
-	for _, refund := range batchRefund.GovPayRefunds {
+	for _, refund := range batchRefund.RefundDetails {
 		r := refund
 		errs.Go(func() error {
 			paymentSession, err := service.DAO.GetPaymentResourceByProviderID(r.OrderCode)
@@ -190,7 +190,7 @@ func (service *RefundService) ValidateGovPayBatchRefund(ctx context.Context, bat
 	return validationErrors, nil
 }
 
-func validateGovPayRefund(paymentSession *models.PaymentResourceDB, refund models.GovPayRefund) string {
+func validateGovPayRefund(paymentSession *models.PaymentResourceDB, refund models.RefundDetails) string {
 	if paymentSession == nil {
 		return fmt.Sprintf("payment session with id [%s] not found", refund.OrderCode)
 	}
@@ -210,11 +210,11 @@ func validateGovPayRefund(paymentSession *models.PaymentResourceDB, refund model
 	return ""
 }
 
-// UpdateGovPayBatchRefund updates each paymentSession in the DB corresponding
+// UpdateBatchRefund updates each paymentSession in the DB corresponding
 // to the refunds in the batch refund file with the necessary refund information
-func (service *RefundService) UpdateGovPayBatchRefund(ctx context.Context, batchRefund models.GovPayRefundBatch, filename string, user string) error {
+func (service *RefundService) UpdateBatchRefund(ctx context.Context, batchRefund models.RefundBatch, filename string, user string) error {
 	errs, _ := errgroup.WithContext(ctx)
-	for _, refund := range batchRefund.GovPayRefunds {
+	for _, refund := range batchRefund.RefundDetails {
 		r := refund
 		errs.Go(func() error {
 

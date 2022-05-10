@@ -98,6 +98,7 @@ func Register(mainRouter *mux.Router, cfg config.Config, paymentsDao dao.DAO) {
 	adminRouter := mainRouter.PathPrefix("/admin/payments/bulk-refunds").Subrouter()
 	adminRouter.HandleFunc("", HandleGetRefundStatuses).Methods("GET").Name("get-refund-statuses")
 	adminRouter.HandleFunc("/govpay", HandleGovPayBulkRefund).Methods("POST").Name("bulk-refund-govpay")
+	adminRouter.HandleFunc("/paypal", HandlePayPalBulkRefund).Methods("POST").Name("bulk-refund-paypal")
 	adminRouter.HandleFunc("/process-pending", HandleProcessPendingRefunds).Methods("POST").Name("process-bulk-refund")
 
 	// callback endpoints should not be intercepted by the paymentauth or userauth interceptors, so needs to be it's own subrouter

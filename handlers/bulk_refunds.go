@@ -17,12 +17,28 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+const (
+	paypalProvider = "paypal"
+	govpayProvider = "govpay"
+)
+
 // HandleGovPayBulkRefund accepts a bulk refunds file and adds and updates
 // refunds data to the DB
 func HandleGovPayBulkRefund(w http.ResponseWriter, req *http.Request) {
+	log.InfoR(req, "start POST request for gov pay bulk refunds")
 
-	log.InfoR(req, "start POST request for bulk refunds")
+	handleRefundFile(w, req, govpayProvider)
+}
 
+// HandlePayPalBulkRefund accepts a bulk refund file and adds and updates
+// refunds data to the DB
+func HandlePayPalBulkRefund(w http.ResponseWriter, req *http.Request) {
+	log.InfoR(req, "start POST request for paypal bulk refunds")
+
+	handleRefundFile(w, req, paypalProvider)
+}
+
+func handleRefundFile(w http.ResponseWriter, req *http.Request, paymentProvider string) {
 	file, header, err := req.FormFile("file")
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error reading file from request: %w", err))
@@ -41,9 +57,9 @@ func HandleGovPayBulkRefund(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var batchRefund models.GovPayRefundBatch
+	var batchRefund models.RefundBatch
 
-	// Unmarshal file to GovPayRefundBatch struct
+	// Unmarshal file to RefundBatch struct
 	err = xml.Unmarshal(buf.Bytes(), &batchRefund)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error parsing file: %w", err))
@@ -62,14 +78,27 @@ func HandleGovPayBulkRefund(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	var validationErrors []string
+
 	// Validate batch refund request data against data in DB
-	validationErrors, err := refundService.ValidateGovPayBatchRefund(req.Context(), batchRefund)
-	if err != nil {
-		log.ErrorR(req, err)
-		m := utils.NewMessageResponse("error processing batch refund")
+	switch paymentProvider {
+	case paypalProvider:
+	case govpayProvider:
+		validationErrors, err = refundService.ValidateGovPayBatchRefund(req.Context(), batchRefund)
+		if err != nil {
+			log.ErrorR(req, err)
+			m := utils.NewMessageResponse("error processing batch refund")
+			utils.WriteJSONWithStatus(w, req, m, http.StatusInternalServerError)
+			return
+		}
+	default:
+		message := fmt.Sprintf("invalid payment provider: %s", paymentProvider)
+		log.Debug(message)
+		m := utils.NewMessageResponse(message)
 		utils.WriteJSONWithStatus(w, req, m, http.StatusInternalServerError)
 		return
 	}
+
 	if len(validationErrors) > 0 {
 		message := fmt.Sprintf("the batch refund has failed validation on the following: %s", strings.Join(validationErrors, ","))
 		log.Debug(message)
@@ -85,7 +114,7 @@ func HandleGovPayBulkRefund(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = refundService.UpdateGovPayBatchRefund(req.Context(), batchRefund, header.Filename, userID)
+	err = refundService.UpdateBatchRefund(req.Context(), batchRefund, header.Filename, userID)
 	if err != nil {
 		m := utils.NewMessageResponse("error updating request")
 		utils.WriteJSONWithStatus(w, req, m, http.StatusInternalServerError)
