@@ -430,8 +430,8 @@ func TestUnitValidateGovPayBatchRefund(t *testing.T) {
 		paymentSession2 := generatePaymentSession()
 		paymentSession2.ExternalPaymentStatusID = "1212"
 
-		mockDao.EXPECT().GetPaymentResourceByProviderID(batchRefund.GovPayRefunds[0].OrderCode).Return(&paymentSession, nil).AnyTimes()
-		mockDao.EXPECT().GetPaymentResourceByProviderID(batchRefund.GovPayRefunds[1].OrderCode).Return(&paymentSession2, nil).AnyTimes()
+		mockDao.EXPECT().GetPaymentResourceByProviderID(batchRefund.RefundDetails[0].OrderCode).Return(&paymentSession, nil).AnyTimes()
+		mockDao.EXPECT().GetPaymentResourceByProviderID(batchRefund.RefundDetails[1].OrderCode).Return(&paymentSession2, nil).AnyTimes()
 		validationErrors, err := service.ValidateGovPayBatchRefund(req.Context(), batchRefund)
 
 		So(len(validationErrors), ShouldEqual, 0)
@@ -450,7 +450,7 @@ func TestUnitUpdateGovPayBatchRefund(t *testing.T) {
 		batchRefund := generateXMLBatchRefund()
 
 		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error")).AnyTimes()
-		err := service.UpdateGovPayBatchRefund(req.Context(), batchRefund, "filename", "userID")
+		err := service.UpdateBatchRefund(req.Context(), batchRefund, "filename", "userID")
 
 		So(err, ShouldNotBeNil)
 	})
@@ -463,7 +463,7 @@ func TestUnitUpdateGovPayBatchRefund(t *testing.T) {
 		batchRefund := generateXMLBatchRefund()
 
 		mockDao.EXPECT().CreateBulkRefund(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-		err := service.UpdateGovPayBatchRefund(req.Context(), batchRefund, "filename", "userID")
+		err := service.UpdateBatchRefund(req.Context(), batchRefund, "filename", "userID")
 
 		So(err, ShouldBeNil)
 	})
@@ -761,10 +761,10 @@ func generatePaymentSession() models.PaymentResourceDB {
 
 }
 
-func generateXMLBatchRefund() models.GovPayRefundBatch {
-	var govPayRefunds []models.GovPayRefund
+func generateXMLBatchRefund() models.RefundBatch {
+	var govPayRefunds []models.RefundDetails
 
-	refund := models.GovPayRefund{
+	refund := models.RefundDetails{
 		XMLName:   xml.Name{"", "refund"},
 		Reference: "1212",
 		OrderCode: "1212",
@@ -776,7 +776,7 @@ func generateXMLBatchRefund() models.GovPayRefundBatch {
 		},
 	}
 
-	refund2 := models.GovPayRefund{
+	refund2 := models.RefundDetails{
 		XMLName:   xml.Name{"", "refund"},
 		Reference: "1122",
 		OrderCode: "1122",
@@ -791,11 +791,11 @@ func generateXMLBatchRefund() models.GovPayRefundBatch {
 	govPayRefunds = append(govPayRefunds, refund)
 	govPayRefunds = append(govPayRefunds, refund2)
 
-	return models.GovPayRefundBatch{
+	return models.RefundBatch{
 		XMLName:       xml.Name{"", "batchService"},
 		Version:       "1.0",
 		MerchantCode:  "1234",
 		BatchCode:     "1234",
-		GovPayRefunds: govPayRefunds,
+		RefundDetails: govPayRefunds,
 	}
 }
