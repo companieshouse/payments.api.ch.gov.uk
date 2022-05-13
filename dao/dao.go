@@ -12,7 +12,6 @@ type DAO interface {
 	PatchPaymentResource(id string, paymentUpdate *models.PaymentResourceDB) error
 	GetPaymentResourceByProviderID(providerID string) (*models.PaymentResourceDB, error)
 	GetPaymentResourceByExternalPaymentTransactionID(providerID string) (*models.PaymentResourceDB, error)
-	CreateBulkRefund(providerID string, bulkRefund models.BulkRefundDB, idQuery string) error
 	CreateBulkRefundByProviderID(providerID string, bulkRefund models.BulkRefundDB) error
 	CreateBulkRefundByExternalPaymentTransactionID(providerID string, bulkRefund models.BulkRefundDB) error
 	GetPaymentsWithRefundStatus() ([]models.PaymentResourceDB, error)
@@ -20,7 +19,7 @@ type DAO interface {
 
 // NewDAO will create a new instance of the DAO interface.
 // All details about its implementation and the
-// database driver will be hidden from outside of this package
+// database driver will be hidden from outside this package
 func NewDAO(cfg *config.Config) DAO {
 	database := getMongoDatabase(cfg.MongoDBURL, cfg.Database)
 

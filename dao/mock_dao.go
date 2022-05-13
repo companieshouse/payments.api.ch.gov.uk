@@ -33,20 +33,6 @@ func (m *MockDAO) EXPECT() *MockDAOMockRecorder {
 	return m.recorder
 }
 
-// CreateBulkRefund mocks base method.
-func (m *MockDAO) CreateBulkRefund(providerID string, bulkRefund models.BulkRefundDB, idQuery string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateBulkRefund", providerID, bulkRefund, idQuery)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CreateBulkRefund indicates an expected call of CreateBulkRefund.
-func (mr *MockDAOMockRecorder) CreateBulkRefund(providerID, bulkRefund, idQuery interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBulkRefund", reflect.TypeOf((*MockDAO)(nil).CreateBulkRefund), providerID, bulkRefund, idQuery)
-}
-
 // CreateBulkRefundByExternalPaymentTransactionID mocks base method.
 func (m *MockDAO) CreateBulkRefundByExternalPaymentTransactionID(providerID string, bulkRefund models.BulkRefundDB) error {
 	m.ctrl.T.Helper()
