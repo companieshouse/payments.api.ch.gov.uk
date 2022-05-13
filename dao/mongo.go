@@ -19,8 +19,10 @@ const deadline = 5 * time.Second
 var client *mongo.Client
 
 const (
-	paymentStatus    = "data.status"
-	bulkRefundStatus = "bulk_refunds.status"
+	paymentStatus                = "data.status"
+	bulkRefundStatus             = "bulk_refunds.status"
+	dataProviderID               = "data.provider_id"
+	externalPaymentTransactionID = "external_payment_transaction_id"
 )
 
 // MongoService is an implementation of the Service interface using MongoDB as the backend driver.
@@ -130,13 +132,13 @@ func (m *MongoService) PatchPaymentResource(id string, paymentUpdate *models.Pay
 		patchUpdate["external_payment_status_id"] = paymentUpdate.ExternalPaymentStatusID
 	}
 	if paymentUpdate.ExternalPaymentTransactionID != "" {
-		patchUpdate["external_payment_transaction_id"] = paymentUpdate.ExternalPaymentTransactionID
+		patchUpdate[externalPaymentTransactionID] = paymentUpdate.ExternalPaymentTransactionID
 	}
 	if paymentUpdate.Refunds != nil {
 		patchUpdate["refunds"] = paymentUpdate.Refunds
 	}
 	if paymentUpdate.Data.ProviderID != "" {
-		patchUpdate["data.provider_id"] = paymentUpdate.Data.ProviderID
+		patchUpdate[dataProviderID] = paymentUpdate.Data.ProviderID
 	}
 	if len(paymentUpdate.BulkRefund) != 0 {
 		patchUpdate["bulk_refunds"] = paymentUpdate.BulkRefund
@@ -150,12 +152,12 @@ func (m *MongoService) PatchPaymentResource(id string, paymentUpdate *models.Pay
 }
 
 // GetPaymentResourceByProviderID retrieves a payment resource
-// associated with the externalPaymentStatusID provided
+// associated with the supplied Provider ID
 func (m *MongoService) GetPaymentResourceByProviderID(providerID string) (*models.PaymentResourceDB, error) {
 	var resource models.PaymentResourceDB
 
 	collection := m.db.Collection(m.CollectionName)
-	document := collection.FindOne(context.Background(), bson.M{"data.provider_id": providerID})
+	document := collection.FindOne(context.Background(), bson.M{dataProviderID: providerID})
 
 	err := document.Err()
 	if err != nil {
@@ -174,14 +176,55 @@ func (m *MongoService) GetPaymentResourceByProviderID(providerID string) (*model
 	return &resource, nil
 }
 
+// GetPaymentResourceByExternalPaymentTransactionID retrieves a payment resource
+// associated with the externalPaymentTransactionID provided
+func (m *MongoService) GetPaymentResourceByExternalPaymentTransactionID(id string) (*models.PaymentResourceDB, error) {
+	var resource models.PaymentResourceDB
+
+	collection := m.db.Collection(m.CollectionName)
+	document := collection.FindOne(context.Background(), bson.M{externalPaymentTransactionID: id})
+
+	err := document.Err()
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			log.Info(fmt.Sprintf("no payment resource found for external_payment_transaction_id: [%s]", id))
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	err = document.Decode(&resource)
+	if err != nil {
+		return nil, err
+	}
+
+	return &resource, nil
+}
+
+// CreateBulkRefundByProviderID creates or adds to the array of bulk refunds on a payment resource
+// The query only updates those payments in the DB with the specified Provider ID
+// which do not have an existing bulk refund with the status of refund-pending
+// or refund-requested
+func (m *MongoService) CreateBulkRefundByProviderID(externalPaymentStatusID string, bulkRefund models.BulkRefundDB) error {
+	return m.CreateBulkRefund(externalPaymentStatusID, bulkRefund, dataProviderID)
+}
+
+// CreateBulkRefundByExternalPaymentTransactionID creates or adds to the array of bulk refunds on a payment resource
+// The query only updates those payments in the DB with the specified External Payment
+// Transaction ID which do not have an existing bulk refund with the status of refund-pending
+// or refund-requested
+func (m *MongoService) CreateBulkRefundByExternalPaymentTransactionID(externalPaymentStatusID string, bulkRefund models.BulkRefundDB) error {
+	return m.CreateBulkRefund(externalPaymentStatusID, bulkRefund, externalPaymentTransactionID)
+}
+
 // CreateBulkRefund creates or adds to the array of bulk refunds on a payment resource
 // The query only updates those payments in the DB with the specified external payment
-// status ID that do not have an existing bulk refund with the status of refund-pending
-// or refund-requested
-func (m *MongoService) CreateBulkRefund(externalPaymentStatusID string, bulkRefund models.BulkRefundDB) error {
+// status ID, filtered on the specified query string, that do not have an existing
+// bulk refund with the status of refund-pending or refund-requested
+func (m *MongoService) CreateBulkRefund(externalPaymentStatusID string, bulkRefund models.BulkRefundDB, idQuery string) error {
 	collection := m.db.Collection(m.CollectionName)
 
-	IDFilter := bson.M{"data.provider_id": externalPaymentStatusID}
+	IDFilter := bson.M{idQuery: externalPaymentStatusID}
 
 	pendingFilter := bson.M{bulkRefundStatus: "refund-pending"}
 	requestedFilter := bson.M{bulkRefundStatus: "refund-requested"}

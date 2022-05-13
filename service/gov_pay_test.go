@@ -984,3 +984,34 @@ func TestUnitCallToGovPay(t *testing.T) {
 
 	})
 }
+
+func TestUnitCapturePayments(t *testing.T) {
+	Convey("Unimplemented methods should return nil", t, func() {
+
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
+		cfg, _ := config.Get()
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockGovPayService := CreateMockGovPayService(&mockPaymentService)
+
+		Convey("CapturePayment returns nil", func() {
+			resp, err := mockGovPayService.CapturePayment("id")
+			So(resp, ShouldBeNil)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("GetCapturedPaymentDetails returns nil", func() {
+			resp, err := mockGovPayService.GetCapturedPaymentDetails("id")
+			So(resp, ShouldBeNil)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("RefundCapture returns nil", func() {
+			resp, err := mockGovPayService.RefundCapture("id")
+			So(resp, ShouldBeNil)
+			So(err, ShouldBeNil)
+		})
+
+	})
+}

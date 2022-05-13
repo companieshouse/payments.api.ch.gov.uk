@@ -52,6 +52,7 @@ func TestUnitPatchPaymentResource(t *testing.T) {
 			ExternalPaymentStatusID:      "id123",
 			ExternalPaymentTransactionID: "id456",
 			Refunds:                      []models.RefundResourceDB{},
+			BulkRefund:                   []models.BulkRefundDB{{}},
 		}
 		err := dao.PatchPaymentResource("id123", &resource)
 		So(err.Error(), ShouldEqual, "the Update operation must have a Deployment set before Execute can be called")
@@ -67,19 +68,6 @@ func TestUnitGetPaymentResourceByExternalPaymentStatusID(t *testing.T) {
 		resource, err := dao.GetPaymentResourceByProviderID("id123")
 		So(resource, ShouldBeNil)
 		So(err.Error(), ShouldEqual, "the Find operation must have a Deployment set before Execute can be called")
-	})
-}
-
-func TestUnitCreateBulkRefund(t *testing.T) {
-	Convey("Create bulk refund", t, func() {
-		cfg, _ := config.Get()
-		client = &mongo.Client{}
-		dao := NewDAO(cfg)
-
-		bulkRefund := models.BulkRefundDB{}
-
-		err := dao.CreateBulkRefund("id123", bulkRefund)
-		So(err.Error(), ShouldEqual, "error updating bulk refund for payment with external status id [id123]: the Update operation must have a Deployment set before Execute can be called")
 	})
 }
 

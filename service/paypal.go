@@ -49,6 +49,8 @@ type PayPalSDK interface {
 	CreateOrder(ctx context.Context, intent string, purchaseUnits []paypal.PurchaseUnitRequest, payer *paypal.CreateOrderPayer, appContext *paypal.ApplicationContext) (*paypal.Order, error)
 	GetOrder(ctx context.Context, orderID string) (*paypal.Order, error)
 	CaptureOrder(ctx context.Context, orderID string, captureOrderRequest paypal.CaptureOrderRequest) (*paypal.CaptureOrderResponse, error)
+	CapturedDetail(ctx context.Context, captureID string) (*paypal.CaptureDetailsResponse, error)
+	RefundCapture(ctx context.Context, captureID string, refundCaptureRequest paypal.RefundCaptureRequest) (*paypal.RefundResponse, error)
 }
 
 // PayPalService handles the specific functionality of integrating PayPal into Payment Sessions
@@ -200,6 +202,28 @@ func (pp *PayPalService) CapturePayment(orderId string) (*paypal.CaptureOrderRes
 		context.Background(),
 		orderId,
 		paypal.CaptureOrderRequest{},
+	)
+	return res, err
+}
+
+// GetCapturedPaymentDetails gets the details of a captured payment in PayPal
+func (pp *PayPalService) GetCapturedPaymentDetails(captureID string) (*paypal.CaptureDetailsResponse, error) {
+	res, err := pp.Client.CapturedDetail(
+		context.Background(),
+		captureID,
+	)
+	return res, err
+}
+
+// RefundCapture refunds a captured PayPal payment
+func (pp *PayPalService) RefundCapture(captureID string) (*paypal.RefundResponse, error) {
+	// For a full refund, include an empty payload in the request body
+	// https://developer.paypal.com/docs/api/payments/v2/#captures_refund
+	request := paypal.RefundCaptureRequest{}
+	res, err := pp.Client.RefundCapture(
+		context.Background(),
+		captureID,
+		request,
 	)
 	return res, err
 }
