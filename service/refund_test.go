@@ -556,7 +556,7 @@ func TestUnitUpdateBatchRefund(t *testing.T) {
 
 		batchRefund := generateXMLBatchRefundGovPay()
 
-		mockDao.EXPECT().CreateBulkRefundByProviderID(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error")).AnyTimes()
+		mockDao.EXPECT().CreateBulkRefundByProviderID(gomock.Any()).Return(fmt.Errorf("error")).AnyTimes()
 		err := service.UpdateBatchRefund(req.Context(), batchRefund, "filename", "userID")
 
 		So(err, ShouldNotBeNil)
@@ -569,7 +569,7 @@ func TestUnitUpdateBatchRefund(t *testing.T) {
 
 		batchRefund := generateXMLBatchRefund("invalid")
 
-		mockDao.EXPECT().CreateBulkRefundByProviderID(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+		mockDao.EXPECT().CreateBulkRefundByProviderID(gomock.Any()).Return(nil).AnyTimes()
 		err := service.UpdateBatchRefund(req.Context(), batchRefund, "filename", "userID")
 
 		So(err.Error(), ShouldEqual, "invalid payment provider: [invalid]")
@@ -582,7 +582,7 @@ func TestUnitUpdateBatchRefund(t *testing.T) {
 
 		batchRefund := generateXMLBatchRefundGovPay()
 
-		mockDao.EXPECT().CreateBulkRefundByProviderID(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+		mockDao.EXPECT().CreateBulkRefundByProviderID(gomock.Any()).Return(nil).AnyTimes()
 		err := service.UpdateBatchRefund(req.Context(), batchRefund, "filename", "userID")
 
 		So(err, ShouldBeNil)
@@ -595,7 +595,7 @@ func TestUnitUpdateBatchRefund(t *testing.T) {
 
 		batchRefund := generateXMLBatchRefundPayPal()
 
-		mockDao.EXPECT().CreateBulkRefundByExternalPaymentTransactionID(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+		mockDao.EXPECT().CreateBulkRefundByExternalPaymentTransactionID(gomock.Any()).Return(nil).AnyTimes()
 		err := service.UpdateBatchRefund(req.Context(), batchRefund, "filename", "userID")
 
 		So(err, ShouldBeNil)

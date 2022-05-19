@@ -249,42 +249,36 @@ func validatePayPalRefund(paymentSession *models.PaymentResourceDB, refund model
 // UpdateBatchRefund updates each paymentSession in the DB corresponding
 // to the refunds in the batch refund file with the necessary refund information
 func (service *RefundService) UpdateBatchRefund(ctx context.Context, batchRefund models.RefundBatch, filename string, user string) error {
-	errs, _ := errgroup.WithContext(ctx)
+
+	bulkRefunds := make(map[string]models.BulkRefundDB)
+
 	for _, refund := range batchRefund.RefundDetails {
-		r := refund
-		errs.Go(func() error {
+		bulkRefundDB := models.BulkRefundDB{
+			Status:            BulkRefundPending.String(),
+			UploadedFilename:  filename,
+			UploadedAt:        time.Now().Truncate(time.Millisecond).String(),
+			UploadedBy:        user,
+			Amount:            refund.Amount.Value,
+			RefundID:          "",
+			ProcessedAt:       "",
+			ExternalRefundURL: "",
+		}
 
-			bulkRefundDB := models.BulkRefundDB{
-				Status:            BulkRefundPending.String(),
-				UploadedFilename:  filename,
-				UploadedAt:        time.Now().Truncate(time.Millisecond).String(),
-				UploadedBy:        user,
-				Amount:            r.Amount.Value,
-				RefundID:          "",
-				ProcessedAt:       "",
-				ExternalRefundURL: "",
-			}
-
-			var err error
-			switch batchRefund.PaymentProvider {
-			case "govpay":
-				err = service.DAO.CreateBulkRefundByProviderID(r.OrderCode, bulkRefundDB)
-			case "paypal":
-				err = service.DAO.CreateBulkRefundByExternalPaymentTransactionID(r.OrderCode, bulkRefundDB)
-			default:
-				err = fmt.Errorf("invalid payment provider: [%s]", batchRefund.PaymentProvider)
-			}
-
-			if err != nil {
-				log.Error(fmt.Errorf("error updating payment session in DB: %w", err))
-				return err
-			}
-
-			return nil
-		})
+		bulkRefunds[refund.OrderCode] = bulkRefundDB
 	}
 
-	if err := errs.Wait(); err != nil {
+	var err error
+	switch batchRefund.PaymentProvider {
+	case "govpay":
+		err = service.DAO.CreateBulkRefundByProviderID(bulkRefunds)
+	case "paypal":
+		err = service.DAO.CreateBulkRefundByExternalPaymentTransactionID(bulkRefunds)
+	default:
+		err = fmt.Errorf("invalid payment provider: [%s]", batchRefund.PaymentProvider)
+	}
+
+	if err != nil {
+		log.Error(fmt.Errorf("error updating payment session in DB: %w", err))
 		return err
 	}
 

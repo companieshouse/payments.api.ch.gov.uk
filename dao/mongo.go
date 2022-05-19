@@ -205,40 +205,49 @@ func (m *MongoService) GetPaymentResourceByExternalPaymentTransactionID(id strin
 // The query only updates those payments in the DB with the specified Provider ID
 // which do not have an existing bulk refund with the status of refund-pending
 // or refund-requested
-func (m *MongoService) CreateBulkRefundByProviderID(externalPaymentStatusID string, bulkRefund models.BulkRefundDB) error {
-	return m.CreateBulkRefund(externalPaymentStatusID, bulkRefund, dataProviderID)
+func (m *MongoService) CreateBulkRefundByProviderID(bulkRefunds map[string]models.BulkRefundDB) error {
+	return m.CreateBulkRefund(bulkRefunds, dataProviderID)
 }
 
 // CreateBulkRefundByExternalPaymentTransactionID creates or adds to the array of bulk refunds on a payment resource
 // The query only updates those payments in the DB with the specified External Payment
 // Transaction ID which do not have an existing bulk refund with the status of refund-pending
 // or refund-requested
-func (m *MongoService) CreateBulkRefundByExternalPaymentTransactionID(externalPaymentStatusID string, bulkRefund models.BulkRefundDB) error {
-	return m.CreateBulkRefund(externalPaymentStatusID, bulkRefund, externalPaymentTransactionID)
+func (m *MongoService) CreateBulkRefundByExternalPaymentTransactionID(bulkRefunds map[string]models.BulkRefundDB) error {
+	return m.CreateBulkRefund(bulkRefunds, externalPaymentTransactionID)
 }
 
 // CreateBulkRefund creates or adds to the array of bulk refunds on a payment resource
 // The query only updates those payments in the DB with the specified external payment
 // status ID, filtered on the specified query string, that do not have an existing
 // bulk refund with the status of refund-pending or refund-requested
-func (m *MongoService) CreateBulkRefund(externalPaymentStatusID string, bulkRefund models.BulkRefundDB, idQuery string) error {
+func (m *MongoService) CreateBulkRefund(bulkRefunds map[string]models.BulkRefundDB, idQuery string) error {
 	collection := m.db.Collection(m.CollectionName)
 
-	IDFilter := bson.M{idQuery: externalPaymentStatusID}
+	var operations []mongo.WriteModel
 
-	pendingFilter := bson.M{bulkRefundStatus: "refund-pending"}
-	requestedFilter := bson.M{bulkRefundStatus: "refund-requested"}
-	statusFilter := bson.M{"$nor": bson.A{pendingFilter, requestedFilter}}
+	for orderID, bulkRefund := range bulkRefunds {
+		IDFilter := bson.M{idQuery: orderID}
+		pendingFilter := bson.M{bulkRefundStatus: "refund-pending"}
+		requestedFilter := bson.M{bulkRefundStatus: "refund-requested"}
+		statusFilter := bson.M{"$nor": bson.A{pendingFilter, requestedFilter}}
 
-	filter := bson.M{"$and": bson.A{IDFilter, statusFilter}}
-	pushQuery := bson.M{"$push": bson.M{"bulk_refunds": bulkRefund}}
+		filter := bson.M{"$and": bson.A{IDFilter, statusFilter}}
+		pushQuery := bson.M{"$push": bson.M{"bulk_refunds": bulkRefund}}
 
-	update, err := collection.UpdateOne(context.Background(), filter, pushQuery)
+		operations = append(operations,
+			mongo.NewUpdateOneModel().SetFilter(filter).SetUpdate(pushQuery))
+		log.Info(fmt.Sprintf("Added operation for payment [%s]", orderID))
+	}
+
+	log.Info(fmt.Sprintf("Running BulkWrite operation for refund file"))
+	update, err := collection.BulkWrite(context.Background(), operations)
+
 	if err != nil {
-		return fmt.Errorf("error updating bulk refund for payment with external status id [%s]: %w", externalPaymentStatusID, err)
+		return fmt.Errorf("error bulk updating on mongo for bulk refund file [%s]: %w", bulkRefunds, err)
 	}
 	if update.ModifiedCount == 0 {
-		log.Error(fmt.Errorf("payment with external status id [%s] not found or has an existing refund that is pending or requested", externalPaymentStatusID))
+		log.Error(fmt.Errorf("no payments updated in bulk update for bulk refunds [%s]", bulkRefunds))
 	}
 
 	return nil
