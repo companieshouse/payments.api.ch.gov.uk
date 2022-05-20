@@ -240,7 +240,7 @@ func (m *MongoService) CreateBulkRefund(bulkRefunds map[string]models.BulkRefund
 		log.Info(fmt.Sprintf("Added operation for payment [%s]", orderID))
 	}
 
-	log.Info(fmt.Sprintf("Running BulkWrite operation for refund file"))
+	log.Info(fmt.Sprintf("Running BulkWrite operation for refund file for refunds on field [%s]", idQuery))
 	update, err := collection.BulkWrite(context.Background(), operations)
 
 	if err != nil {
