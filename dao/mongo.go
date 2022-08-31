@@ -261,12 +261,15 @@ func (m *MongoService) GetPaymentsWithRefundStatus() ([]models.PaymentResourceDB
 	collection := m.db.Collection(m.CollectionName)
 	statusFilter := bson.M{bulkRefundStatus: "refund-pending"}
 
+	log.Debug("Before reading data from mongoDB") // FIXME remove this temporary logging
 	paymentDBResources, err := collection.Find(context.Background(), statusFilter)
 	if err != nil {
 		return nil, err
 	}
 
+	log.Debug("After reading data from mongoDB") // FIXME remove this temporary logging
 	err = paymentDBResources.All(context.Background(), &payments)
+	log.Debug("After converting mongo data to payments resource") // FIXME remove this temporary logging
 	if err != nil {
 		return nil, err
 	}
