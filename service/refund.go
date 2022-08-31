@@ -308,12 +308,14 @@ func (service *RefundService) GetPaymentsWithPendingRefundStatus() (*models.Pend
 // ProcessBatchRefund processes all refunds in the DB with a refund-pending status
 func (service *RefundService) ProcessBatchRefund(req *http.Request) []error {
 	var errorList []error
+	log.Debug("Before getting payment resources with pending refund status from MongoDB") // FIXME remove this temporary logging
 	payments, err := service.DAO.GetPaymentsWithRefundStatus()
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error retrieving payments with refund-pending status: %w", err))
 		errorList = append(errorList, errors.New("error retrieving payments with refund-pending status"))
 		return errorList
 	}
+	log.Debug("Finished getting payment resources with pending refund status from MongoDB") // FIXME remove this temporary logging
 	if len(payments) == 0 {
 		log.ErrorR(req, errors.New("no payments with refund-pending status found"))
 		errorList = append(errorList, errors.New("no payments with refund-pending status found"))
@@ -323,11 +325,13 @@ func (service *RefundService) ProcessBatchRefund(req *http.Request) []error {
 	for _, p := range payments {
 		switch p.Data.PaymentMethod {
 		case "credit-card":
+			log.Debug("Making GOV.UK Pay refund") // FIXME remove this temporary logging
 			err := service.processGovPayBatchRefund(req, p)
 			if err != nil {
 				errorList = append(errorList, err)
 			}
 		case "PayPal":
+			log.Debug("Making PayPal refund") // FIXME remove this temporary logging
 			err := service.processPayPalBatchRefund(req, p)
 			if err != nil {
 				errorList = append(errorList, err)
@@ -337,6 +341,8 @@ func (service *RefundService) ProcessBatchRefund(req *http.Request) []error {
 			errorList = append(errorList, err)
 		}
 	}
+
+	log.Debug("Finished making refund requests") // FIXME remove this temporary logging
 
 	return errorList
 }

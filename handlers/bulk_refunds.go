@@ -124,6 +124,7 @@ func HandleProcessPendingRefunds(w http.ResponseWriter, req *http.Request) {
 	log.InfoR(req, "Start POST request for processing pending refunds")
 
 	errList := refundService.ProcessBatchRefund(req)
+	log.Debug("finished processing pending refunds") // FIXME remove this temporary logging
 
 	var res []string
 
