@@ -93,7 +93,7 @@ func handleRefundFile(w http.ResponseWriter, req *http.Request, paymentProvider 
 
 	if len(validationErrors) > 0 {
 		message := fmt.Sprintf("the batch refund has failed validation on the following: %s", strings.Join(validationErrors, ","))
-		log.Debug(message)
+		log.Info(message)
 		m := utils.NewMessageResponse(message)
 		utils.WriteJSONWithStatus(w, req, m, http.StatusBadRequest)
 		return
