@@ -15,7 +15,7 @@ func InternalOrPaymentPrivilegesIntercept(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check headers for identity type and identity
 		identityType := authentication.GetAuthorisedIdentityType(r)
-		if !(identityType == authentication.APIKeyIdentityType) {
+		if identityType != authentication.APIKeyIdentityType {
 			log.Error(fmt.Errorf("internal or payment privileges interceptor unauthorised: not API key identity type"))
 			w.WriteHeader(http.StatusUnauthorized)
 			return

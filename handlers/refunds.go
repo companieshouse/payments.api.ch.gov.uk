@@ -48,9 +48,6 @@ func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
 		case service.InvalidData:
 			w.WriteHeader(http.StatusBadRequest)
 			return
-		case service.Error:
-			w.WriteHeader(http.StatusInternalServerError)
-			return
 		case service.NotFound:
 			w.WriteHeader(http.StatusNotFound)
 			return
@@ -103,9 +100,6 @@ func HandleUpdateRefund(w http.ResponseWriter, req *http.Request) {
 		switch responseType {
 		case service.InvalidData:
 			w.WriteHeader(http.StatusBadRequest)
-			return
-		case service.Error:
-			w.WriteHeader(http.StatusInternalServerError)
 			return
 		case service.NotFound:
 			w.WriteHeader(http.StatusNotFound)
