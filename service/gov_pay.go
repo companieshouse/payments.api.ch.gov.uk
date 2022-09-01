@@ -15,9 +15,9 @@ import (
 	"github.com/plutov/paypal/v4"
 )
 
-var GovPayRequestError = "error generating request for GovPay: [%s]"
-var GovPayHeaderError = "error adding GovPay headers: [%s]"
-var GovPayStatusError = "error status [%v] back from GovPay: [%s]"
+var govPayRequestError = "error generating request for GovPay: [%s]"
+var govPayHeaderError = "error adding GovPay headers: [%s]"
+var govPayStatusError = "error status [%v] back from GovPay: [%s]"
 
 // GovPayService handles the specific functionality of integrating GovPay provider into Payment Sessions
 type GovPayService struct {
@@ -79,12 +79,12 @@ func (gp *GovPayService) CreatePaymentAndGenerateNextURL(req *http.Request, paym
 
 	request, err := http.NewRequest("POST", gp.PaymentService.Config.GovPayURL, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return "", Error, fmt.Errorf(GovPayRequestError, err)
+		return "", Error, fmt.Errorf(govPayRequestError, err)
 	}
 
 	err = addGovPayHeaders(request, paymentResource, gp)
 	if err != nil {
-		return "", InvalidData, fmt.Errorf(GovPayHeaderError, err)
+		return "", InvalidData, fmt.Errorf(govPayHeaderError, err)
 	}
 
 	resp, err := http.DefaultClient.Do(request)
@@ -104,7 +104,7 @@ func (gp *GovPayService) CreatePaymentAndGenerateNextURL(req *http.Request, paym
 		return "", Error, fmt.Errorf("error reading response from GovPay: [%s]", err)
 	}
 	if resp.StatusCode != http.StatusCreated {
-		return "", Error, fmt.Errorf(GovPayStatusError, resp.StatusCode, govPayResponse.Description)
+		return "", Error, fmt.Errorf(govPayStatusError, resp.StatusCode, govPayResponse.Description)
 	}
 
 	err = gp.PaymentService.StoreExternalPaymentStatusDetails(paymentResource.MetaData.ID, govPayResponse.GovPayLinks.Self.HREF, govPayResponse.PaymentID)
@@ -191,12 +191,12 @@ func (gp *GovPayService) CreateRefund(paymentResource *models.PaymentResourceRes
 
 	request, err := http.NewRequest("POST", paymentResource.MetaData.ExternalPaymentStatusURI+"/refunds", bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil, Error, fmt.Errorf(GovPayRequestError, err)
+		return nil, Error, fmt.Errorf(govPayRequestError, err)
 	}
 
 	err = addGovPayHeaders(request, paymentResource, gp)
 	if err != nil {
-		return nil, Error, fmt.Errorf(GovPayHeaderError, err)
+		return nil, Error, fmt.Errorf(govPayHeaderError, err)
 	}
 
 	resp, err := http.DefaultClient.Do(request)
@@ -216,7 +216,7 @@ func (gp *GovPayService) CreateRefund(paymentResource *models.PaymentResourceRes
 		return nil, Error, fmt.Errorf("error reading response from GovPay: [%s]", err)
 	}
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
-		return nil, Error, fmt.Errorf(GovPayStatusError, resp.StatusCode, govPayResponse.Status)
+		return nil, Error, fmt.Errorf(govPayStatusError, resp.StatusCode, govPayResponse.Status)
 	}
 
 	return govPayResponse, Success, nil
@@ -226,12 +226,12 @@ func (gp *GovPayService) CreateRefund(paymentResource *models.PaymentResourceRes
 func (gp *GovPayService) GetRefundStatus(paymentResource *models.PaymentResourceRest, refundId string) (*models.GetRefundStatusGovPayResponse, ResponseType, error) {
 	request, err := http.NewRequest("GET", paymentResource.MetaData.ExternalPaymentStatusURI+"/refunds/"+refundId, nil)
 	if err != nil {
-		return nil, Error, fmt.Errorf(GovPayRequestError, err)
+		return nil, Error, fmt.Errorf(govPayRequestError, err)
 	}
 
 	err = addGovPayHeaders(request, paymentResource, gp)
 	if err != nil {
-		return nil, Error, fmt.Errorf(GovPayHeaderError, err)
+		return nil, Error, fmt.Errorf(govPayHeaderError, err)
 	}
 
 	resp, err := http.DefaultClient.Do(request)
@@ -251,7 +251,7 @@ func (gp *GovPayService) GetRefundStatus(paymentResource *models.PaymentResource
 		return nil, Error, fmt.Errorf("error reading response from GovPay: [%s]", err)
 	}
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
-		return nil, Error, fmt.Errorf(GovPayStatusError, resp.StatusCode, govPayResponse.Status)
+		return nil, Error, fmt.Errorf(govPayStatusError, resp.StatusCode, govPayResponse.Status)
 	}
 
 	return govPayResponse, Success, nil
@@ -271,12 +271,12 @@ func callGovPay(gp *GovPayService, paymentResource *models.PaymentResourceRest) 
 
 	request, err := http.NewRequest("GET", paymentResource.MetaData.ExternalPaymentStatusURI, nil)
 	if err != nil {
-		return nil, fmt.Errorf(GovPayRequestError, err)
+		return nil, fmt.Errorf(govPayRequestError, err)
 	}
 
 	err = addGovPayHeaders(request, paymentResource, gp)
 	if err != nil {
-		return nil, fmt.Errorf(GovPayHeaderError, err)
+		return nil, fmt.Errorf(govPayHeaderError, err)
 	}
 
 	// Make call to GovPay
@@ -300,7 +300,7 @@ func callGovPay(gp *GovPayService, paymentResource *models.PaymentResourceRest) 
 }
 
 func addGovPayHeaders(request *http.Request, paymentResource *models.PaymentResourceRest, gp *GovPayService) error {
-	var BearerToken = "Bearer "
+	BearerToken := "Bearer "
 	treasuryBearer := BearerToken + gp.PaymentService.Config.GovPayBearerTokenTreasury
 	chBearer := BearerToken + gp.PaymentService.Config.GovPayBearerTokenChAccount
 	legacyBearer := BearerToken + gp.PaymentService.Config.GovPayBearerTokenLegacy
