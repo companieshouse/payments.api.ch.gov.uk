@@ -17,3 +17,13 @@ func TestUnitHandleCreateRefund(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
 }
+
+func TestUnitHandleProcessPendingRefunds(t *testing.T) {
+
+	Convey("Successful request", t, func() {
+		req, _ := http.NewRequest("POST", "/payments/refunds/process-pending", nil)
+		w := httptest.NewRecorder()
+		HandleProcessPendingRefunds(w, req)
+		So(w.Code, ShouldEqual, http.StatusOK)
+	})
+}

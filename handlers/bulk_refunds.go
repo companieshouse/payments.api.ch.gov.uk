@@ -117,10 +117,10 @@ func handleRefundFile(w http.ResponseWriter, req *http.Request, paymentProvider 
 	w.WriteHeader(http.StatusCreated)
 }
 
-// HandleProcessPendingRefunds retrieves a list of payments in the DB with
+// HandleProcessBulkPendingRefunds retrieves a list of payments in the DB with
 // a refund-pending status and fires a request to the payment provider to
 // issue a refund
-func HandleProcessPendingRefunds(w http.ResponseWriter, req *http.Request) {
+func HandleProcessBulkPendingRefunds(w http.ResponseWriter, req *http.Request) {
 	log.InfoR(req, "Start POST request for processing pending refunds")
 
 	errList := refundService.ProcessBatchRefund(req)

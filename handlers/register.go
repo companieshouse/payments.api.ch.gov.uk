@@ -87,6 +87,9 @@ func Register(mainRouter *mux.Router, cfg config.Config, paymentsDao dao.DAO) {
 	updateRefundRouter := mainRouter.PathPrefix("/payments/{paymentId}/refunds/{refundId}").Subrouter()
 	updateRefundRouter.HandleFunc("", HandleUpdateRefund).Methods("PATCH").Name("update-refund")
 
+	refundRouter := mainRouter.PathPrefix("/payments/refunds").Subrouter()
+	refundRouter.HandleFunc("/process-pending", HandleProcessPendingRefunds).Methods("POST").Name("process-pending-refunds")
+
 	// All private endpoints need  payment and user auth, and due to router limitations of applying interceptors, need their own subrouters
 	privatePatchRouter := mainRouter.PathPrefix("/private/payments/{payment_id}").Subrouter()
 	privatePatchRouter.HandleFunc("", HandlePatchPaymentSession).Methods("PATCH").Name("patch-payment")
@@ -100,7 +103,7 @@ func Register(mainRouter *mux.Router, cfg config.Config, paymentsDao dao.DAO) {
 	adminRouter.HandleFunc("", HandleGetRefundStatuses).Methods("GET").Name("get-refund-statuses")
 	adminRouter.HandleFunc("/govpay", HandleGovPayBulkRefund).Methods("POST").Name("bulk-refund-govpay")
 	adminRouter.HandleFunc("/paypal", HandlePayPalBulkRefund).Methods("POST").Name("bulk-refund-paypal")
-	adminRouter.HandleFunc("/process-pending", HandleProcessPendingRefunds).Methods("POST").Name("process-bulk-refund")
+	adminRouter.HandleFunc("/process-pending", HandleProcessBulkPendingRefunds).Methods("POST").Name("process-bulk-refund")
 
 	// callback endpoints should not be intercepted by the paymentauth or userauth interceptors, so needs to be it's own subrouter
 	callbackRouter := mainRouter.PathPrefix("/callback").Subrouter()
@@ -113,6 +116,7 @@ func Register(mainRouter *mux.Router, cfg config.Config, paymentsDao dao.DAO) {
 	paymentDetailsRouter.Use(log.Handler, interceptors.UserPaymentAuthenticationIntercept, interceptors.InternalOrPaymentPrivilegesIntercept, pa.PaymentAuthenticationIntercept)
 	createRefundRouter.Use(log.Handler, authentication.ElevatedPrivilegesInterceptor)
 	updateRefundRouter.Use(log.Handler, authentication.ElevatedPrivilegesInterceptor)
+	refundRouter.Use(log.Handler, interceptors.InternalOrPaymentPrivilegesIntercept)
 	privatePatchRouter.Use(log.Handler, interceptors.UserPaymentAuthenticationIntercept, pa.PaymentAuthenticationIntercept)
 	privateJourneyRouter.Use(log.Handler, interceptors.UserPaymentAuthenticationIntercept, pa.PaymentAuthenticationIntercept)
 	adminRouter.Use(log.Handler, interceptors.UserPaymentAuthenticationIntercept, interceptors.PaymentAdminAuthenticationIntercept)
