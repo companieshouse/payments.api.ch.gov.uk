@@ -307,7 +307,7 @@ func TestUnitHandleBulkRefund(t *testing.T) {
 	})
 }
 
-func TestUnitHandleProcessPendingRefunds(t *testing.T) {
+func TestUnitHandleProcessBulkPendingRefunds(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
@@ -330,7 +330,7 @@ func TestUnitHandleProcessPendingRefunds(t *testing.T) {
 		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/process-pending", nil)
 		w := httptest.NewRecorder()
 
-		HandleProcessPendingRefunds(w, req)
+		HandleProcessBulkPendingRefunds(w, req)
 
 		So(w.Code, ShouldEqual, http.StatusAccepted)
 		So(w.Body.String(), ShouldContainSubstring, "error retrieving payments with refund-pending status")
@@ -368,7 +368,7 @@ func TestUnitHandleProcessPendingRefunds(t *testing.T) {
 		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/process-pending", nil)
 		w := httptest.NewRecorder()
 
-		HandleProcessPendingRefunds(w, req)
+		HandleProcessBulkPendingRefunds(w, req)
 
 		So(w.Code, ShouldEqual, http.StatusAccepted)
 		So(w.Body.String(), ShouldContainSubstring, "error converting amount string to int for payment with id [1234],error converting amount string to int for payment with id [1122]")
@@ -412,7 +412,7 @@ func TestUnitHandleProcessPendingRefunds(t *testing.T) {
 		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/process-pending", nil)
 		w := httptest.NewRecorder()
 
-		HandleProcessPendingRefunds(w, req)
+		HandleProcessBulkPendingRefunds(w, req)
 
 		So(w.Code, ShouldEqual, http.StatusAccepted)
 		So(w.Body.String(), ShouldEqual, "\"\"\n")
@@ -457,7 +457,7 @@ func TestUnitHandleProcessPendingRefunds(t *testing.T) {
 		req := httptest.NewRequest("POST", "/admin/payments/bulk-refunds/process-pending", nil)
 		w := httptest.NewRecorder()
 
-		HandleProcessPendingRefunds(w, req)
+		HandleProcessBulkPendingRefunds(w, req)
 
 		So(w.Code, ShouldEqual, http.StatusAccepted)
 		So(w.Body.String(), ShouldEqual, "\"\"\n")

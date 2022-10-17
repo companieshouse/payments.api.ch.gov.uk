@@ -40,6 +40,7 @@ func TestUnitRegisterRoutes(t *testing.T) {
 		So(router.GetRoute("bulk-refund-paypal"), ShouldNotBeNil)
 		So(router.GetRoute("get-refund-statuses"), ShouldNotBeNil)
 		So(router.GetRoute("process-bulk-refund"), ShouldNotBeNil)
+		So(router.GetRoute("process-pending-refunds"), ShouldNotBeNil)
 	})
 }
 

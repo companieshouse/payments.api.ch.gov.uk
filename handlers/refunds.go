@@ -121,3 +121,8 @@ func HandleUpdateRefund(w http.ResponseWriter, req *http.Request) {
 
 	log.InfoR(req, "Successful PATCH request for refund", log.Data{"refund_id": refundId, "status": http.StatusOK})
 }
+
+// HandleProcessPendingRefunds checks the status of each pending refund and updates the status for any completed refunds.
+func HandleProcessPendingRefunds(w http.ResponseWriter, req *http.Request) {
+	log.Info("Process Pending Refunds request received") // TODO implement endpoint
+}
