@@ -15,6 +15,7 @@ type DAO interface {
 	CreateBulkRefundByProviderID(bulkRefunds map[string]models.BulkRefundDB) error
 	CreateBulkRefundByExternalPaymentTransactionID(bulkRefunds map[string]models.BulkRefundDB) error
 	GetPaymentsWithRefundStatus() ([]models.PaymentResourceDB, error)
+	GetPaymentsWithRefundPendingStatus() ([]models.PaymentResourceDB, error)
 }
 
 // NewDAO will create a new instance of the DAO interface.

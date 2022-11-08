@@ -11,6 +11,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const (
+	contentType                 = "Content-Type"
+	applicationJsonResponseType = "application/json"
+	writingErrorResponse        = "error writing response: %v"
+)
+
 // handleRefundMessage allows us to mock the call to produceRefundMessage for unit tests
 var handleRefundMessage = produceRefundMessage
 
@@ -57,12 +63,12 @@ func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(contentType, applicationJsonResponseType)
 	w.WriteHeader(http.StatusCreated)
 
 	err = json.NewEncoder(w).Encode(refund)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
+		log.ErrorR(req, fmt.Errorf(writingErrorResponse, err))
 		return
 	}
 
@@ -110,12 +116,12 @@ func HandleUpdateRefund(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(contentType, applicationJsonResponseType)
 	w.WriteHeader(http.StatusOK)
 
 	err = json.NewEncoder(w).Encode(refund)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
+		log.ErrorR(req, fmt.Errorf(writingErrorResponse, err))
 		return
 	}
 
@@ -124,5 +130,33 @@ func HandleUpdateRefund(w http.ResponseWriter, req *http.Request) {
 
 // HandleProcessPendingRefunds checks the status of each pending refund and updates the status for any completed refunds.
 func HandleProcessPendingRefunds(w http.ResponseWriter, req *http.Request) {
-	log.Info("Process Pending Refunds request received") // TODO implement endpoint
+	payments, responseType, errList := refundService.ProcessPendingRefunds(req)
+
+	if errList != nil {
+		log.ErrorR(req, fmt.Errorf("error retrieving payments with pending refunds: %v", errList))
+		switch responseType {
+		case service.Error:
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		case service.Success:
+			w.WriteHeader(http.StatusOK)
+			return
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
+
+	w.Header().Set(contentType, applicationJsonResponseType)
+	w.WriteHeader(http.StatusOK)
+
+	err := json.NewEncoder(w).Encode(payments)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf(writingErrorResponse, err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	log.InfoR(req, "Successful processed pending refunds request", log.Data{"status": http.StatusOK})
+
 }

@@ -341,6 +341,26 @@ func (service *RefundService) ProcessBatchRefund(req *http.Request) []error {
 	return errorList
 }
 
+// ProcessPendingRefunds processes all refunds in the DB with a paid status
+func (service *RefundService) ProcessPendingRefunds(req *http.Request) ([]models.PaymentResourceDB, ResponseType, []error) {
+	var errorList []error
+	payments, err := service.DAO.GetPaymentsWithRefundPendingStatus()
+
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error retrieving payments with : %w", err))
+		errorList = append(errorList, errors.New("error retrieving payments with refund pending status"))
+		return nil, Error, errorList
+	}
+
+	if len(payments) == 0 {
+		log.ErrorR(req, errors.New("no payments with paid status found"))
+		errorList = append(errorList, errors.New("no payments with paid status found"))
+		return nil, Success, errorList
+	}
+
+	return payments, Success, nil
+}
+
 func (service *RefundService) processGovPayBatchRefund(req *http.Request, payment models.PaymentResourceDB) error {
 	recentRefund := payment.BulkRefund[len(payment.BulkRefund)-1]
 	a := strings.Replace(recentRefund.Amount, ".", "", -1)
