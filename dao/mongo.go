@@ -20,6 +20,7 @@ var client *mongo.Client
 
 const (
 	paymentStatus                = "data.status"
+	refundStatus                 = "refunds.status"
 	bulkRefundStatus             = "bulk_refunds.status"
 	dataProviderID               = "data.provider_id"
 	externalPaymentTransactionID = "external_payment_transaction_id"
@@ -270,6 +271,32 @@ func (m *MongoService) GetPaymentsWithRefundStatus() ([]models.PaymentResourceDB
 	if err != nil {
 		return nil, err
 	}
+
+	return payments, nil
+}
+
+// GetPaymentsWithRefundPendingStatus retrieves a list of all payments in the DB with a status of PAID
+func (m *MongoService) GetPaymentsWithRefundPendingStatus() ([]models.PaymentResourceDB, error) {
+	var payments []models.PaymentResourceDB
+
+	collection := m.db.Collection(m.CollectionName)
+	statusFilter := bson.M{refundStatus: "pending"}
+
+	paymentDBResources, err := collection.Find(context.Background(), statusFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	err = paymentDBResources.All(context.Background(), &payments)
+	if err != nil {
+		return nil, err
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	paymentDBResources.Close(context.Background())
 
 	return payments, nil
 }

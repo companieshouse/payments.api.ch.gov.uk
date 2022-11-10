@@ -129,10 +129,26 @@ func (m *MockDAO) GetPaymentsWithRefundStatus() ([]models.PaymentResourceDB, err
 	return ret0, ret1
 }
 
+// GetPaymentsWithRefundPendingStatus mocks base method.
+func (m *MockDAO) GetPaymentsWithRefundPendingStatus() ([]models.PaymentResourceDB, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPaymentsWithRefundPendingStatus")
+	ret0, _ := ret[0].([]models.PaymentResourceDB)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+
 // GetPaymentsWithRefundStatus indicates an expected call of GetPaymentsWithRefundStatus.
 func (mr *MockDAOMockRecorder) GetPaymentsWithRefundStatus() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaymentsWithRefundStatus", reflect.TypeOf((*MockDAO)(nil).GetPaymentsWithRefundStatus))
+}
+
+// GetPaymentsWithRefundPendingStatus indicates an expected call of GetPaymentsWithRefundPendingStatus.
+func (mr *MockDAOMockRecorder) GetPaymentsWithRefundPendingStatus() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaymentsWithRefundPendingStatus", reflect.TypeOf((*MockDAO)(nil).GetPaymentsWithRefundPendingStatus))
 }
 
 // PatchPaymentResource mocks base method.
