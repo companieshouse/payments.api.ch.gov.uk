@@ -90,6 +90,7 @@ func getRefundDB(refund models.RefundResourceRest) models.RefundResourceDB {
 		Amount:            refund.Amount,
 		Status:            refund.Status,
 		ExternalRefundUrl: refund.ExternalRefundUrl,
+		RefundReference:   refund.RefundReference,
 	}
 }
 
@@ -110,5 +111,6 @@ func getRefundRest(refund models.RefundResourceDB) models.RefundResourceRest {
 		Amount:            refund.Amount,
 		Status:            refund.Status,
 		ExternalRefundUrl: refund.ExternalRefundUrl,
+		RefundReference:   refund.RefundReference,
 	}
 }
