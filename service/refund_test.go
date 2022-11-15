@@ -371,7 +371,7 @@ func TestUnitUpdateRefund(t *testing.T) {
 
 	Convey("Error patching payment session", t, func() {
 		now := time.Now()
-		mockGovPayService.EXPECT().GetRefundStatus(gomock.Any(), refundId).Return(&models.GetRefundStatusGovPayResponse{Status: RefundsStatusSuccess}, Success, nil)
+		mockGovPayService.EXPECT().GetRefundStatus(gomock.Any(), refundId).Return(&models.CreateRefundGovPayResponse{Status: RefundsStatusSuccess}, Success, nil)
 		mockDao.EXPECT().PatchPaymentResource(paymentId, gomock.Any()).Return(fmt.Errorf("err"))
 		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{ID: "1234", ExternalPaymentStatusURI: "http://external_uri", Refunds: []models.RefundResourceDB{
 			{
@@ -409,7 +409,7 @@ func TestUnitUpdateRefund(t *testing.T) {
 	Convey("Patches resource", t, func() {
 		now := time.Now()
 		var capturedSession *models.PaymentResourceDB
-		mockGovPayService.EXPECT().GetRefundStatus(gomock.Any(), refundId).Return(&models.GetRefundStatusGovPayResponse{Status: RefundsStatusSuccess}, Success, nil)
+		mockGovPayService.EXPECT().GetRefundStatus(gomock.Any(), refundId).Return(&models.CreateRefundGovPayResponse{Status: RefundsStatusSuccess}, Success, nil)
 		mockDao.EXPECT().PatchPaymentResource(paymentId, gomock.Any()).Do(func(paymentId string, session *models.PaymentResourceDB) {
 			capturedSession = session
 		})
@@ -812,15 +812,20 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 }
 
 func TestUnitProcessPendingRefunds(t *testing.T) {
+	cfg, _ := config.Get()
 	req := httptest.NewRequest("POST", "/test", nil)
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockDao := dao.NewMockDAO(mockCtrl)
-	mockPayPalService := NewMockPaymentProviderService(mockCtrl)
+
+	mockGovPayService := NewMockPaymentProviderService(mockCtrl)
+	mockPaymentService := createMockPaymentService(mockDao, cfg)
 
 	service := RefundService{
-		PayPalService: mockPayPalService,
-		DAO:           mockDao,
+		GovPayService:  mockGovPayService,
+		PaymentService: &mockPaymentService,
+		DAO:            mockDao,
+		Config:         *cfg,
 	}
 
 	Convey("Error retrieving payments with paid status from DB", t, func() {
@@ -867,6 +872,8 @@ func TestUnitProcessPendingRefunds(t *testing.T) {
 
 		paymentsPaidStatus := []models.PaymentResourceDB{}
 		paymentsPaidStatus = append(paymentsPaidStatus, paymentsPaidData)
+
+		mockDao.EXPECT().GetPaymentResource("xVzfvN3TlKWAAPp").Return(&models.PaymentResourceDB{}, nil)
 
 		mockDao.EXPECT().GetPaymentsWithRefundPendingStatus().Return(paymentsPaidStatus, nil)
 
@@ -1252,6 +1259,32 @@ func TestUnitProcessPayPalBatchRefund(t *testing.T) {
 		err := refundService.processPayPalBatchRefund(req, paymentResource)
 		So(err, ShouldBeNil)
 	})
+}
+
+func TestUnitCheckGovPayAndUpdateRefundStatus(t *testing.T) {
+	cfg, _ := config.Get()
+
+	req := httptest.NewRequest("POST", "/test", nil)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockDao := dao.NewMockDAO(mockCtrl)
+	mockGovPayService := NewMockPaymentProviderService(mockCtrl)
+	mockPaymentService := createMockPaymentService(mockDao, cfg)
+
+	service := RefundService{
+		GovPayService:  mockGovPayService,
+		PaymentService: &mockPaymentService,
+		DAO:            mockDao,
+		Config:         *cfg,
+	}
+
+	Convey("Process pending refunds payments status with no payments", t, func() {
+		payments := []models.PaymentResourceDB{}
+
+		err := checkGovPayAndUpdateRefundStatus(req, payments, &service)
+		So(err, ShouldEqual, nil)
+	})
+
 }
 
 func setUp(controller *gomock.Controller) (RefundService, *dao.MockDAO) {

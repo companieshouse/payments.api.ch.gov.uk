@@ -16,6 +16,7 @@ type DAO interface {
 	CreateBulkRefundByExternalPaymentTransactionID(bulkRefunds map[string]models.BulkRefundDB) error
 	GetPaymentsWithRefundStatus() ([]models.PaymentResourceDB, error)
 	GetPaymentsWithRefundPendingStatus() ([]models.PaymentResourceDB, error)
+	PatchPaymentsWithRefundPendingStatus(id string, paymentUpdate *models.PaymentResourceDB) error
 }
 
 // NewDAO will create a new instance of the DAO interface.
@@ -25,7 +26,8 @@ func NewDAO(cfg *config.Config) DAO {
 	database := getMongoDatabase(cfg.MongoDBURL, cfg.Database)
 
 	return &MongoService{
-		db:             database,
-		CollectionName: cfg.Collection,
+		db:                      database,
+		CollectionName:          cfg.Collection,
+		ProcessRefundsBatchSize: cfg.ProcessRefundsBatchSize,
 	}
 }

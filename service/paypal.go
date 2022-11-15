@@ -189,7 +189,7 @@ func (pp *PayPalService) CreateRefund(_ *models.PaymentResourceRest, _ *models.C
 }
 
 // GetRefundStatus gets refund status from PayPal
-func (pp *PayPalService) GetRefundStatus(_ *models.PaymentResourceRest, _ string) (*models.GetRefundStatusGovPayResponse, ResponseType, error) {
+func (pp *PayPalService) GetRefundStatus(_ *models.PaymentResourceRest, _ string) (*models.CreateRefundGovPayResponse, ResponseType, error) {
 
 	// not implemented
 

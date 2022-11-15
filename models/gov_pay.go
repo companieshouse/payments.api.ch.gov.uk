@@ -52,6 +52,7 @@ type RefundSummary struct {
 type SettlementSummary struct {
 	CaptureSubmitTime string `json:"capture_submit_time"`
 	CapturedDate      string `json:"captured_date"`
+	SettlementDate    string `json:"settled_date,omitempty"`
 }
 
 // GovPayLinks contains links for this payment, including the next_url to continue the journey, and the link to check the status.
@@ -124,11 +125,12 @@ type PaymentDetails struct {
 
 // RefundDetails
 type CreateRefundGovPayResponse struct {
-	RefundId    string            `json:"refund_id"`
-	CreatedDate string            `json:"created_date"`
-	Amount      int               `json:"amount"`
-	Links       GovPayRefundLinks `json:"_links"`
-	Status      string            `json:"status"`
+	RefundId          string            `json:"refund_id"`
+	CreatedDate       string            `json:"created_date"`
+	Amount            int               `json:"amount"`
+	Links             GovPayRefundLinks `json:"_links"`
+	SettlementSummary SettlementSummary `json:"settlement_summary"`
+	Status            string            `json:"status"`
 }
 
 type GovPayRefundLinks struct {

@@ -131,10 +131,10 @@ func (mr *MockPaymentProviderServiceMockRecorder) GetPaymentDetails(paymentResou
 }
 
 // GetRefundStatus mocks base method.
-func (m *MockPaymentProviderService) GetRefundStatus(paymentResource *models.PaymentResourceRest, refundId string) (*models.GetRefundStatusGovPayResponse, ResponseType, error) {
+func (m *MockPaymentProviderService) GetRefundStatus(paymentResource *models.PaymentResourceRest, refundId string) (*models.CreateRefundGovPayResponse, ResponseType, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRefundStatus", paymentResource, refundId)
-	ret0, _ := ret[0].(*models.GetRefundStatusGovPayResponse)
+	ret0, _ := ret[0].(*models.CreateRefundGovPayResponse)
 	ret1, _ := ret[1].(ResponseType)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2

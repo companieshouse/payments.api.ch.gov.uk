@@ -69,6 +69,12 @@ func TestUnitHandleProcessPendingRefundsWithPaymentRefunds(t *testing.T) {
 	paymentsPaidStatus = append(paymentsPaidStatus, paymentPaidStatus)
 
 	Convey("Successful request - with payment refunds", t, func() {
+		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{
+			ID:                       "1234",
+			ExternalPaymentStatusURI: "http://external_uri",
+			Data: models.PaymentResourceDataDB{Amount: "10.00",
+				Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}},
+			nil)
 		mockDao.EXPECT().GetPaymentsWithRefundPendingStatus().Return(paymentsPaidStatus, nil)
 
 		paymentService = &service.PaymentService{
@@ -119,6 +125,12 @@ func TestUnitHandleProcessPendingRefundsWithResponseTypeSuccess(t *testing.T) {
 	paymentsPaidStatus = append(paymentsPaidStatus, paymentPaidStatus)
 
 	Convey("Successful request - with response type success", t, func() {
+		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{
+			ID:                       "1234",
+			ExternalPaymentStatusURI: "http://external_uri",
+			Data: models.PaymentResourceDataDB{Amount: "10.00",
+				Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}},
+			nil)
 		mockDao.EXPECT().GetPaymentsWithRefundPendingStatus().Return(paymentsPaidStatus, nil)
 
 		paymentService = &service.PaymentService{
@@ -126,7 +138,10 @@ func TestUnitHandleProcessPendingRefundsWithResponseTypeSuccess(t *testing.T) {
 			Config: *cfg,
 		}
 
+		govPayService := &service.GovPayService{PaymentService: *paymentService}
+
 		refundService = &service.RefundService{
+			GovPayService:  govPayService,
 			PaymentService: paymentService,
 			DAO:            mockDao,
 			Config:         *cfg,
@@ -146,6 +161,7 @@ func TestUnitHandleProcessPendingRefundsWithResponseTypeError(t *testing.T) {
 	var errorList []error
 	cfg, _ := config.Get()
 	mockDao := dao.NewMockDAO(gomock.NewController(t))
+
 	paymentResourceDataDB := models.PaymentResourceDataDB{}
 	refundData := models.RefundResourceDB{
 		RefundId:          "sasaswewq23wsw",
@@ -181,7 +197,10 @@ func TestUnitHandleProcessPendingRefundsWithResponseTypeError(t *testing.T) {
 			Config: *cfg,
 		}
 
+		govPayService := &service.GovPayService{PaymentService: *paymentService}
+
 		refundService = &service.RefundService{
+			GovPayService:  govPayService,
 			PaymentService: paymentService,
 			DAO:            mockDao,
 			Config:         *cfg,

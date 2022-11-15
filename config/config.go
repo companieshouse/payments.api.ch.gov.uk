@@ -33,15 +33,17 @@ type Config struct {
 	PaypalEnv                  string   `env:"PAYPAL_ENV"                      flag:"paypal-env"                        flagDesc:"live or test"`
 	PaypalClientID             string   `env:"PAYPAL_CLIENT_ID"                flag:"paypal-client-id"                  flagDesc:"PayPal Client ID"`
 	PaypalSecret               string   `env:"PAYPAL_SECRET"                   flag:"paypal-secret"                     flagDesc:"PayPal Secret"`
+	ProcessRefundsBatchSize    int      `env:"BATCH_SIZE"                      flag:"batch-size"                        flagDesc:"Processing Refunds batchsize"`
 }
 
 // DefaultConfig returns a pointer to a Config instance that has been populated
 // with default values.
 func DefaultConfig() *Config {
 	return &Config{
-		Database:            "payments",
-		Collection:          "payments",
-		ExpiryTimeInMinutes: "90",
+		Database:                "payments",
+		Collection:              "payments",
+		ExpiryTimeInMinutes:     "90",
+		ProcessRefundsBatchSize: 20,
 	}
 }
 
