@@ -20,13 +20,15 @@ import (
 )
 
 const (
-	RefundPending          = "pending"
-	RefundUnavailable      = "unavailable"
-	RefundAvailable        = "available"
-	RefundFull             = "full"
-	RefundsStatusSuccess   = "success"
-	RefundsStatusSubmitted = "submitted"
-	RefundsStatusError     = "error"
+	RefundPending           = "pending"
+	RefundUnavailable       = "unavailable"
+	RefundAvailable         = "available"
+	RefundFull              = "full"
+	RefundsStatusSuccess    = "success"
+	RefundsStatusSubmitted  = "submitted"
+	RefundsStatusError      = "error"
+	PaymentMethodCreditCard = "credit-card"
+	PaymentMethodPayPal     = "PayPal"
 )
 
 // BulkRefundStatus Enum Type
@@ -63,7 +65,7 @@ func (service *RefundService) CreateRefund(req *http.Request, id string, createR
 	paymentSession, _, _ := service.PaymentService.GetPaymentSession(req, id)
 
 	// Currently, refunds are only enabled for Gov Pay
-	if paymentSession.PaymentMethod != "credit-card" {
+	if paymentSession.PaymentMethod != PaymentMethodCreditCard {
 		err := fmt.Errorf("unexpected payment method: %s", paymentSession.PaymentMethod)
 		return nil, nil, Forbidden, err
 	}
@@ -231,7 +233,7 @@ func validateGovPayRefund(paymentSession *models.PaymentResourceDB, refund model
 		return fmt.Sprintf("payment session with id [%s] not found", refund.OrderCode)
 	}
 
-	if paymentSession.Data.PaymentMethod != "credit-card" {
+	if paymentSession.Data.PaymentMethod != PaymentMethodCreditCard {
 		return fmt.Sprintf("payment with order code [%s] has not been made via Gov.Pay - refund not eligible", refund.OrderCode)
 	}
 
@@ -251,7 +253,7 @@ func validatePayPalRefund(paymentSession *models.PaymentResourceDB, refund model
 		return fmt.Sprintf("payment session with id [%s] not found", refund.OrderCode)
 	}
 
-	if paymentSession.Data.PaymentMethod != "PayPal" {
+	if paymentSession.Data.PaymentMethod != PaymentMethodPayPal {
 		return fmt.Sprintf("payment with order code [%s] has not been made via PayPal - refund not eligible", refund.OrderCode)
 	}
 
@@ -342,12 +344,12 @@ func (service *RefundService) ProcessBatchRefund(req *http.Request) []error {
 
 	for _, p := range payments {
 		switch p.Data.PaymentMethod {
-		case "credit-card":
+		case PaymentMethodCreditCard:
 			err := service.processGovPayBatchRefund(req, p)
 			if err != nil {
 				errorList = append(errorList, err)
 			}
-		case "PayPal":
+		case PaymentMethodPayPal:
 			err := service.processPayPalBatchRefund(req, p)
 			if err != nil {
 				errorList = append(errorList, err)
