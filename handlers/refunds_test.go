@@ -12,6 +12,7 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 	"github.com/golang/mock/gomock"
+	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -19,6 +20,21 @@ func TestUnitHandleCreateRefund(t *testing.T) {
 
 	Convey("Request Body Empty", t, func() {
 		req, _ := http.NewRequest("POST", "/payments/123/refunds", nil)
+		w := httptest.NewRecorder()
+		HandleCreateRefund(w, req)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+	})
+
+	Convey("Payment ID not supplied", t, func() {
+		req, _ := http.NewRequest("POST", "/payments/123/refunds", strings.NewReader("Body"))
+		w := httptest.NewRecorder()
+		HandleCreateRefund(w, req)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+	})
+
+	Convey("Invalid request body", t, func() {
+		req, _ := http.NewRequest("POST", "/payments/123/refunds", strings.NewReader("invalid_body"))
+		req = mux.SetURLVars(req, map[string]string{"paymentId": "abc"})
 		w := httptest.NewRecorder()
 		HandleCreateRefund(w, req)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -49,7 +65,7 @@ func TestUnitHandleProcessPendingRefundsWithPaymentRefunds(t *testing.T) {
 		BulkRefund:                   nil,
 	}
 
-	paymentsPaidStatus := []models.PaymentResourceDB{}
+	var paymentsPaidStatus []models.PaymentResourceDB
 	paymentsPaidStatus = append(paymentsPaidStatus, paymentPaidStatus)
 
 	Convey("Successful request - with payment refunds", t, func() {
@@ -99,7 +115,7 @@ func TestUnitHandleProcessPendingRefundsWithResponseTypeSuccess(t *testing.T) {
 		BulkRefund:                   nil,
 	}
 
-	paymentsPaidStatus := []models.PaymentResourceDB{}
+	var paymentsPaidStatus []models.PaymentResourceDB
 	paymentsPaidStatus = append(paymentsPaidStatus, paymentPaidStatus)
 
 	Convey("Successful request - with response type success", t, func() {
@@ -151,14 +167,14 @@ func TestUnitHandleProcessPendingRefundsWithResponseTypeError(t *testing.T) {
 		BulkRefund:                   nil,
 	}
 
-	paymentsPaidStatus := []models.PaymentResourceDB{}
+	var paymentsPaidStatus []models.PaymentResourceDB
 	paymentsPaidStatus = append(paymentsPaidStatus, paymentPaidStatus)
 
 	Convey("Failed request - with response type Error", t, func() {
-		errorReponse := errors.New("error retrieving payments with pending refunds status")
-		errorList = append(errorList, errorReponse)
+		errorResponse := errors.New("error retrieving payments with pending refunds status")
+		errorList = append(errorList, errorResponse)
 
-		mockDao.EXPECT().GetPaymentsWithRefundPendingStatus().Return(nil, errorReponse)
+		mockDao.EXPECT().GetPaymentsWithRefundPendingStatus().Return(nil, errorResponse)
 
 		paymentService = &service.PaymentService{
 			DAO:    mockDao,
@@ -179,7 +195,6 @@ func TestUnitHandleProcessPendingRefundsWithResponseTypeError(t *testing.T) {
 		So(respondedError[0].Error(), ShouldEqual, "error retrieving payments with refund pending status")
 		So(resType, ShouldEqual, service.Error)
 		So(len(res), ShouldEqual, 0)
-
 	})
 
 	Convey("Successful request - with no payment response", t, func() {
@@ -201,12 +216,10 @@ func TestUnitHandleProcessPendingRefundsWithResponseTypeError(t *testing.T) {
 
 		res, resType, respondedError := refundService.ProcessPendingRefunds(req)
 
-		So(respondedError[0].Error(), ShouldEqual, "no payments with paid status found")
+		So(respondedError[0].Error(), ShouldEqual, "no payments with refund pending status found")
 		So(resType, ShouldEqual, service.Success)
 		So(len(res), ShouldEqual, 0)
-
 	})
-
 }
 
 func TestUnitHandleProcessPendingRefundsWithNoPayment(t *testing.T) {
@@ -233,7 +246,7 @@ func TestUnitHandleProcessPendingRefundsWithNoPayment(t *testing.T) {
 		BulkRefund:                   nil,
 	}
 
-	paymentsPaidStatus := []models.PaymentResourceDB{}
+	var paymentsPaidStatus []models.PaymentResourceDB
 	paymentsPaidStatus = append(paymentsPaidStatus, paymentPaidStatus)
 
 	Convey("Successful request - with no payment response", t, func() {
@@ -255,10 +268,8 @@ func TestUnitHandleProcessPendingRefundsWithNoPayment(t *testing.T) {
 
 		res, resType, respondedError := refundService.ProcessPendingRefunds(req)
 
-		So(respondedError[0].Error(), ShouldEqual, "no payments with paid status found")
+		So(respondedError[0].Error(), ShouldEqual, "no payments with refund pending status found")
 		So(resType, ShouldEqual, service.Success)
 		So(len(res), ShouldEqual, 0)
-
 	})
-
 }

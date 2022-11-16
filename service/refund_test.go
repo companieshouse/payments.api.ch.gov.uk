@@ -15,7 +15,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/jarcoal/httpmock"
 	"github.com/plutov/paypal/v4"
-
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -26,19 +25,86 @@ func TestUnitCreateRefund(t *testing.T) {
 
 	mockDao := dao.NewMockDAO(mockCtrl)
 	mockGovPayService := NewMockPaymentProviderService(mockCtrl)
+	mockPaymentService := createMockPaymentService(mockDao, cfg)
 
 	service := RefundService{
-		GovPayService: mockGovPayService,
-		DAO:           mockDao,
-		Config:        *cfg,
+		GovPayService:  mockGovPayService,
+		PaymentService: &mockPaymentService,
+		DAO:            mockDao,
+		Config:         *cfg,
 	}
 
 	req := httptest.NewRequest("POST", "/test", nil)
 	id := "123"
 
+	Convey("Error when getting payment session", t, func() {
+		body := fixtures.GetRefundRequest(8)
+
+		payment := generatePaymentSession("invalid-method")
+		payment.Data.Links = models.PaymentLinksDB{Resource: "http://dummy-resource"}
+		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&payment, nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+
+		paymentSession, refund, status, err := service.CreateRefund(req, id, body)
+
+		So(paymentSession, ShouldBeNil)
+		So(refund, ShouldBeNil)
+		So(status, ShouldEqual, Forbidden)
+		So(err.Error(), ShouldEqual, "unexpected payment method: invalid-method")
+	})
+
+	Convey("Refund conflict", t, func() {
+		body := fixtures.GetRefundRequest(8)
+		body.RefundReference = "123"
+
+		payment := generatePaymentSessionGovPay()
+		payment.Data.Links = models.PaymentLinksDB{Resource: "http://dummy-resource"}
+		refunds := []models.RefundResourceDB{
+			{
+				RefundId:          "",
+				CreatedAt:         "",
+				Amount:            0,
+				Status:            "",
+				ExternalRefundUrl: "",
+				RefundReference:   "123",
+			},
+		}
+		payment.Refunds = refunds
+		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&payment, nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
+
+		paymentSession, refund, status, err := service.CreateRefund(req, id, body)
+
+		So(paymentSession, ShouldBeNil)
+		So(refund, ShouldBeNil)
+		So(status, ShouldEqual, Conflict)
+		So(err.Error(), ShouldEqual, "duplicate refund reference found: 123")
+	})
+
 	Convey("Error when getting GovPay refund summary", t, func() {
 		body := fixtures.GetRefundRequest(8)
 		err := fmt.Errorf("error getting payment resource")
+
+		payment := generatePaymentSessionGovPay()
+		fmt.Println(payment.Data.PaymentMethod)
+		payment.Data.Links = models.PaymentLinksDB{Resource: "http://dummy-resource"}
+		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&payment, nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
 		mockGovPayService.EXPECT().
 			GetRefundSummary(req, id).
@@ -55,6 +121,16 @@ func TestUnitCreateRefund(t *testing.T) {
 	Convey("Error because amount is higher than amount available", t, func() {
 		body := fixtures.GetRefundRequest(8)
 		refundSummary := fixtures.GetRefundSummary(4)
+
+		payment := generatePaymentSessionGovPay()
+		payment.Data.Links = models.PaymentLinksDB{Resource: "http://dummy-resource"}
+		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&payment, nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
 		mockGovPayService.EXPECT().
 			GetRefundSummary(req, id).
@@ -73,6 +149,16 @@ func TestUnitCreateRefund(t *testing.T) {
 		refundSummary := fixtures.GetRefundSummary(8)
 		paymentResource := &models.PaymentResourceRest{}
 		refundRequest := fixtures.GetCreateRefundGovPayRequest(body.Amount, refundSummary.AmountAvailable)
+
+		payment := generatePaymentSessionGovPay()
+		payment.Data.Links = models.PaymentLinksDB{Resource: "http://dummy-resource"}
+		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&payment, nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
 		err := fmt.Errorf("error reading refund GovPayRequest")
 
@@ -98,6 +184,16 @@ func TestUnitCreateRefund(t *testing.T) {
 		paymentResource := &models.PaymentResourceRest{}
 		refundRequest := fixtures.GetCreateRefundGovPayRequest(body.Amount, refundSummary.AmountAvailable)
 		response := fixtures.GetCreateRefundGovPayResponse()
+
+		payment := generatePaymentSessionGovPay()
+		payment.Data.Links = models.PaymentLinksDB{Resource: "http://dummy-resource"}
+		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&payment, nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
 		err := fmt.Errorf("error reading refund GovPayRequest")
 
@@ -127,6 +223,16 @@ func TestUnitCreateRefund(t *testing.T) {
 		paymentResource := &models.PaymentResourceRest{}
 		refundRequest := fixtures.GetCreateRefundGovPayRequest(body.Amount, refundSummary.AmountAvailable)
 		response := fixtures.GetCreateRefundGovPayResponse()
+
+		payment := generatePaymentSessionGovPay()
+		payment.Data.Links = models.PaymentLinksDB{Resource: "http://dummy-resource"}
+		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&payment, nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "http://dummy-resource", jsonResponse)
 
 		err := fmt.Errorf("error reading refund GovPayRequest")
 
@@ -734,7 +840,7 @@ func TestUnitProcessPendingRefunds(t *testing.T) {
 
 		So(len(errs), ShouldEqual, 1)
 		So(Success, ShouldNotEqual, 0)
-		So(errs[0].Error(), ShouldEqual, "no payments with paid status found")
+		So(errs[0].Error(), ShouldEqual, "no payments with refund pending status found")
 	})
 
 	Convey("Payments with paid status found", t, func() {
