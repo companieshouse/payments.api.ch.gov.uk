@@ -380,6 +380,13 @@ func (service *RefundService) ProcessPendingRefunds(req *http.Request) ([]models
 		return nil, Success, errorList
 	}
 
+	err = checkGovPayAndUpdateRefundStatus(req, payments, service)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error completing the refund pending status update : %w", err))
+		errorList = append(errorList, errors.New("error completing the refund pending status update"))
+		return nil, Error, errorList
+	}
+
 	return payments, Success, nil
 }
 
@@ -477,6 +484,41 @@ func (service *RefundService) processPayPalBatchRefund(req *http.Request, paymen
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error patching payment [%w]", err))
 		return fmt.Errorf("error patching payment with id [%s]", payment.ID)
+	}
+
+	return nil
+}
+
+func checkGovPayAndUpdateRefundStatus(req *http.Request, payments []models.PaymentResourceDB, service *RefundService) error {
+	for _, i := range payments {
+		x := i
+
+		paymentSession, response, err := service.PaymentService.GetPaymentSession(req, x.ID)
+
+		if err != nil {
+			log.ErrorR(req, fmt.Errorf("error getting payment resource: [%w]", err))
+			return nil
+		}
+
+		if response == NotFound {
+			err = fmt.Errorf("error getting payment resource")
+			return nil
+		}
+
+		govPayStatusResponse, response, err := service.GovPayService.GetRefundStatus(paymentSession, x.Refunds[0].RefundId)
+
+		if err != nil {
+			log.ErrorR(req, fmt.Errorf("error getting payment pending refund status Id: [%s]", x.Refunds[0].RefundId))
+			return nil
+		}
+
+		if govPayStatusResponse != nil && govPayStatusResponse.Status == RefundsStatusSuccess {
+			err := service.DAO.PatchPaymentsWithRefundPendingStatus(x.ID, &x)
+			if err != nil {
+				log.ErrorR(req, fmt.Errorf("error updating payment Id: [%s] pending refund status ", x.ID))
+				return nil
+			}
+		}
 	}
 
 	return nil

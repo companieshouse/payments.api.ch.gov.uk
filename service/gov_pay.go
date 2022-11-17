@@ -223,7 +223,7 @@ func (gp *GovPayService) CreateRefund(paymentResource *models.PaymentResourceRes
 }
 
 // GetRefundStatus gets refund status from GovPay
-func (gp *GovPayService) GetRefundStatus(paymentResource *models.PaymentResourceRest, refundId string) (*models.GetRefundStatusGovPayResponse, ResponseType, error) {
+func (gp *GovPayService) GetRefundStatus(paymentResource *models.PaymentResourceRest, refundId string) (*models.CreateRefundGovPayResponse, ResponseType, error) {
 	request, err := http.NewRequest("GET", paymentResource.MetaData.ExternalPaymentStatusURI+"/refunds/"+refundId, nil)
 	if err != nil {
 		return nil, Error, fmt.Errorf(govPayRequestError, err)
@@ -245,7 +245,8 @@ func (gp *GovPayService) GetRefundStatus(paymentResource *models.PaymentResource
 		return nil, Error, fmt.Errorf("error reading response from GovPay: [%s]", err)
 	}
 
-	govPayResponse := &models.GetRefundStatusGovPayResponse{}
+	govPayResponse := &models.CreateRefundGovPayResponse{}
+ 
 	err = json.Unmarshal(body, govPayResponse)
 	if err != nil {
 		return nil, Error, fmt.Errorf("error reading response from GovPay: [%s]", err)
@@ -253,7 +254,7 @@ func (gp *GovPayService) GetRefundStatus(paymentResource *models.PaymentResource
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
 		return nil, Error, fmt.Errorf(govPayStatusError, resp.StatusCode, govPayResponse.Status)
 	}
-
+	
 	return govPayResponse, Success, nil
 }
 

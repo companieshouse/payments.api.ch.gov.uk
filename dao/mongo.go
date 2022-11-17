@@ -28,8 +28,9 @@ const (
 
 // MongoService is an implementation of the Service interface using MongoDB as the backend driver.
 type MongoService struct {
-	db             MongoDatabaseInterface
-	CollectionName string
+	db              MongoDatabaseInterface
+	CollectionName  string
+	RefundBatchSize int
 }
 
 // MongoDatabaseInterface is an interface that describes the mongodb driver
@@ -282,7 +283,12 @@ func (m *MongoService) GetPaymentsWithRefundPendingStatus() ([]models.PaymentRes
 	collection := m.db.Collection(m.CollectionName)
 	statusFilter := bson.M{refundStatus: "pending"}
 
-	paymentDBResources, err := collection.Find(context.Background(), statusFilter)
+	filterOptions := options.Find()
+	filterOptions.SetSort(bson.M{"_id": 1})
+	filterOptions.SetSkip(0)
+	filterOptions.SetLimit(int64(m.RefundBatchSize))
+
+	paymentDBResources, err := collection.Find(context.Background(), statusFilter, filterOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -299,4 +305,27 @@ func (m *MongoService) GetPaymentsWithRefundPendingStatus() ([]models.PaymentRes
 	paymentDBResources.Close(context.Background())
 
 	return payments, nil
+}
+
+// PatchPaymentsWithRefundPendingStatus updates payment refunds status to refund-requested and insert a new refund_at
+func (m *MongoService) PatchPaymentsWithRefundPendingStatus(id string, paymentUpdate *models.PaymentResourceDB) error {
+	collection := m.db.Collection(m.CollectionName)
+
+	refundsFilter := options.ArrayFilters{Filters: bson.A{bson.M{"x.refund_id": paymentUpdate.Refunds[0].RefundId}}}
+	upsert := true
+
+	opts := options.UpdateOptions{
+		ArrayFilters: &refundsFilter,
+		Upsert:       &upsert,
+	}
+
+	patchUpdate := bson.M{
+		"$set": bson.M{
+			"refunds.$[x].status":      "refund-requested",
+			"refunds.$[x].refunded_at": time.Now(),
+		},
+	}
+	_, err := collection.UpdateOne(context.Background(), bson.M{"_id": id}, patchUpdate, &opts)
+
+	return err
 }

@@ -24,7 +24,7 @@ type PaymentProviderService interface {
 	GetCapturedPaymentDetails(id string) (*paypal.CaptureDetailsResponse, error)
 	RefundCapture(captureID string) (*paypal.RefundResponse, error)
 	GetRefundSummary(req *http.Request, id string) (*models.PaymentResourceRest, *models.RefundSummary, ResponseType, error)
-	GetRefundStatus(paymentResource *models.PaymentResourceRest, refundId string) (*models.GetRefundStatusGovPayResponse, ResponseType, error)
+	GetRefundStatus(paymentResource *models.PaymentResourceRest, refundId string) (*models.CreateRefundGovPayResponse, ResponseType, error)
 	CreateRefund(paymentResource *models.PaymentResourceRest, refundRequest *models.CreateRefundGovPayRequest) (*models.CreateRefundGovPayResponse, ResponseType, error)
 }
 
