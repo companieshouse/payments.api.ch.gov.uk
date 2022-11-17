@@ -20,13 +20,15 @@ import (
 )
 
 const (
-	RefundPending          = "pending"
-	RefundUnavailable      = "unavailable"
-	RefundAvailable        = "available"
-	RefundFull             = "full"
-	RefundsStatusSuccess   = "success"
-	RefundsStatusSubmitted = "submitted"
-	RefundsStatusError     = "error"
+	RefundPending           = "pending"
+	RefundUnavailable       = "unavailable"
+	RefundAvailable         = "available"
+	RefundFull              = "full"
+	RefundsStatusSuccess    = "success"
+	RefundsStatusSubmitted  = "submitted"
+	RefundsStatusError      = "error"
+	PaymentMethodCreditCard = "credit-card"
+	PaymentMethodPayPal     = "PayPal"
 )
 
 // BulkRefundStatus Enum Type
@@ -59,6 +61,26 @@ type RefundService struct {
 
 // CreateRefund creates refund in GovPay and saves refund information to payment object in database
 func (service *RefundService) CreateRefund(req *http.Request, id string, createRefundResource models.CreateRefundRequest) (*models.PaymentResourceRest, *models.RefundResponse, ResponseType, error) {
+
+	paymentSession, _, _ := service.PaymentService.GetPaymentSession(req, id)
+
+	// Currently, refunds are only enabled for Gov Pay
+	if paymentSession.PaymentMethod != PaymentMethodCreditCard {
+		err := fmt.Errorf("unexpected payment method: %s", paymentSession.PaymentMethod)
+		return nil, nil, Forbidden, err
+	}
+
+	// return error if refund reference is not unique
+	// unless other uses of this refund reference are cancelled or failed
+	if paymentSession.Refunds != nil {
+		for _, refund := range paymentSession.Refunds {
+			// RefundsStatusError is returned by GovPay if a refund has failed to be processed
+			if refund.RefundReference == createRefundResource.RefundReference && refund.Status != RefundsStatusError {
+				err := fmt.Errorf("duplicate refund reference found: %s", refund.RefundReference)
+				return nil, nil, Conflict, err
+			}
+		}
+	}
 
 	// Get RefundSummary from GovPay to check the available amount
 	paymentSession, refundSummary, response, err := service.GovPayService.GetRefundSummary(req, id)
@@ -211,7 +233,7 @@ func validateGovPayRefund(paymentSession *models.PaymentResourceDB, refund model
 		return fmt.Sprintf("payment session with id [%s] not found", refund.OrderCode)
 	}
 
-	if paymentSession.Data.PaymentMethod != "credit-card" {
+	if paymentSession.Data.PaymentMethod != PaymentMethodCreditCard {
 		return fmt.Sprintf("payment with order code [%s] has not been made via Gov.Pay - refund not eligible", refund.OrderCode)
 	}
 
@@ -231,7 +253,7 @@ func validatePayPalRefund(paymentSession *models.PaymentResourceDB, refund model
 		return fmt.Sprintf("payment session with id [%s] not found", refund.OrderCode)
 	}
 
-	if paymentSession.Data.PaymentMethod != "PayPal" {
+	if paymentSession.Data.PaymentMethod != PaymentMethodPayPal {
 		return fmt.Sprintf("payment with order code [%s] has not been made via PayPal - refund not eligible", refund.OrderCode)
 	}
 
@@ -322,12 +344,12 @@ func (service *RefundService) ProcessBatchRefund(req *http.Request) []error {
 
 	for _, p := range payments {
 		switch p.Data.PaymentMethod {
-		case "credit-card":
+		case PaymentMethodCreditCard:
 			err := service.processGovPayBatchRefund(req, p)
 			if err != nil {
 				errorList = append(errorList, err)
 			}
-		case "PayPal":
+		case PaymentMethodPayPal:
 			err := service.processPayPalBatchRefund(req, p)
 			if err != nil {
 				errorList = append(errorList, err)
@@ -341,7 +363,7 @@ func (service *RefundService) ProcessBatchRefund(req *http.Request) []error {
 	return errorList
 }
 
-// ProcessPendingRefunds processes all refunds in the DB with a paid status
+// ProcessPendingRefunds processes all refunds in the DB with a pending status
 func (service *RefundService) ProcessPendingRefunds(req *http.Request) ([]models.PaymentResourceDB, ResponseType, []error) {
 	var errorList []error
 	payments, err := service.DAO.GetPaymentsWithRefundPendingStatus()
@@ -353,8 +375,8 @@ func (service *RefundService) ProcessPendingRefunds(req *http.Request) ([]models
 	}
 
 	if len(payments) == 0 {
-		log.ErrorR(req, errors.New("no payments with paid status found"))
-		errorList = append(errorList, errors.New("no payments with paid status found"))
+		log.ErrorR(req, errors.New("no payments with refund pending status found"))
+		errorList = append(errorList, errors.New("no payments with refund pending status found"))
 		return nil, Success, errorList
 	}
 

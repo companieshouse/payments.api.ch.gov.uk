@@ -57,6 +57,12 @@ func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
 		case service.NotFound:
 			w.WriteHeader(http.StatusNotFound)
 			return
+		case service.Forbidden:
+			w.WriteHeader(http.StatusForbidden)
+			return
+		case service.Conflict:
+			w.WriteHeader(http.StatusConflict)
+			return
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
 			return
