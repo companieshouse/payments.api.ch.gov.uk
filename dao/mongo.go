@@ -28,9 +28,9 @@ const (
 
 // MongoService is an implementation of the Service interface using MongoDB as the backend driver.
 type MongoService struct {
-	db                      MongoDatabaseInterface
-	CollectionName          string
-	ProcessRefundsBatchSize int
+	db              MongoDatabaseInterface
+	CollectionName  string
+	RefundBatchSize int
 }
 
 // MongoDatabaseInterface is an interface that describes the mongodb driver
@@ -286,7 +286,7 @@ func (m *MongoService) GetPaymentsWithRefundPendingStatus() ([]models.PaymentRes
 	filterOptions := options.Find()
 	filterOptions.SetSort(bson.M{"_id": 1})
 	filterOptions.SetSkip(0)
-	filterOptions.SetLimit(int64(m.ProcessRefundsBatchSize))
+	filterOptions.SetLimit(int64(m.RefundBatchSize))
 
 	paymentDBResources, err := collection.Find(context.Background(), statusFilter, filterOptions)
 	if err != nil {

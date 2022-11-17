@@ -26,8 +26,8 @@ func NewDAO(cfg *config.Config) DAO {
 	database := getMongoDatabase(cfg.MongoDBURL, cfg.Database)
 
 	return &MongoService{
-		db:                      database,
-		CollectionName:          cfg.Collection,
-		ProcessRefundsBatchSize: cfg.ProcessRefundsBatchSize,
+		db:              database,
+		CollectionName:  cfg.Collection,
+		RefundBatchSize: cfg.RefundBatchSize,
 	}
 }
