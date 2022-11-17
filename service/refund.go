@@ -112,7 +112,6 @@ func (service *RefundService) CreateRefund(req *http.Request, paymentID string, 
 
 	// Add refund information to payment session
 	paymentSession.Refunds = append(paymentSession.Refunds, mappers.MapToRefundRest(*refund, createRefundResource.RefundReference))
-	//paymentSession.Links.Refunds = service.Config.PaymentsAPIURL + "/payments/" + paymentResourceID + "/refunds"
 	paymentSession.Links.Refunds = fmt.Sprintf("%s/payments/%s/refunds", service.Config.PaymentsAPIURL, paymentID)
 	paymentResourceUpdate := transformers.PaymentTransformer{}.TransformToDB(*paymentSession)
 

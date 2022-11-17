@@ -47,6 +47,7 @@ func TestUnitPatchPaymentResource(t *testing.T) {
 				Status:        "pending",
 				CompletedAt:   time.Now(),
 				ProviderID:    "id123",
+				Links:         models.PaymentLinksDB{Refunds: "refunds_url"},
 			},
 			ExternalPaymentStatusURI:     "companieshouse.gov.uk",
 			ExternalPaymentStatusID:      "id123",
