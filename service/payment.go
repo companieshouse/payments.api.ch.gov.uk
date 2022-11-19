@@ -203,11 +203,13 @@ func (service *PaymentService) StoreExternalPaymentStatusDetails(id, externalPay
 // GetPaymentSession retrieves the payment session with the given ID from the database
 func (service *PaymentService) GetPaymentSession(req *http.Request, id string) (*models.PaymentResourceRest, ResponseType, error) {
 	paymentResource, err := service.DAO.GetPaymentResource(id)
+
 	if err != nil {
 		err = fmt.Errorf("error getting payment resource from db: [%v]", err)
 		log.ErrorR(req, err)
 		return nil, Error, err
 	}
+
 	if paymentResource == nil {
 		log.TraceR(req, "payment session not found", log.Data{"payment_id": id})
 		return nil, NotFound, nil
