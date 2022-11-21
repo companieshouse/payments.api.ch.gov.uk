@@ -75,7 +75,7 @@ func TestUnitHandleProcessPendingRefundsWithPaymentRefunds(t *testing.T) {
 			Data: models.PaymentResourceDataDB{Amount: "10.00",
 				Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}},
 			nil)
-		mockDao.EXPECT().GetPaymentsWithRefundPendingStatus().Return(paymentsPaidStatus, nil)
+		mockDao.EXPECT().GetPaymentsWithRefundPendingStatus().Return(nil, nil)
 
 		paymentService = &service.PaymentService{
 			DAO:    mockDao,
@@ -94,66 +94,6 @@ func TestUnitHandleProcessPendingRefundsWithPaymentRefunds(t *testing.T) {
 		HandleProcessPendingRefunds(w, req)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-	})
-}
-
-func TestUnitHandleProcessPendingRefundsWithResponseTypeSuccess(t *testing.T) {
-	cfg, _ := config.Get()
-	mockDao := dao.NewMockDAO(gomock.NewController(t))
-	paymentResourceDataDB := models.PaymentResourceDataDB{}
-	refundData := models.RefundResourceDB{
-		RefundId:          "sasaswewq23wsw",
-		CreatedAt:         "2020-11-19T12:57:30.Z06Z",
-		Amount:            800.0,
-		Status:            "pending",
-		ExternalRefundUrl: "https://pulicapi.payments.service.gov.uk",
-	}
-	refundDatas := []models.RefundResourceDB{refundData}
-	paymentPaidStatus := models.PaymentResourceDB{
-		ID:                           "xVzfvN3TlKWAAPp",
-		RedirectURI:                  "https://www.google.com",
-		State:                        "application-nonce-value",
-		ExternalPaymentStatusURI:     "https://publicapi.payments/5212tt8usgl6k574f6",
-		ExternalPaymentStatusID:      "tPM43f6ck5212tt8usgl6k574f6",
-		ExternalPaymentTransactionID: "",
-		Data:                         paymentResourceDataDB,
-		Refunds:                      refundDatas,
-		BulkRefund:                   nil,
-	}
-
-	var paymentsPaidStatus []models.PaymentResourceDB
-	paymentsPaidStatus = append(paymentsPaidStatus, paymentPaidStatus)
-
-	Convey("Successful request - with response type success", t, func() {
-		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{
-			ID:                       "1234",
-			ExternalPaymentStatusURI: "http://external_uri",
-			Data: models.PaymentResourceDataDB{Amount: "10.00",
-				Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}},
-			nil)
-		mockDao.EXPECT().GetPaymentsWithRefundPendingStatus().Return(paymentsPaidStatus, nil)
-
-		paymentService = &service.PaymentService{
-			DAO:    mockDao,
-			Config: *cfg,
-		}
-
-		govPayService := &service.GovPayService{PaymentService: *paymentService}
-
-		refundService = &service.RefundService{
-			GovPayService:  govPayService,
-			PaymentService: paymentService,
-			DAO:            mockDao,
-			Config:         *cfg,
-		}
-
-		req, _ := http.NewRequest("POST", "/payments/refunds/process-pending", strings.NewReader("Body"))
-		httptest.NewRecorder()
-
-		res, resType, _ := refundService.ProcessPendingRefunds(req)
-
-		So(resType, ShouldEqual, service.Success)
-		So(len(res), ShouldEqual, 1)
 	})
 }
 
