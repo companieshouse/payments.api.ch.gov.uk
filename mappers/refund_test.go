@@ -62,7 +62,7 @@ func TestUnitMapToRefundRest(t *testing.T) {
 		So(refundRest.RefundId, ShouldEqual, govPayResponse.RefundId)
 		So(refundRest.Amount, ShouldEqual, govPayResponse.Amount)
 		So(refundRest.CreatedAt, ShouldEqual, govPayResponse.CreatedDate)
-		So(refundRest.Status, ShouldEqual, govPayResponse.Status)
+		So(refundRest.Status, ShouldEqual, mapGovPayStatusToInternal(govPayResponse.Status))
 		So(refundRest.ExternalRefundUrl, ShouldEqual, govPayResponse.Links.Self.HREF)
 		So(refundRest.RefundReference, ShouldEqual, refundReference)
 	})
