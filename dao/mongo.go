@@ -145,6 +145,9 @@ func (m *MongoService) PatchPaymentResource(id string, paymentUpdate *models.Pay
 	if len(paymentUpdate.BulkRefund) != 0 {
 		patchUpdate["bulk_refunds"] = paymentUpdate.BulkRefund
 	}
+	if paymentUpdate.Data.Links.Refunds != "" {
+		patchUpdate["data.links.refunds"] = paymentUpdate.Data.Links.Refunds
+	}
 
 	updateCall := bson.M{"$set": patchUpdate}
 

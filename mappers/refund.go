@@ -8,13 +8,14 @@ import (
 )
 
 // MapToRefundRest maps a GOV.UK Pay refund response to a rest resource
-func MapToRefundRest(response models.CreateRefundGovPayResponse) models.RefundResourceRest {
+func MapToRefundRest(response models.CreateRefundGovPayResponse, refundReference string) models.RefundResourceRest {
 	return models.RefundResourceRest{
 		RefundId:          response.RefundId,
 		CreatedAt:         response.CreatedDate,
 		Amount:            response.Amount,
 		Status:            mapGovPayStatusToInternal(response.Status),
 		ExternalRefundUrl: response.Links.Self.HREF,
+		RefundReference:   refundReference,
 	}
 }
 

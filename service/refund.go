@@ -60,9 +60,9 @@ type RefundService struct {
 }
 
 // CreateRefund creates refund in GovPay and saves refund information to payment object in database
-func (service *RefundService) CreateRefund(req *http.Request, id string, createRefundResource models.CreateRefundRequest) (*models.PaymentResourceRest, *models.RefundResponse, ResponseType, error) {
+func (service *RefundService) CreateRefund(req *http.Request, paymentID string, createRefundResource models.CreateRefundRequest) (*models.PaymentResourceRest, *models.RefundResponse, ResponseType, error) {
 
-	paymentSession, _, _ := service.PaymentService.GetPaymentSession(req, id)
+	paymentSession, _, _ := service.PaymentService.GetPaymentSession(req, paymentID)
 
 	// Currently, refunds are only enabled for Gov Pay
 	if paymentSession.PaymentMethod != PaymentMethodCreditCard {
@@ -83,7 +83,7 @@ func (service *RefundService) CreateRefund(req *http.Request, id string, createR
 	}
 
 	// Get RefundSummary from GovPay to check the available amount
-	paymentSession, refundSummary, response, err := service.GovPayService.GetRefundSummary(req, id)
+	paymentSession, refundSummary, response, err := service.GovPayService.GetRefundSummary(req, paymentID)
 	if err != nil {
 		err = fmt.Errorf("error getting refund summary from govpay: [%v]", err)
 		log.ErrorR(req, err)
@@ -111,11 +111,12 @@ func (service *RefundService) CreateRefund(req *http.Request, id string, createR
 	refundResource := mappers.MapGovPayToRefundResponse(*refund)
 
 	// Add refund information to payment session
-	paymentSession.Refunds = append(paymentSession.Refunds, mappers.MapToRefundRest(*refund))
+	paymentSession.Refunds = append(paymentSession.Refunds, mappers.MapToRefundRest(*refund, createRefundResource.RefundReference))
+	paymentSession.Links.Refunds = fmt.Sprintf("%s/payments/%s/refunds", service.Config.PaymentsAPIURL, paymentID)
 	paymentResourceUpdate := transformers.PaymentTransformer{}.TransformToDB(*paymentSession)
 
 	// Save refund information to database
-	err = service.DAO.PatchPaymentResource(id, &paymentResourceUpdate)
+	err = service.DAO.PatchPaymentResource(paymentID, &paymentResourceUpdate)
 	if err != nil {
 		err = fmt.Errorf("error patching payment session on database: [%v]", err)
 		log.Error(err)
@@ -492,31 +493,30 @@ func (service *RefundService) processPayPalBatchRefund(req *http.Request, paymen
 func checkGovPayAndUpdateRefundStatus(req *http.Request, payments []models.PaymentResourceDB, service *RefundService) error {
 	for _, i := range payments {
 		x := i
-
 		paymentSession, response, err := service.PaymentService.GetPaymentSession(req, x.ID)
 
 		if err != nil {
 			log.ErrorR(req, fmt.Errorf("error getting payment resource: [%w]", err))
-			return nil
+			return fmt.Errorf("error getting payment resource ID: [%s]", x.ID)
 		}
 
 		if response == NotFound {
 			err = fmt.Errorf("error getting payment resource")
-			return nil
+			return fmt.Errorf("not found error from payment service session with payment ID:[%s]", x.ID)
 		}
 
 		govPayStatusResponse, response, err := service.GovPayService.GetRefundStatus(paymentSession, x.Refunds[0].RefundId)
 
 		if err != nil {
 			log.ErrorR(req, fmt.Errorf("error getting payment pending refund status Id: [%s]", x.Refunds[0].RefundId))
-			return nil
+			return fmt.Errorf("error getting payment pending refund status Id: [%s]", x.Refunds[0].RefundId)
 		}
 
 		if govPayStatusResponse != nil && govPayStatusResponse.Status == RefundsStatusSuccess {
 			err := service.DAO.PatchPaymentsWithRefundPendingStatus(x.ID, &x)
 			if err != nil {
 				log.ErrorR(req, fmt.Errorf("error updating payment Id: [%s] pending refund status ", x.ID))
-				return nil
+				return fmt.Errorf("error updating payment Id: [%s] pending refund status ", x.ID)
 			}
 		}
 	}

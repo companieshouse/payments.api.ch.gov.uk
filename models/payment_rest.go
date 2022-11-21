@@ -54,9 +54,10 @@ type PaymentLinksRest struct {
 	Journey  string `json:"journey"`
 	Resource string `json:"resource"`
 	Self     string `json:"self" validate:"required"`
+	Refunds  string `json:"refunds"`
 }
 
-// Costs contains details of all the Cost Resources
+// CostsRest contains details of all the Cost Resources
 type CostsRest struct {
 	Description      string             `json:"description"`
 	Etag             string             `json:"etag"`
