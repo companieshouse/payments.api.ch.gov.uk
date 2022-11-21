@@ -46,6 +46,7 @@ type PaymentLinksDB struct {
 	Journey  string `bson:"journey"`
 	Resource string `bson:"resource"`
 	Self     string `bson:"self" validate:"required"`
+	Refunds  string `bson:"refunds,omitempty"`
 }
 
 // CostLinksDB is a set of URLs related to the resource, including self
