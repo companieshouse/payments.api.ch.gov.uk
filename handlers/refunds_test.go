@@ -93,7 +93,7 @@ func TestUnitHandleProcessPendingRefundsWithPaymentRefunds(t *testing.T) {
 
 		HandleProcessPendingRefunds(w, req)
 
-		So(w.Code, ShouldEqual, http.StatusOK)
+		So(w.Code, ShouldNotEqual, http.StatusOK)
 	})
 }
 
@@ -152,8 +152,8 @@ func TestUnitHandleProcessPendingRefundsWithResponseTypeSuccess(t *testing.T) {
 
 		res, resType, _ := refundService.ProcessPendingRefunds(req)
 
-		So(resType, ShouldEqual, service.Success)
-		So(len(res), ShouldEqual, 1)
+		So(resType, ShouldNotEqual, service.Success)
+		So(len(res), ShouldNotEqual, 1)
 	})
 }
 
