@@ -1263,78 +1263,78 @@ func TestUnitProcessPayPalBatchRefund(t *testing.T) {
 }
 
 func TestUnitCheckGovPayAndUpdateRefundStatus(t *testing.T) {
-    cfg, _ := config.Get()
+	cfg, _ := config.Get()
 
-    req := httptest.NewRequest("POST", "/test", nil)
-    mockCtrl := gomock.NewController(t)
-    defer mockCtrl.Finish()
-    mockDao := dao.NewMockDAO(mockCtrl)
-    mockGovPayService := NewMockPaymentProviderService(mockCtrl)
-    mockPaymentService := createMockPaymentService(mockDao, cfg)
+	req := httptest.NewRequest("POST", "/test", nil)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockDao := dao.NewMockDAO(mockCtrl)
+	mockGovPayService := NewMockPaymentProviderService(mockCtrl)
+	mockPaymentService := createMockPaymentService(mockDao, cfg)
 
-    service := RefundService{
-        GovPayService:  mockGovPayService,
-        PaymentService: &mockPaymentService,
-        DAO:            mockDao,
-        Config:         *cfg,
-    }
+	service := RefundService{
+		GovPayService:  mockGovPayService,
+		PaymentService: &mockPaymentService,
+		DAO:            mockDao,
+		Config:         *cfg,
+	}
 
-    paymentResourceDataDB := models.PaymentResourceDataDB{}
-    refundData := models.RefundResourceDB{
-        RefundId:          "sasaswewq23wsw",
-        CreatedAt:         "2020-11-19T12:57:30.Z06Z",
-        Amount:            800.0,
-        Status:            "pending",
-        ExternalRefundUrl: "https://pulicapi.payments.service.gov.uk",
-    }
-    refundDatas := []models.RefundResourceDB{refundData}
-    paymentsPaidData := models.PaymentResourceDB{
-        ID:                           "xVzfvN3TlKWAAPp",
-        RedirectURI:                  "https://www.google.com",
-        State:                        "application-nonce-value",
-        ExternalPaymentStatusURI:     "https://publicapi.payments/5212tt8usgl6k574f6",
-        ExternalPaymentStatusID:      "tPM43f6ck5212tt8usgl6k574f6",
-        ExternalPaymentTransactionID: "",
-        Data:                         paymentResourceDataDB,
-        Refunds:                      refundDatas,
-        BulkRefund:                   nil,
-    }
+	paymentResourceDataDB := models.PaymentResourceDataDB{}
+	refundData := models.RefundResourceDB{
+		RefundId:          "sasaswewq23wsw",
+		CreatedAt:         "2020-11-19T12:57:30.Z06Z",
+		Amount:            800.0,
+		Status:            "pending",
+		ExternalRefundUrl: "https://pulicapi.payments.service.gov.uk",
+	}
+	refundDatas := []models.RefundResourceDB{refundData}
+	paymentsPaidData := models.PaymentResourceDB{
+		ID:                           "xVzfvN3TlKWAAPp",
+		RedirectURI:                  "https://www.google.com",
+		State:                        "application-nonce-value",
+		ExternalPaymentStatusURI:     "https://publicapi.payments/5212tt8usgl6k574f6",
+		ExternalPaymentStatusID:      "tPM43f6ck5212tt8usgl6k574f6",
+		ExternalPaymentTransactionID: "",
+		Data:                         paymentResourceDataDB,
+		Refunds:                      refundDatas,
+		BulkRefund:                   nil,
+	}
 
-    paymentsPaidDatas := []models.PaymentResourceDB{}
+	paymentsPaidDatas := []models.PaymentResourceDB{}
 
-    Convey("Process pending refunds payments status with no payments", t, func() {
-        payments := []models.PaymentResourceDB{}
+	Convey("Process pending refunds payments status with no payments", t, func() {
+		payments := []models.PaymentResourceDB{}
 
-        err := checkGovPayAndUpdateRefundStatus(req, payments, &service)
-        So(err, ShouldEqual, nil)
-    })
+		err := service.checkGovPayAndUpdateRefundStatus(req, payments)
+		So(err, ShouldEqual, nil)
+	})
 
-    Convey("Process pending refunds payments status with payments", t, func() {
-        paymentsPaidDatas = append(paymentsPaidDatas, paymentsPaidData)
-        mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentsPaidData, nil)
+	Convey("Process pending refunds payments status with payments", t, func() {
+		paymentsPaidDatas = append(paymentsPaidDatas, paymentsPaidData)
+		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentsPaidData, nil)
 
-        err := checkGovPayAndUpdateRefundStatus(req, paymentsPaidDatas, &service)
-        So(err.Error(), ShouldEqual, "error getting payment resource ID: [xVzfvN3TlKWAAPp]")
-    })
+		err := service.checkGovPayAndUpdateRefundStatus(req, paymentsPaidDatas)
+		So(err.Error(), ShouldEqual, "error getting payment resource ID: [xVzfvN3TlKWAAPp]")
+	})
 
-    Convey("Process pending refunds with number of calls to checkGovPayAndUpdateRefundStatus equals payments count", t, func() {
-        newPaymentsPaidData := models.PaymentResourceDB{
-            ID:                           "xVzfvN3TlKWAMMM",
-            RedirectURI:                  "https://www.google.com",
-            State:                        "application-nonce-value",
-            ExternalPaymentStatusURI:     "https://publicapi.payments/5212tt8usgl6k574f6",
-            ExternalPaymentStatusID:      "tPM43f6ck5212tt8usgl6k574f6",
-            ExternalPaymentTransactionID: "",
-            Data:                         paymentResourceDataDB,
-            Refunds:                      refundDatas,
-            BulkRefund:                   nil,
-        }
-        paymentsPaidDatas := []models.PaymentResourceDB{paymentsPaidData, newPaymentsPaidData}
-        mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{}, nil).MinTimes(1)
+	Convey("Process pending refunds with number of calls to checkGovPayAndUpdateRefundStatus equals payments count", t, func() {
+		newPaymentsPaidData := models.PaymentResourceDB{
+			ID:                           "xVzfvN3TlKWAMMM",
+			RedirectURI:                  "https://www.google.com",
+			State:                        "application-nonce-value",
+			ExternalPaymentStatusURI:     "https://publicapi.payments/5212tt8usgl6k574f6",
+			ExternalPaymentStatusID:      "tPM43f6ck5212tt8usgl6k574f6",
+			ExternalPaymentTransactionID: "",
+			Data:                         paymentResourceDataDB,
+			Refunds:                      refundDatas,
+			BulkRefund:                   nil,
+		}
+		paymentsPaidDatas := []models.PaymentResourceDB{paymentsPaidData, newPaymentsPaidData}
+		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{}, nil).MinTimes(1)
 
-        err := checkGovPayAndUpdateRefundStatus(req, paymentsPaidDatas, &service)
-        So(err.Error(), ShouldEqual, "error getting payment resource ID: [xVzfvN3TlKWAAPp]")
-    })
+		err := service.checkGovPayAndUpdateRefundStatus(req, paymentsPaidDatas)
+		So(err.Error(), ShouldEqual, "error getting payment resource ID: [xVzfvN3TlKWAAPp]")
+	})
 
 }
 

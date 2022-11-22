@@ -310,11 +310,13 @@ func (m *MongoService) GetPaymentsWithRefundPendingStatus() ([]models.PaymentRes
 	return payments, nil
 }
 
-// PatchPaymentsWithRefundPendingStatus updates payment refunds status to refund-success and insert a new refund_at
-func (m *MongoService) PatchPaymentsWithRefundPendingStatus(id string, paymentUpdate *models.PaymentResourceDB) error {
+// PatchPaymentsWithRefundPendingStatus updates payment refunds status to refund-requested and insert a new refund_at
+func (m *MongoService) PatchPaymentsWithRefundPendingStatus(id string, isPaid bool, paymentUpdate *models.PaymentResourceDB) error {
 	collection := m.db.Collection(m.CollectionName)
+	refunds := paymentUpdate.Refunds[0]
+	attempts := refunds.Attempts + 1
 
-	refundsFilter := options.ArrayFilters{Filters: bson.A{bson.M{"x.refund_id": paymentUpdate.Refunds[0].RefundId}}}
+	refundsFilter := options.ArrayFilters{Filters: bson.A{bson.M{"x.refund_id": refunds.RefundId}}}
 	upsert := true
 
 	opts := options.UpdateOptions{
@@ -322,12 +324,24 @@ func (m *MongoService) PatchPaymentsWithRefundPendingStatus(id string, paymentUp
 		Upsert:       &upsert,
 	}
 
-	patchUpdate := bson.M{
-		"$set": bson.M{
-			"refunds.$[x].status":      "refund-success",
-			"refunds.$[x].refunded_at": time.Now(),
-		},
+	patchUpdate := bson.M{}
+
+	if isPaid {
+		patchUpdate = bson.M{
+			"$set": bson.M{
+				"refunds.$[x].status":      "refund-success",
+				"refunds.$[x].refunded_at": time.Now(),
+				"refunds.$[x].attempts":    attempts,
+			},
+		}
+	} else {
+		patchUpdate = bson.M{
+			"$set": bson.M{
+				"refunds.$[x].attempts": attempts,
+			},
+		}
 	}
+
 	_, err := collection.UpdateOne(context.Background(), bson.M{"_id": id}, patchUpdate, &opts)
 
 	return err
