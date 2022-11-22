@@ -32,7 +32,7 @@ func MapGovPayToRefundResponse(gpResponse models.CreateRefundGovPayResponse) mod
 // mapGovPayStatusToInternal maps all possible GOV.UK Pay status to internal values
 // See GOV.UK Pay spec for possible values:
 // https://docs.payments.service.gov.uk/refunding_payments/#checking-the-status-of-a-refund-status
-// Important note - GovPay sandbox does will return `success` upon refund request, whereas Live will return `submitted`.
+// Important note - GovPay sandbox will return `success` upon refund request, whereas Live will return `submitted`.
 func mapGovPayStatusToInternal(status string) string {
 
 	govPayStatusMap := map[string]string{
