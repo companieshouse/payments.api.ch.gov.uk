@@ -509,7 +509,7 @@ func (service *RefundService) checkGovPayAndUpdateRefundStatus(req *http.Request
 		govPayStatusResponse, response, err := service.GovPayService.GetRefundStatus(paymentSession, refund.RefundId)
 
 		if err != nil {
-			log.ErrorR(req, fmt.Errorf("error getting payment pending refund status Id: [%s]", refund.RefundId))
+			log.ErrorR(req, fmt.Errorf("error getting payment pending refund status [%w]", err))
 			return fmt.Errorf("error getting payment pending refund status Id: [%s]", refund.RefundId)
 		}
 
@@ -517,7 +517,7 @@ func (service *RefundService) checkGovPayAndUpdateRefundStatus(req *http.Request
 
 		err = service.DAO.PatchPaymentsWithRefundPendingStatus(x.ID, isPaid, &x)
 		if err != nil {
-			log.ErrorR(req, fmt.Errorf("error updating payment Id: [%s] pending refund status ", x.ID))
+			log.ErrorR(req, fmt.Errorf("error patching payment [%w]", err))
 			return fmt.Errorf("error updating payment Id: [%s] pending refund status ", x.ID)
 		}
 

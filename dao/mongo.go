@@ -324,7 +324,7 @@ func (m *MongoService) PatchPaymentsWithRefundPendingStatus(id string, isPaid bo
 		Upsert:       &upsert,
 	}
 
-	patchUpdate := bson.M{}
+	var patchUpdate bson.M
 
 	if isPaid {
 		patchUpdate = bson.M{
