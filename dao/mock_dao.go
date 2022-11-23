@@ -160,9 +160,9 @@ func (m *MockDAO) PatchPaymentResource(id string, paymentUpdate *models.PaymentR
 }
 
 // PatchPaymentsWithRefundPendingStatus mocks base method.
-func (m *MockDAO) PatchPaymentsWithRefundPendingStatus(id string, paymentUpdate *models.PaymentResourceDB) error {
+func (m *MockDAO) PatchPaymentsWithRefundPendingStatus(id string, isPaid bool, paymentUpdate *models.PaymentResourceDB) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PatchPaymentsWithRefundPendingStatus", id, paymentUpdate)
+	ret := m.ctrl.Call(m, "PatchPaymentsWithRefundPendingStatus", id, isPaid, paymentUpdate)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
