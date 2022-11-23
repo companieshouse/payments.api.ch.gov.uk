@@ -258,7 +258,7 @@ func (m *MongoService) CreateBulkRefund(bulkRefunds map[string]models.BulkRefund
 	return nil
 }
 
-// GetPaymentsWithRefundStatus retrieves a list of all payments in the DB with a status of
+// GetPaymentsWithRefundStatus retrieves a list of all payments in the DB with a bulk refund status of
 // refund-pending
 func (m *MongoService) GetPaymentsWithRefundStatus() ([]models.PaymentResourceDB, error) {
 	var payments []models.PaymentResourceDB
@@ -279,12 +279,12 @@ func (m *MongoService) GetPaymentsWithRefundStatus() ([]models.PaymentResourceDB
 	return payments, nil
 }
 
-// GetPaymentsWithRefundPendingStatus retrieves a list of all payments in the DB with a status of PAID
+// GetPaymentsWithRefundPendingStatus retrieves a list of payments in the DB with a status of refund-requested
 func (m *MongoService) GetPaymentsWithRefundPendingStatus() ([]models.PaymentResourceDB, error) {
 	var payments []models.PaymentResourceDB
 
 	collection := m.db.Collection(m.CollectionName)
-	statusFilter := bson.M{refundStatus: "pending"}
+	statusFilter := bson.M{refundStatus: "refund-requested"}
 
 	filterOptions := options.Find()
 	filterOptions.SetSort(bson.M{"_id": 1})
@@ -310,7 +310,7 @@ func (m *MongoService) GetPaymentsWithRefundPendingStatus() ([]models.PaymentRes
 	return payments, nil
 }
 
-// PatchPaymentsWithRefundPendingStatus updates payment refunds status to refund-requested and insert a new refund_at
+// PatchPaymentsWithRefundPendingStatus updates payment refunds status to refund-success and insert a new refund_at
 func (m *MongoService) PatchPaymentsWithRefundPendingStatus(id string, paymentUpdate *models.PaymentResourceDB) error {
 	collection := m.db.Collection(m.CollectionName)
 
@@ -324,7 +324,7 @@ func (m *MongoService) PatchPaymentsWithRefundPendingStatus(id string, paymentUp
 
 	patchUpdate := bson.M{
 		"$set": bson.M{
-			"refunds.$[x].status":      "refund-requested",
+			"refunds.$[x].status":      "refund-success",
 			"refunds.$[x].refunded_at": time.Now(),
 		},
 	}

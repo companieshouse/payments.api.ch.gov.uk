@@ -31,7 +31,7 @@ func TestUnitMapGovPayToRefundResponse(t *testing.T) {
 
 		So(refundResponse.RefundId, ShouldEqual, govPayResponse.RefundId)
 		So(refundResponse.Amount, ShouldEqual, govPayResponse.Amount)
-		So(refundResponse.Status, ShouldEqual, govPayResponse.Status)
+		So(refundResponse.Status, ShouldEqual, mapGovPayStatusToInternal(govPayResponse.Status))
 		So(refundResponse.CreatedDateTime, ShouldEqual, govPayResponse.CreatedDate)
 	})
 }
@@ -62,8 +62,17 @@ func TestUnitMapToRefundRest(t *testing.T) {
 		So(refundRest.RefundId, ShouldEqual, govPayResponse.RefundId)
 		So(refundRest.Amount, ShouldEqual, govPayResponse.Amount)
 		So(refundRest.CreatedAt, ShouldEqual, govPayResponse.CreatedDate)
-		So(refundRest.Status, ShouldEqual, govPayResponse.Status)
+		So(refundRest.Status, ShouldEqual, mapGovPayStatusToInternal(govPayResponse.Status))
 		So(refundRest.ExternalRefundUrl, ShouldEqual, govPayResponse.Links.Self.HREF)
 		So(refundRest.RefundReference, ShouldEqual, refundReference)
+	})
+}
+
+func TestUnitMapGovPayStatusToInternal(t *testing.T) {
+	Convey("Correct mappings", t, func() {
+		So(mapGovPayStatusToInternal("submitted"), ShouldEqual, "refund-requested")
+		So(mapGovPayStatusToInternal("success"), ShouldEqual, "refund-success")
+		So(mapGovPayStatusToInternal("error"), ShouldEqual, "refund-error")
+		So(mapGovPayStatusToInternal("unexpected"), ShouldEqual, "unexpected")
 	})
 }
