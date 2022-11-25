@@ -311,7 +311,7 @@ func (m *MongoService) GetPaymentsWithRefundPendingStatus() ([]models.PaymentRes
 }
 
 // PatchPaymentsWithRefundPendingStatus updates payment refunds status to refund-requested and insert a new refund_at
-func (m *MongoService) PatchPaymentsWithRefundPendingStatus(id string, isPaid bool, paymentUpdate *models.PaymentResourceDB) error {
+func (m *MongoService) PatchPaymentsWithRefundPendingStatus(id string, isPaid bool, paymentUpdate *models.PaymentResourceDB) (models.PaymentResourceDB, error) {
 	collection := m.db.Collection(m.CollectionName)
 	refunds := paymentUpdate.Refunds[0]
 	attempts := refunds.Attempts + 1
@@ -319,12 +319,15 @@ func (m *MongoService) PatchPaymentsWithRefundPendingStatus(id string, isPaid bo
 	refundsFilter := options.ArrayFilters{Filters: bson.A{bson.M{"x.refund_id": refunds.RefundId}}}
 	upsert := true
 
-	opts := options.UpdateOptions{
-		ArrayFilters: &refundsFilter,
-		Upsert:       &upsert,
+	after := options.After
+
+	opts := options.FindOneAndUpdateOptions{
+		ArrayFilters:   &refundsFilter,
+		ReturnDocument: &after,
+		Upsert:         &upsert,
 	}
 
-	var patchUpdate bson.M
+	var patchUpdate, updatedDoc bson.M
 
 	if isPaid {
 		patchUpdate = bson.M{
@@ -342,7 +345,21 @@ func (m *MongoService) PatchPaymentsWithRefundPendingStatus(id string, isPaid bo
 		}
 	}
 
-	_, err := collection.UpdateOne(context.Background(), bson.M{"_id": id}, patchUpdate, &opts)
+	updatedPayment := models.PaymentResourceDB{}
+	result := collection.FindOneAndUpdate(context.Background(), bson.M{"_id": id}, patchUpdate, &opts)
 
-	return err
+	if result.Err() != nil {
+		return updatedPayment, result.Err()
+	}
+
+	err := result.Decode(&updatedDoc)
+
+	if err != nil {
+		return updatedPayment, err
+	}
+
+	bsonBytes, _ := bson.Marshal(updatedDoc)
+	bson.Unmarshal(bsonBytes, &updatedPayment)
+
+	return updatedPayment, nil
 }
