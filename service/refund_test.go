@@ -1305,7 +1305,7 @@ func TestUnitCheckGovPayAndUpdateRefundStatus(t *testing.T) {
 	Convey("Process pending refunds payments status with no payments", t, func() {
 		payments := []models.PaymentResourceDB{}
 
-		err := service.checkGovPayAndUpdateRefundStatus(req, payments)
+		_, err := service.checkGovPayAndUpdateRefundStatus(req, payments)
 		So(err, ShouldEqual, nil)
 	})
 
@@ -1313,7 +1313,7 @@ func TestUnitCheckGovPayAndUpdateRefundStatus(t *testing.T) {
 		paymentsPaidDatas = append(paymentsPaidDatas, paymentsPaidData)
 		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentsPaidData, nil)
 
-		err := service.checkGovPayAndUpdateRefundStatus(req, paymentsPaidDatas)
+		_, err := service.checkGovPayAndUpdateRefundStatus(req, paymentsPaidDatas)
 		So(err.Error(), ShouldEqual, "error getting payment resource ID: [xVzfvN3TlKWAAPp]")
 	})
 
@@ -1332,7 +1332,7 @@ func TestUnitCheckGovPayAndUpdateRefundStatus(t *testing.T) {
 		paymentsPaidDatas := []models.PaymentResourceDB{paymentsPaidData, newPaymentsPaidData}
 		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{}, nil).MinTimes(1)
 
-		err := service.checkGovPayAndUpdateRefundStatus(req, paymentsPaidDatas)
+		_, err := service.checkGovPayAndUpdateRefundStatus(req, paymentsPaidDatas)
 		So(err.Error(), ShouldEqual, "error getting payment resource ID: [xVzfvN3TlKWAAPp]")
 	})
 

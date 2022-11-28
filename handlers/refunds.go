@@ -165,4 +165,18 @@ func HandleProcessPendingRefunds(w http.ResponseWriter, req *http.Request) {
 
 	log.InfoR(req, "Successful processed pending refunds request", log.Data{"status": http.StatusOK})
 
+	processKafkaSendMessage(req, payments)
+
+}
+
+func processKafkaSendMessage(req *http.Request, payments []models.PaymentResourceDB) {
+	for _, i := range payments {
+		x := i
+		refund := x.Refunds[0]
+		err := handleRefundMessage(x.ID, refund.RefundId)
+		if err != nil {
+			log.ErrorR(req, fmt.Errorf("error producing refund kafka message: [%v]", err))
+		}
+	}
+
 }
