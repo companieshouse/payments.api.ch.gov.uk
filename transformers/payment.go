@@ -86,6 +86,7 @@ func getRefundsDB(refunds []models.RefundResourceRest) []models.RefundResourceDB
 func getRefundDB(refund models.RefundResourceRest) models.RefundResourceDB {
 	return models.RefundResourceDB{
 		RefundId:          refund.RefundId,
+		RefundedAt:        refund.RefundedAt,
 		CreatedAt:         refund.CreatedAt,
 		Amount:            refund.Amount,
 		Status:            refund.Status,
@@ -107,6 +108,7 @@ func getRefundsRest(refunds []models.RefundResourceDB) []models.RefundResourceRe
 func getRefundRest(refund models.RefundResourceDB) models.RefundResourceRest {
 	return models.RefundResourceRest{
 		RefundId:          refund.RefundId,
+		RefundedAt:        refund.RefundedAt,
 		CreatedAt:         refund.CreatedAt,
 		Amount:            refund.Amount,
 		Status:            refund.Status,

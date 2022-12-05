@@ -1,8 +1,11 @@
 package models
 
+import "time"
+
 // RefundResourceDB represents the database refund structure
 type RefundResourceDB struct {
 	RefundId          string `bson:"refund_id"`
+	RefundedAt        time.Time `bson:"refunded_at"`
 	CreatedAt         string `bson:"created_at"`
 	Amount            int    `bson:"amount"`
 	Status            string `bson:"status"`
