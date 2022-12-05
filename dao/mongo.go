@@ -333,7 +333,7 @@ func (m *MongoService) PatchPaymentsWithRefundPendingStatus(id string, isPaid bo
 		patchUpdate = bson.M{
 			"$set": bson.M{
 				"refunds.$[x].status":      "refund-success",
-				"refunds.$[x].refunded_at": time.Now(),
+				"refunds.$[x].refunded_at": time.Now().String(),
 				"refunds.$[x].attempts":    attempts,
 			},
 		}

@@ -17,6 +17,7 @@ type RefundResponse struct {
 // RefundResourceRest is the data contained in a refund resource
 type RefundResourceRest struct {
 	RefundId          string `json:"refund_id"`
+	RefundedAt        string `json:"refunded_at,omitempty"`
 	CreatedAt         string `json:"created_at"`
 	Amount            int    `json:"amount"`
 	Status            string `json:"status"`
