@@ -125,3 +125,15 @@ func TestUnitPatchPaymentsWithRefundPendingStatus(t *testing.T) {
 		So(err.Error(), ShouldEqual, "the FindAndModify operation must have a Deployment set before Execute can be called")
 	})
 }
+
+func TestUnitGetPaymentRefunds(t *testing.T) {
+	Convey("Get payment refunds by payment Id", t, func() {
+		cfg, _ := config.Get()
+		client = &mongo.Client{}
+		dao := NewDAO(cfg)
+
+		resource, err := dao.GetPaymentRefunds("id123")
+		So(resource, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "the Find operation must have a Deployment set before Execute can be called")
+	})
+}

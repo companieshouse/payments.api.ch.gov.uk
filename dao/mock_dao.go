@@ -84,6 +84,21 @@ func (m *MockDAO) GetPaymentResource(arg0 string) (*models.PaymentResourceDB, er
 	return ret0, ret1
 }
 
+// GetPaymentRefunds indicates an expected call of GetPaymentRefunds.
+func (mr *MockDAOMockRecorder) GetPaymentRefunds(paymentResource interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaymentRefunds", reflect.TypeOf((*MockDAO)(nil).GetPaymentRefunds), paymentResource)
+}
+
+// GetPaymentRefunds mocks base method.
+func (m *MockDAO) GetPaymentRefunds(paymentId string) ([]models.RefundResourceDB, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPaymentRefunds", paymentId)
+	ret0, _ := ret[0].([]models.RefundResourceDB)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
 // GetPaymentResource indicates an expected call of GetPaymentResource.
 func (mr *MockDAOMockRecorder) GetPaymentResource(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()

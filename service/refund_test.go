@@ -811,6 +811,57 @@ func TestUnitProcessBatchRefund(t *testing.T) {
 	})
 }
 
+func TestUnitGetPaymentRefunds(t *testing.T) {
+	req := httptest.NewRequest("GET", "/payments/123/refunds", nil)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	cfg, _ := config.Get()
+
+	mockDao := dao.NewMockDAO(mockCtrl)
+
+	service := RefundService{
+		DAO:    mockDao,
+		Config: *cfg,
+	}
+
+	Convey("Error when getting payment's refunds session", t, func() {
+		mockDao.EXPECT().GetPaymentRefunds("123").Return([]models.RefundResourceDB{}, fmt.Errorf("error"))
+
+		pendingRefundPayments, err := service.GetPaymentRefunds(req, "123")
+
+		So(pendingRefundPayments, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "error retrieving the payment refunds")
+	})
+
+	Convey("Error is nil witn no refunds", t, func() {
+		paymentRefunds := []models.RefundResourceDB{}
+
+		mockDao.EXPECT().GetPaymentRefunds("123").Return(paymentRefunds, nil)
+
+		_, err := service.GetPaymentRefunds(req, "123")
+
+		So(err.Error(), ShouldEqual, "no refunds with paymentId found")
+	})
+
+	Convey("Successful request - with payment's refunds", t, func() {
+		refundData := models.RefundResourceDB{
+			RefundId:          "sasaswewq23wsw",
+			CreatedAt:         "2020-11-19T12:57:30.Z06Z",
+			Amount:            800.0,
+			Status:            "pending",
+			ExternalRefundUrl: "https://pulicapi.payments.service.gov.uk",
+		}
+		paymentRefunds := []models.RefundResourceDB{refundData}
+
+		mockDao.EXPECT().GetPaymentRefunds("123").Return(paymentRefunds, nil)
+
+		refunds, _ := service.GetPaymentRefunds(req, "123")
+
+		So(refunds, ShouldNotBeNil)
+		So(len(refunds), ShouldEqual, 1)
+	})
+}
+
 func TestUnitProcessPendingRefunds(t *testing.T) {
 	cfg, _ := config.Get()
 	req := httptest.NewRequest("POST", "/test", nil)
