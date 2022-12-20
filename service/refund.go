@@ -137,7 +137,7 @@ func (service *RefundService) GetPaymentRefunds(req *http.Request, paymentId str
 	}
 
 	if len(refunds) == 0 {
-		log.ErrorR(req, errors.New("no refunds with paymentId found"))
+		log.ErrorR(req, fmt.Errorf("no refunds with paymentId: %s found", paymentId))
 		return nil, errors.New("no refunds with paymentId found")
 	}
 
