@@ -16,6 +16,7 @@ type DAO interface {
 	CreateBulkRefundByExternalPaymentTransactionID(bulkRefunds map[string]models.BulkRefundDB) error
 	GetPaymentsWithRefundStatus() ([]models.PaymentResourceDB, error)
 	GetPaymentsWithRefundPendingStatus() ([]models.PaymentResourceDB, error)
+	GetPaymentRefunds(string) ([]models.RefundResourceDB, error)
 	PatchPaymentsWithRefundPendingStatus(id string, isPaid bool, paymentUpdate *models.PaymentResourceDB) (models.PaymentResourceDB, error)
 }
 

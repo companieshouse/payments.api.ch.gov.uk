@@ -88,6 +88,37 @@ func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// HandleGetRefunds retrieves the refunds by paymentId
+func HandleGetRefunds(w http.ResponseWriter, req *http.Request) {
+
+	paymentId := mux.Vars(req)["paymentId"]
+
+	if paymentId == "" {
+		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	paymentRefunds, err := refundService.GetPaymentRefunds(req, paymentId)
+
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error getting the payment refunds: [%v]", err))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	err = json.NewEncoder(w).Encode(paymentRefunds)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	log.InfoR(req, "Successfully GET request for the payment refunds: ", log.Data{"payment_id": paymentId})
+}
+
 // HandleUpdateRefund fetches refund from the external provider and updates the status in Payments MongoDB
 func HandleUpdateRefund(w http.ResponseWriter, req *http.Request) {
 	paymentId := mux.Vars(req)["paymentId"]

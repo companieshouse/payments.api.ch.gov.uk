@@ -126,6 +126,24 @@ func (service *RefundService) CreateRefund(req *http.Request, paymentID string, 
 	return paymentSession, &refundResource, Success, nil
 }
 
+// GetPaymentRefunds processes all refunds in the DB by paymentId
+func (service *RefundService) GetPaymentRefunds(req *http.Request, paymentId string) ([]models.RefundResourceDB, error) {
+
+	refunds, err := service.DAO.GetPaymentRefunds(paymentId)
+
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error retrieving the payment refunds with : %w", err))
+		return nil, errors.New("error retrieving the payment refunds")
+	}
+
+	if len(refunds) == 0 {
+		log.ErrorR(req, fmt.Errorf("no refunds with paymentId: %s found", paymentId))
+		return nil, errors.New("no refunds with paymentId found")
+	}
+
+	return refunds, nil
+}
+
 // UpdateRefund checks refund status in GovPay and if status is successful saves it to payment object in database
 func (service *RefundService) UpdateRefund(req *http.Request, paymentId string, refundId string) (*models.RefundResourceRest, ResponseType, error) {
 	paymentSession, response, err := service.PaymentService.GetPaymentSession(req, paymentId)

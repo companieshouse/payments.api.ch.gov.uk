@@ -83,6 +83,10 @@ func Register(mainRouter *mux.Router, cfg config.Config, paymentsDao dao.DAO) {
 	createRefundRouter := mainRouter.PathPrefix("/payments/{paymentId}/refunds").Subrouter()
 	createRefundRouter.HandleFunc("", HandleCreateRefund).Methods("POST").Name("create-refund")
 
+	// get-refunds endpoint needs its own interceptor
+	getRefundRouter := mainRouter.PathPrefix("/payments/{paymentId}/refunds").Subrouter()
+	getRefundRouter.HandleFunc("", HandleGetRefunds).Methods("GET").Name("get-refunds")
+
 	// update-refund endpoint needs its own interceptor
 	updateRefundRouter := mainRouter.PathPrefix("/payments/{paymentId}/refunds/{refundId}").Subrouter()
 	updateRefundRouter.HandleFunc("", HandleUpdateRefund).Methods("PATCH").Name("update-refund")

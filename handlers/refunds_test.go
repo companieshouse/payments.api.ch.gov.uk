@@ -41,6 +41,62 @@ func TestUnitHandleCreateRefund(t *testing.T) {
 	})
 }
 
+func TestUnitGetPaymentRefunds(t *testing.T) {
+	cfg, _ := config.Get()
+	mockDao := dao.NewMockDAO(gomock.NewController(t))
+	Convey("Request Body Empty", t, func() {
+		req, _ := http.NewRequest("GET", "/payments/123/refunds", nil)
+		w := httptest.NewRecorder()
+		HandleGetRefunds(w, req)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+	})
+
+	Convey("Payment ID not supplied", t, func() {
+		req, _ := http.NewRequest("GET", "/payments/123/refunds", nil)
+		vars := map[string]string{"paymentId": ""}
+		w := httptest.NewRecorder()
+
+		req = mux.SetURLVars(req, vars)
+
+		HandleGetRefunds(w, req)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+	})
+
+	Convey("Successful request - with the paymentId for refunds", t, func() {
+		refundData := models.RefundResourceDB{
+			RefundId:          "sasaswewq23wsw",
+			CreatedAt:         "2020-11-19T12:57:30.Z06Z",
+			Amount:            800.0,
+			Status:            "pending",
+			ExternalRefundUrl: "https://pulicapi.payments.service.gov.uk",
+		}
+		refundDatas := []models.RefundResourceDB{refundData}
+		
+
+		paymentService = &service.PaymentService{
+			DAO:    mockDao,
+			Config: *cfg,
+		}
+
+		refundService = &service.RefundService{
+			PaymentService: paymentService,
+			DAO:            mockDao,
+			Config:         *cfg,
+		}
+
+		req, _ := http.NewRequest("GET", "/payments/123/refunds", nil)
+		vars := map[string]string{"paymentId": "123"}
+		w := httptest.NewRecorder()
+
+		req = mux.SetURLVars(req, vars)
+
+		mockDao.EXPECT().GetPaymentRefunds(gomock.Any()).Return(refundDatas, nil)
+
+		HandleGetRefunds(w, req)
+		So(w.Code, ShouldEqual, http.StatusOK)
+	})
+}
+
 func TestUnitHandleProcessPendingRefundsWithPaymentRefunds(t *testing.T) {
 	cfg, _ := config.Get()
 	mockDao := dao.NewMockDAO(gomock.NewController(t))

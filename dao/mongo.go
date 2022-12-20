@@ -310,6 +310,34 @@ func (m *MongoService) GetPaymentsWithRefundPendingStatus() ([]models.PaymentRes
 	return payments, nil
 }
 
+// GetPaymentRefunds retrieves a list of refunds in the DB by paymentId
+func (m *MongoService) GetPaymentRefunds(id string) ([]models.RefundResourceDB, error) {
+	
+	var paymentResource models.PaymentResourceDB
+	var paymentRefunds []models.RefundResourceDB
+	
+	collection := m.db.Collection(m.CollectionName)
+	dbRefunds := collection.FindOne(context.Background(), bson.M{"_id": id})
+
+	err := dbRefunds.Err()
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			log.Info(fmt.Sprintf("no payment refunds found for paymentId: [%s]", id))
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	err = dbRefunds.Decode(&paymentResource)
+	if err != nil {
+		return nil, err
+	}
+	 
+	paymentRefunds = paymentResource.Refunds
+
+	return paymentRefunds, nil
+}
+
 // PatchPaymentsWithRefundPendingStatus updates payment refunds status to refund-requested and insert a new refund_at
 func (m *MongoService) PatchPaymentsWithRefundPendingStatus(id string, isPaid bool, paymentUpdate *models.PaymentResourceDB) (models.PaymentResourceDB, error) {
 	collection := m.db.Collection(m.CollectionName)
