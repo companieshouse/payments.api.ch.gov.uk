@@ -312,10 +312,10 @@ func (m *MongoService) GetPaymentsWithRefundPendingStatus() ([]models.PaymentRes
 
 // GetPaymentRefunds retrieves a list of refunds in the DB by paymentId
 func (m *MongoService) GetPaymentRefunds(id string) ([]models.RefundResourceDB, error) {
-	
+
 	var paymentResource models.PaymentResourceDB
 	var paymentRefunds []models.RefundResourceDB
-	
+
 	collection := m.db.Collection(m.CollectionName)
 	dbRefunds := collection.FindOne(context.Background(), bson.M{"_id": id})
 
@@ -332,13 +332,13 @@ func (m *MongoService) GetPaymentRefunds(id string) ([]models.RefundResourceDB, 
 	if err != nil {
 		return nil, err
 	}
-	 
+
 	paymentRefunds = paymentResource.Refunds
 
 	return paymentRefunds, nil
 }
 
-// PatchPaymentsWithRefundPendingStatus updates payment refunds status to refund-requested and insert a new refund_at
+// PatchPaymentsWithRefundPendingStatus updates payment refunds status to refund-success and inserts a new refunded_at
 func (m *MongoService) PatchPaymentsWithRefundPendingStatus(id string, isPaid bool, paymentUpdate *models.PaymentResourceDB) (models.PaymentResourceDB, error) {
 	collection := m.db.Collection(m.CollectionName)
 	refunds := paymentUpdate.Refunds[0]
