@@ -125,12 +125,6 @@ func TestUnitHandleProcessPendingRefundsWithPaymentRefunds(t *testing.T) {
 	paymentsPaidStatus = append(paymentsPaidStatus, paymentPaidStatus)
 
 	Convey("Successful request - with payment refunds", t, func() {
-		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&models.PaymentResourceDB{
-			ID:                       "1234",
-			ExternalPaymentStatusURI: "http://external_uri",
-			Data: models.PaymentResourceDataDB{Amount: "10.00",
-				Links: models.PaymentLinksDB{Resource: "http://dummy-resource"}}},
-			nil)
 		mockDao.EXPECT().GetPaymentsWithRefundPendingStatus().Return(nil, nil)
 
 		paymentService = &service.PaymentService{

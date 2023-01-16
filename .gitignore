@@ -5,3 +5,6 @@ build.log
 
 coverage.out
 coverage.html
+
+#VS Code files
+/.vscode/*
