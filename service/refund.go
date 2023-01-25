@@ -108,6 +108,14 @@ func (service *RefundService) CreateRefund(req *http.Request, paymentID string, 
 		return nil, nil, response, err
 	}
 
+	// GOV.UK Pay returns different refund statuses in Sandbox and Live.
+	// Hard-coding the initial status here enables testing in Sandbox.
+	// https://docs.payments.service.gov.uk/refunding_payments/
+	if service.Config.GovPaySandbox {
+		log.Info("GOV.UK Pay sandbox enabled for test environment: hard-coding initial refund status to `submitted`")
+		refund.Status = "submitted"
+	}
+
 	refundResource := mappers.MapGovPayToRefundResponse(*refund)
 
 	// Add refund information to payment session
