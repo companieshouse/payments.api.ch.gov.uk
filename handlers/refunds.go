@@ -46,7 +46,7 @@ func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// once we've read and decoded request body call the refund service handle internal business logic
-	paymentResource, refund, responseType, err := refundService.CreateRefund(req, id, incomingRefundResourceRequest)
+	_, refund, responseType, err := refundService.CreateRefund(req, id, incomingRefundResourceRequest)
 
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error creating refund resource: [%v]", err), log.Data{"service_response_type": responseType.String()})
@@ -79,13 +79,6 @@ func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
 	}
 
 	log.InfoR(req, "Successful POST request for new refund", log.Data{"refund_id": refund.RefundId, "status": http.StatusCreated})
-
-	err = handleRefundMessage(paymentResource.MetaData.ID, refund.RefundId)
-	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error producing refund kafka message: [%v]", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
 }
 
 // HandleGetRefunds retrieves the refunds by paymentId

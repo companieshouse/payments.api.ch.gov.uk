@@ -248,6 +248,7 @@ func TestUnitCreateRefund(t *testing.T) {
 			PatchPaymentResource(id, gomock.Any()).
 			Return(nil)
 
+		service.Config.GovPaySandbox = true
 		paymentSession, refund, status, err := service.CreateRefund(req, id, body)
 
 		So(paymentSession, ShouldNotBeNil)

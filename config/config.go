@@ -25,6 +25,7 @@ type Config struct {
 	GovPayBearerTokenTreasury  string   `env:"GOV_PAY_BEARER_TOKEN_TREASURY"   flag:"gov-pay-bearer-token-treasury"     flagDesc:"Bearer Token used to authenticate API calls with GovPay for treasury payments"`
 	GovPayBearerTokenChAccount string   `env:"GOV_PAY_BEARER_TOKEN_CH_ACCOUNT" flag:"gov-pay-bearer-token-ch-account"   flagDesc:"Bearer Token used to authenticate API calls with GovPay for Companies House Payments"`
 	GovPayBearerTokenLegacy    string   `env:"GOV_PAY_BEARER_TOKEN_LEGACY"     flag:"gov-pay-bearer-token-legacy"       flagDesc:"Bearer Token used to authenticate API calls with GovPay for payments on legacy Companies House services"`
+	GovPaySandbox              bool     `env:"GOV_PAY_SANDBOX"                 flag:"gov-pay-sandbox"                   flagDesc:"Gov Pay Sandbox - returns different refund status values"`
 	ExpiryTimeInMinutes        string   `env:"EXPIRY_TIME_IN_MINUTES"          flag:"expiry-time-in-minutes"            flagDesc:"The expiry time for the payment session in minutes"`
 	BrokerAddr                 []string `env:"KAFKA_BROKER_ADDR"               flag:"broker-addr"                       flagDesc:"Kafka broker address"`
 	SchemaRegistryURL          string   `env:"SCHEMA_REGISTRY_URL"             flag:"schema-registry-url"               flagDesc:"Schema registry url"`
