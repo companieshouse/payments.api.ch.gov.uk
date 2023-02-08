@@ -287,7 +287,7 @@ func (m *MongoService) GetPaymentsWithRefundPendingStatus() ([]models.PaymentRes
 	statusFilter := bson.M{refundStatus: "refund-requested"}
 
 	filterOptions := options.Find()
-	filterOptions.SetSort(bson.M{"_id": 1})
+	filterOptions.SetSort(bson.M{"refunds.created_at": 1})
 	filterOptions.SetSkip(0)
 	filterOptions.SetLimit(int64(m.RefundBatchSize))
 
