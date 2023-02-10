@@ -291,7 +291,7 @@ func TestUnitGetPaymentResourceByExternalPaymentTransactionIDDriver(t *testing.T
 	})
 
 	mt.Run("GetPaymentResource with error findone", func(mt *mtest.T) {
-		
+
 		mt.AddMockResponses(mtest.CreateCommandErrorResponse(commandError))
 
 		mongoService.db = mt.DB
@@ -592,7 +592,7 @@ func TestUnitPatchPaymentsWithRefundPendingStatusDriver(t *testing.T) {
 		})
 
 		mongoService.db = mt.DB
-		paymentRefunds, err := mongoService.PatchPaymentsWithRefundPendingStatus("id", true, &paymentResource)
+		paymentRefunds, err := mongoService.PatchRefundSuccessStatus("id", true, &paymentResource)
 
 		assert.Nil(t, err)
 		assert.NotNil(t, paymentRefunds)
@@ -602,7 +602,7 @@ func TestUnitPatchPaymentsWithRefundPendingStatusDriver(t *testing.T) {
 		mt.AddMockResponses(mtest.CreateCommandErrorResponse(commandError))
 
 		mongoService.db = mt.DB
-		paymentRefunds, err := mongoService.PatchPaymentsWithRefundPendingStatus("id", true, &paymentResource)
+		paymentRefunds, err := mongoService.PatchRefundSuccessStatus("id", true, &paymentResource)
 
 		assert.NotNil(t, err)
 		assert.NotNil(t, paymentRefunds)
@@ -628,7 +628,7 @@ func TestUnitPatchPaymentsWithRefundPendingStatusDriver(t *testing.T) {
 		mt.AddMockResponses(response)
 		mongoService.db = mt.DB
 
-		paymentRefunds, err := mongoService.PatchPaymentsWithRefundPendingStatus("id", true, &paymentResource)
+		paymentRefunds, err := mongoService.PatchRefundSuccessStatus("id", true, &paymentResource)
 		assert.NotNil(t, paymentRefunds)
 		assert.NotNil(t, err)
 		assert.Equal(t, err.Error(), "mongo: no documents in result")

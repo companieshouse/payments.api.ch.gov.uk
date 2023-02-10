@@ -121,7 +121,7 @@ func TestUnitPatchPaymentsWithRefundPendingStatus(t *testing.T) {
 			ExternalPaymentTransactionID: "id456",
 			Refunds:                      refundDatas,
 		}
-		_, err := dao.PatchPaymentsWithRefundPendingStatus("id123", true, &resource)
+		_, err := dao.PatchRefundSuccessStatus("id123", true, &resource)
 		So(err.Error(), ShouldEqual, "the FindAndModify operation must have a Deployment set before Execute can be called")
 	})
 }

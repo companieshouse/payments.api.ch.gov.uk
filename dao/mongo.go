@@ -338,8 +338,18 @@ func (m *MongoService) GetPaymentRefunds(id string) ([]models.RefundResourceDB, 
 	return paymentRefunds, nil
 }
 
-// PatchPaymentsWithRefundPendingStatus updates payment refunds status to refund-success and inserts a new refunded_at
-func (m *MongoService) PatchPaymentsWithRefundPendingStatus(id string, isPaid bool, paymentUpdate *models.PaymentResourceDB) (models.PaymentResourceDB, error) {
+// PatchRefundSuccessStatus updates payment refunds status to refund-success
+func (m *MongoService) PatchRefundSuccessStatus(id string, isRefunded bool, paymentUpdate *models.PaymentResourceDB) (models.PaymentResourceDB, error) {
+	return m.PatchRefundStatus(id, isRefunded, false, "refund-success", paymentUpdate)
+}
+
+// PatchRefundReconciliationFailedStatus updates payment refunds status to refund-reconciliation-failed
+func (m *MongoService) PatchRefundReconciliationFailedStatus(id string, paymentUpdate *models.PaymentResourceDB) (models.PaymentResourceDB, error) {
+	return m.PatchRefundStatus(id, false, true, "refund-reconciliation-failed", paymentUpdate)
+}
+
+// PatchRefundStatus updates payment refunds status and inserts a new refunded_at
+func (m *MongoService) PatchRefundStatus(id string, isRefunded bool, isFailed bool, refundStatus string, paymentUpdate *models.PaymentResourceDB) (models.PaymentResourceDB, error) {
 	collection := m.db.Collection(m.CollectionName)
 	refunds := paymentUpdate.Refunds[0]
 	attempts := refunds.Attempts + 1
@@ -357,12 +367,19 @@ func (m *MongoService) PatchPaymentsWithRefundPendingStatus(id string, isPaid bo
 
 	var patchUpdate, updatedDoc bson.M
 
-	if isPaid {
+	if isRefunded {
 		patchUpdate = bson.M{
 			"$set": bson.M{
-				"refunds.$[x].status":      "refund-success",
+				"refunds.$[x].status":      refundStatus,
 				"refunds.$[x].refunded_at": time.Now(),
 				"refunds.$[x].attempts":    attempts,
+			},
+		}
+	} else if isFailed {
+		patchUpdate = bson.M{
+			"$set": bson.M{
+				"refunds.$[x].status":   refundStatus,
+				"refunds.$[x].attempts": attempts,
 			},
 		}
 	} else {
