@@ -407,12 +407,7 @@ func (service *RefundService) ProcessPendingRefunds(req *http.Request) ([]models
 		return nil, Success, errorList
 	}
 
-	payments, err = service.checkGovPayAndUpdateRefundStatus(req, payments)
-	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error completing the refund pending status update : %w", err))
-		errorList = append(errorList, errors.New("error completing the refund pending status update"))
-		return nil, Error, errorList
-	}
+	payments = service.checkGovPayAndUpdateRefundStatus(req, payments)
 
 	return payments, Success, nil
 }
@@ -516,7 +511,7 @@ func (service *RefundService) processPayPalBatchRefund(req *http.Request, paymen
 	return nil
 }
 
-func (service *RefundService) checkGovPayAndUpdateRefundStatus(req *http.Request, payments []models.PaymentResourceDB) ([]models.PaymentResourceDB, error) {
+func (service *RefundService) checkGovPayAndUpdateRefundStatus(req *http.Request, payments []models.PaymentResourceDB) []models.PaymentResourceDB {
 	var updatedPayments []models.PaymentResourceDB
 	for _, i := range payments {
 		x := i
@@ -525,38 +520,54 @@ func (service *RefundService) checkGovPayAndUpdateRefundStatus(req *http.Request
 			paymentSession, response, err := service.PaymentService.GetPaymentSession(req, x.ID)
 
 			if err != nil {
-				log.ErrorR(req, fmt.Errorf("error getting payment resource: [%w]", err))
-				return nil, fmt.Errorf("error getting payment resource ID: [%s]", x.ID)
+				log.ErrorR(req, fmt.Errorf("error getting payment resource ID [%s]: [%w]", x.ID, err))
+				_, err := service.DAO.PatchRefundReconciliationFailedStatus(x.ID, &x)
+				if err != nil {
+					log.ErrorR(req, fmt.Errorf("error storing status to DB: [%w]", err))
+				}
+				continue
 			}
 
 			if response == NotFound {
-				err = fmt.Errorf("error getting payment resource")
-				return nil, fmt.Errorf("not found error from payment service session with payment ID:[%s]", x.ID)
+				log.ErrorR(req, fmt.Errorf("not found error from payment service session with payment ID:[%s]", x.ID))
+				_, err := service.DAO.PatchRefundReconciliationFailedStatus(x.ID, &x)
+				if err != nil {
+					log.ErrorR(req, fmt.Errorf("error storing status to DB: [%w]", err))
+				}
+				continue
 			}
 
 			govPayStatusResponse, response, err := service.GovPayService.GetRefundStatus(paymentSession, refund.RefundId)
 
 			if err != nil {
-				log.ErrorR(req, fmt.Errorf("error getting payment pending refund status [%w]", err))
-				return nil, fmt.Errorf("error getting payment pending refund status Id: [%s]", refund.RefundId)
+				log.ErrorR(req, fmt.Errorf("error getting refund status for ID [%s] [%w]", refund.RefundId, err))
+				_, err := service.DAO.PatchRefundReconciliationFailedStatus(x.ID, &x)
+				if err != nil {
+					log.ErrorR(req, fmt.Errorf("error storing status to DB: [%w]", err))
+				}
+				continue
 			}
 
-			isPaid := govPayStatusResponse != nil && govPayStatusResponse.Status == RefundsStatusSuccess
+			isRefunded := govPayStatusResponse != nil && govPayStatusResponse.Status == RefundsStatusSuccess
 
-			payment, err := service.DAO.PatchPaymentsWithRefundPendingStatus(x.ID, isPaid, &x)
+			payment, err := service.DAO.PatchRefundSuccessStatus(x.ID, isRefunded, &x)
 			if err != nil {
-				log.ErrorR(req, fmt.Errorf("error patching payment [%w]", err))
-				return nil, fmt.Errorf("error updating payment Id: [%s] pending refund status ", x.ID)
+				log.ErrorR(req, fmt.Errorf("error patching payment ID [%s] [%w]", x.ID, err))
+				// No need to error out here, can continue to reconciliation
 			}
 
 			if payment.Refunds[0].Status == "refund-success" {
 				updatedPayments = append(updatedPayments, payment)
 			}
 		} else {
-			return nil, fmt.Errorf("No refund found with payment Id: [%s]", x.ID)
+			log.ErrorR(req, fmt.Errorf("no refund found with payment Id: [%s]", x.ID))
+			_, err := service.DAO.PatchRefundReconciliationFailedStatus(x.ID, &x)
+			if err != nil {
+				log.ErrorR(req, fmt.Errorf("error storing status to DB: [%w]", err))
+			}
+			continue
 		}
-
 	}
 
-	return updatedPayments, nil
+	return updatedPayments
 }
