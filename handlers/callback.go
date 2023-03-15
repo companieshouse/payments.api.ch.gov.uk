@@ -27,6 +27,8 @@ func HandleGovPayCallback(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	log.InfoR(req, "Callback received from Gov Pay", log.Data{"payment_id": id})
+
 	// The payment session must be retrieved directly to enable access to metadata outside the data block
 	paymentSession, _, err := paymentService.GetPaymentSession(req, id)
 	if err != nil {
@@ -125,6 +127,8 @@ func HandlePayPalCallback(externalPaymentSvc service.PaymentProviderService) htt
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+
+		log.InfoR(req, "Callback received from PayPal", log.Data{"payment_id": paymentID})
 
 		// The payment session must be retrieved directly to enable access to metadata outside the data block
 		paymentSession, _, err := paymentService.GetPaymentSession(req, paymentID)
