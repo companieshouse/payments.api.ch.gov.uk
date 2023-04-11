@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/companieshouse/chs.go/log"
+	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -204,6 +205,38 @@ func (m *MongoService) GetPaymentResourceByExternalPaymentTransactionID(id strin
 	}
 
 	return &resource, nil
+}
+
+// GetIncompleteGovPayPayments retrieves all in-progress payments which were have existed longer than the expiry limit
+func (m *MongoService) GetIncompleteGovPayPayments(cfg *config.Config) ([]models.PaymentResourceDB, error) {
+
+	var pendingPayments []models.PaymentResourceDB
+
+	collection := m.db.Collection(m.CollectionName)
+	now := time.Now()
+
+	filter := bson.M{
+		"data.payment_method": "credit-card",
+		"data.status":         "in-progress",
+		"data.created_at": bson.M{
+			"$lt": now.Add(time.Minute * -time.Duration(cfg.GovPayExpiryTime)),
+		},
+	}
+
+	incompletePaymentsDB, err := collection.Find(context.Background(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	err = incompletePaymentsDB.All(context.Background(), &pendingPayments)
+	if err != nil {
+		return nil, err
+	}
+
+	incompletePaymentsDB.Close(context.Background())
+
+	return pendingPayments, nil
+
 }
 
 // CreateBulkRefundByProviderID creates or adds to the array of bulk refunds on a payment resource

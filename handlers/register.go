@@ -79,6 +79,9 @@ func Register(mainRouter *mux.Router, cfg config.Config, paymentsDao dao.DAO) {
 	paymentDetailsRouter := mainRouter.PathPrefix("/private/payments/{payment_id}/payment-details").Subrouter()
 	paymentDetailsRouter.Handle("", HandleGetPaymentDetails(externalPaymentService)).Methods("GET").Name("get-payment-details")
 
+	paymentStatusRouter := mainRouter.PathPrefix("/private/payments/status-check").Subrouter()
+	paymentStatusRouter.HandleFunc("", HandleCheckPaymentStatus).Methods("POST").Name("check-payment-status")
+
 	// create-refund endpoint needs its own interceptor
 	createRefundRouter := mainRouter.PathPrefix("/payments/{paymentId}/refunds").Subrouter()
 	createRefundRouter.HandleFunc("", HandleCreateRefund).Methods("POST").Name("create-refund")
@@ -118,6 +121,7 @@ func Register(mainRouter *mux.Router, cfg config.Config, paymentsDao dao.DAO) {
 	createPaymentRouter.Use(log.Handler, interceptors.Oauth2OrPaymentPrivilegesIntercept, interceptors.UserPaymentAuthenticationIntercept)
 	getPaymentRouter.Use(interceptors.UserPaymentAuthenticationIntercept, pa.PaymentAuthenticationIntercept)
 	paymentDetailsRouter.Use(log.Handler, interceptors.UserPaymentAuthenticationIntercept, interceptors.InternalOrPaymentPrivilegesIntercept, pa.PaymentAuthenticationIntercept)
+	paymentStatusRouter.Use(log.Handler, interceptors.InternalOrPaymentPrivilegesIntercept)
 	createRefundRouter.Use(log.Handler, authentication.ElevatedPrivilegesInterceptor)
 	updateRefundRouter.Use(log.Handler, authentication.ElevatedPrivilegesInterceptor)
 	refundRouter.Use(log.Handler, interceptors.InternalOrPaymentPrivilegesIntercept)

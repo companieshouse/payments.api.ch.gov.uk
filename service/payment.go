@@ -242,6 +242,23 @@ func (service *PaymentService) GetPaymentSession(req *http.Request, id string) (
 	return &paymentResourceRest, Success, nil
 }
 
+// GetIncompletePayments returns an array of incomplete GovPay payments
+func (service *PaymentService) GetIncompletePayments(cfg *config.Config) (*[]models.PaymentResourceRest, error) {
+
+	// Retrieve pending GovPay payments from DB.
+	pendingPayments, err := service.DAO.GetIncompleteGovPayPayments(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	var incompletePaymentsRest []models.PaymentResourceRest
+	for _, paymentSession := range pendingPayments {
+		incompletePaymentsRest = append(incompletePaymentsRest, transformers.PaymentTransformer{}.TransformToRest(paymentSession))
+	}
+
+	return &incompletePaymentsRest, nil
+}
+
 func getTotalAmount(costs *[]models.CostResourceRest) (string, error) {
 	r := regexp.MustCompile(`^\d+(\.\d{2})?$`)
 	var totalAmount decimal.Decimal
