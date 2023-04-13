@@ -12,6 +12,8 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 )
 
+const errorWritingResponse = "error writing response: %w"
+
 // HandleCreatePaymentSession creates a payment session and returns a journey URL for the calling app to redirect to
 func HandleCreatePaymentSession(w http.ResponseWriter, req *http.Request) {
 	if req.Body == nil {
@@ -48,13 +50,13 @@ func HandleCreatePaymentSession(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// response body contains fully decorated REST model
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(contentType, applicationJsonResponseType)
 	w.Header().Set("Location", paymentResource.Links.Journey)
 	w.WriteHeader(http.StatusCreated)
 
 	err = json.NewEncoder(w).Encode(paymentResource)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
+		log.ErrorR(req, fmt.Errorf(errorWritingResponse, err))
 		return
 	}
 
@@ -85,11 +87,11 @@ func HandleGetPaymentSession(w http.ResponseWriter, req *http.Request) {
 		paymentSession.Status = service.Expired.String()
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(contentType, applicationJsonResponseType)
 
 	err = json.NewEncoder(w).Encode(paymentSession)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
+		log.ErrorR(req, fmt.Errorf(errorWritingResponse, err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -192,11 +194,11 @@ func HandleGetPaymentDetails(externalPaymentSvc *service.ExternalPaymentProvider
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(contentType, applicationJsonResponseType)
 
 		err = json.NewEncoder(w).Encode(statusResponse)
 		if err != nil {
-			log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
+			log.ErrorR(req, fmt.Errorf(errorWritingResponse, err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -222,7 +224,7 @@ func HandleCheckPaymentStatus(w http.ResponseWriter, req *http.Request) {
 		log.InfoR(req, "no in-progress payments found")
 		err = json.NewEncoder(w).Encode(updatedPayments)
 		if err != nil {
-			log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
+			log.ErrorR(req, fmt.Errorf(errorWritingResponse, err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -280,11 +282,11 @@ func HandleCheckPaymentStatus(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(contentType, applicationJsonResponseType)
 
 	err = json.NewEncoder(w).Encode(updatedPayments)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
+		log.ErrorR(req, fmt.Errorf(errorWritingResponse, err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
