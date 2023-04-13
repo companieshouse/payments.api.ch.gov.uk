@@ -212,16 +212,25 @@ func HandleCheckPaymentStatus(w http.ResponseWriter, req *http.Request) {
 	incompletePayments, err := paymentService.GetIncompletePayments(&paymentService.Config)
 	if err != nil {
 		log.ErrorR(req, fmt.Errorf("error getting in-progress payments: %w", err))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	updatedPayments := make([]models.PaymentResourceRest, 0)
+
 	if len(*incompletePayments) == 0 {
 		log.InfoR(req, "no in-progress payments found")
+		err = json.NewEncoder(w).Encode(updatedPayments)
+		if err != nil {
+			log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
 		return
 	}
 
 	log.InfoR(req, fmt.Sprintf("%d in-progress payments found", len(*incompletePayments)))
-
-	var updatedPayments []models.PaymentResourceRest
 
 	// call GovPay for each payment to check status
 	for _, pendingPayment := range *incompletePayments {
@@ -280,5 +289,6 @@ func HandleCheckPaymentStatus(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
 	log.InfoR(req, "finished checking payment statuses")
 }

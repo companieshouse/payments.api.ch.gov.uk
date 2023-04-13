@@ -6,6 +6,7 @@ package dao
 import (
 	reflect "reflect"
 
+	config "github.com/companieshouse/payments.api.ch.gov.uk/config"
 	models "github.com/companieshouse/payments.api.ch.gov.uk/models"
 	gomock "github.com/golang/mock/gomock"
 )
@@ -73,6 +74,21 @@ func (m *MockDAO) CreatePaymentResource(paymentResource *models.PaymentResourceD
 func (mr *MockDAOMockRecorder) CreatePaymentResource(paymentResource interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePaymentResource", reflect.TypeOf((*MockDAO)(nil).CreatePaymentResource), paymentResource)
+}
+
+// GetIncompleteGovPayPayments mocks base method.
+func (m *MockDAO) GetIncompleteGovPayPayments(arg0 *config.Config) ([]models.PaymentResourceDB, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIncompleteGovPayPayments", arg0)
+	ret0, _ := ret[0].([]models.PaymentResourceDB)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetIncompleteGovPayPayments indicates an expected call of GetIncompleteGovPayPayments.
+func (mr *MockDAOMockRecorder) GetIncompleteGovPayPayments(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncompleteGovPayPayments", reflect.TypeOf((*MockDAO)(nil).GetIncompleteGovPayPayments), arg0)
 }
 
 // GetPaymentRefunds mocks base method.

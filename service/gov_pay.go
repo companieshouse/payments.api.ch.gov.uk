@@ -142,7 +142,6 @@ func (gp *GovPayService) GetPaymentDetails(paymentResource *models.PaymentResour
 // GetPaymentStatus gets the status of a GovPay payment
 // https://docs.payments.service.gov.uk/api_reference/#payment-status-lifecycle
 func (gp *GovPayService) GetPaymentStatus(paymentResource *models.PaymentResourceRest) (bool, string, string, error) {
-	// func (gp *GovPayService) GetPaymentStatus(paymentResource *models.PaymentResourceRest) (*models.PaymentDetails, ResponseType, error)
 
 	govPayResponse, err := callGovPay(gp, paymentResource)
 	if err != nil {

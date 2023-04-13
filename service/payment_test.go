@@ -631,6 +631,32 @@ func TestUnitGetPayment(t *testing.T) {
 	})
 }
 
+func TestUnitGetIncompletePayments(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	cfg, _ := config.Get()
+
+	Convey("Error getting incomplete payments from DB", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mock.EXPECT().GetIncompleteGovPayPayments(gomock.Any()).Return(nil, fmt.Errorf("err"))
+
+		payments, err := mockPaymentService.GetIncompletePayments(cfg)
+		So(payments, ShouldBeNil)
+		So(err.Error(), ShouldEqual, "err")
+	})
+
+	Convey("Get incomplete payments - success", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+
+		mock.EXPECT().GetIncompleteGovPayPayments(gomock.Any()).Return([]models.PaymentResourceDB{{ID: "id"}}, nil)
+
+		payments, err := mockPaymentService.GetIncompletePayments(cfg)
+		So(len(*payments), ShouldEqual, 1)
+		So(err, ShouldBeNil)
+	})
+}
+
 func TestUnitGetTotalAmount(t *testing.T) {
 	Convey("Get Total Amount - valid", t, func() {
 		costs := []models.CostResourceRest{{Amount: "10"}, {Amount: "13"}, {Amount: "13.01"}}

@@ -359,6 +359,56 @@ func TestUnitCreateBulkRefundByExternalPaymentTransactionIDDriver(t *testing.T) 
 
 }
 
+func TestUnitGetIncompleteGovPayPaymentsDriver(t *testing.T) {
+	t.Parallel()
+
+	mongoService, commandError, opts, _, _, _ := setDriverUp()
+
+	mt := mtest.New(t, opts)
+	defer mt.Close()
+
+	cfg, _ := config.Get()
+
+	mt.Run("GetIncompleteGovPayPayments runs successfully", func(mt *mtest.T) {
+		first := mtest.CreateCursorResponse(1, "models.PaymentResourceDB", mtest.FirstBatch, bson.D{
+			{"_id", primitive.NewObjectID()},
+		})
+
+		stopCursors := mtest.CreateCursorResponse(0, "models.PaymentResourceDB", mtest.NextBatch)
+		mt.AddMockResponses(first, stopCursors)
+
+		mongoService.db = mt.DB
+		payments, err := mongoService.GetIncompleteGovPayPayments(cfg)
+
+		assert.Nil(t, err)
+		assert.NotNil(t, payments)
+	})
+
+	mt.Run("GetIncompleteGovPayPayments runs with error on find", func(mt *mtest.T) {
+		mt.AddMockResponses(mtest.CreateCommandErrorResponse(commandError))
+
+		mongoService.db = mt.DB
+		_, err := mongoService.GetIncompleteGovPayPayments(cfg)
+
+		assert.Equal(t, err.Error(), "(Name) Message")
+	})
+
+	mt.Run("GetIncompleteGovPayPayments runs with error on unmarshal cursor", func(mt *mtest.T) {
+		first := mtest.CreateCursorResponse(1, "models.PaymentResourceDB", mtest.FirstBatch, bson.D{
+			{"_id", primitive.NewObjectID()},
+		})
+
+		mt.AddMockResponses(first)
+
+		mongoService.db = mt.DB
+		payments, err := mongoService.GetIncompleteGovPayPayments(cfg)
+
+		assert.Nil(t, payments)
+		assert.NotNil(t, err)
+		assert.Equal(t, err.Error(), "no responses remaining")
+	})
+}
+
 func TestUnitGetPaymentsWithRefundStatusDriver(t *testing.T) {
 	t.Parallel()
 

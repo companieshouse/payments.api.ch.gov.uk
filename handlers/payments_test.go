@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -448,4 +449,302 @@ func TestUnitHandleGetPaymentDetails(t *testing.T) {
 		So(res.Code, ShouldEqual, http.StatusOK)
 	})
 
+}
+
+func TestUnitHandleCheckPaymentStatus(t *testing.T) {
+
+	cfg, _ := config.Get()
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockPaymentService := createMockPaymentService(dao.NewMockDAO(mockCtrl), cfg)
+
+	externalPaymentService = &service.ExternalPaymentProvidersService{
+		GovPayService: service.GovPayService{
+			PaymentService: *mockPaymentService,
+		},
+	}
+
+	Convey("Error getting incomplete payments", t, func() {
+		req := httptest.NewRequest("GET", "/test", nil)
+		w := httptest.NewRecorder()
+
+		mockDao := dao.NewMockDAO(mockCtrl)
+		mockDao.EXPECT().GetIncompleteGovPayPayments(gomock.Any()).Return(nil, fmt.Errorf("err"))
+		paymentService = &service.PaymentService{
+			DAO:    mockDao,
+			Config: *cfg,
+		}
+
+		HandleCheckPaymentStatus(w, req)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
+	Convey("No in-progress payments found", t, func() {
+		req := httptest.NewRequest("GET", "/test", nil)
+		w := httptest.NewRecorder()
+
+		mockDao := dao.NewMockDAO(mockCtrl)
+		mockDao.EXPECT().GetIncompleteGovPayPayments(gomock.Any()).Return(nil, nil)
+		paymentService = &service.PaymentService{
+			DAO:    mockDao,
+			Config: *cfg,
+		}
+
+		HandleCheckPaymentStatus(w, req)
+		So(w.Code, ShouldEqual, http.StatusOK)
+
+		decoder := json.NewDecoder(w.Body)
+		var rest []models.PaymentResourceRest
+		decoder.Decode(&rest)
+		So(len(rest), ShouldBeZeroValue)
+	})
+
+	Convey("Error getting payment session", t, func() {
+		req := httptest.NewRequest("GET", "/test", nil)
+		w := httptest.NewRecorder()
+
+		paymentsDB := []models.PaymentResourceDB{{ID: "id"}}
+
+		mockDao := dao.NewMockDAO(mockCtrl)
+		mockDao.EXPECT().GetIncompleteGovPayPayments(gomock.Any()).Return(paymentsDB, nil)
+		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(nil, fmt.Errorf("err"))
+		paymentService = &service.PaymentService{
+			DAO:    mockDao,
+			Config: *cfg,
+		}
+
+		HandleCheckPaymentStatus(w, req)
+		So(w.Code, ShouldEqual, http.StatusOK)
+
+		decoder := json.NewDecoder(w.Body)
+		var rest []models.PaymentResourceRest
+		decoder.Decode(&rest)
+		So(len(rest), ShouldBeZeroValue)
+	})
+
+	Convey("Error getting payment status", t, func() {
+		req := httptest.NewRequest("GET", "/test", nil)
+		w := httptest.NewRecorder()
+
+		paymentDB := models.PaymentResourceDB{
+			ID: "id",
+			Data: models.PaymentResourceDataDB{
+				Amount: "10.00",
+				Links:  models.PaymentLinksDB{Resource: "companieshouse.gov.uk"},
+			},
+		}
+		paymentsDB := []models.PaymentResourceDB{paymentDB}
+
+		mockDao := dao.NewMockDAO(mockCtrl)
+		mockDao.EXPECT().GetIncompleteGovPayPayments(gomock.Any()).Return(paymentsDB, nil)
+		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentDB, nil)
+
+		paymentService = &service.PaymentService{
+			DAO:    mockDao,
+			Config: *cfg,
+		}
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "companieshouse.gov.uk", jsonResponse)
+
+		HandleCheckPaymentStatus(w, req)
+		So(w.Code, ShouldEqual, http.StatusOK)
+
+		decoder := json.NewDecoder(w.Body)
+		var rest []models.PaymentResourceRest
+		decoder.Decode(&rest)
+		So(len(rest), ShouldBeZeroValue)
+	})
+
+	Convey("Payment not finished", t, func() {
+		req := httptest.NewRequest("GET", "/test", nil)
+		w := httptest.NewRecorder()
+
+		paymentDB := models.PaymentResourceDB{
+			ID: "id",
+			Data: models.PaymentResourceDataDB{
+				Amount: "10.00",
+				Links:  models.PaymentLinksDB{Resource: "companieshouse.gov.uk"},
+			},
+			ExternalPaymentStatusURI: "externalPayProvider.gov.uk",
+		}
+		paymentsDB := []models.PaymentResourceDB{paymentDB}
+
+		mockDao := dao.NewMockDAO(mockCtrl)
+		mockDao.EXPECT().GetIncompleteGovPayPayments(gomock.Any()).Return(paymentsDB, nil)
+		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentDB, nil)
+
+		paymentService = &service.PaymentService{
+			DAO:    mockDao,
+			Config: *cfg,
+		}
+
+		govPayResponse := models.IncomingGovPayResponse{
+			State: models.State{Finished: false},
+		}
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		paymentResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "companieshouse.gov.uk", paymentResponse)
+		externalPaymentResponse, _ := httpmock.NewJsonResponder(200, govPayResponse)
+		httpmock.RegisterResponder("GET", "externalPayProvider.gov.uk", externalPaymentResponse)
+
+		HandleCheckPaymentStatus(w, req)
+		So(w.Code, ShouldEqual, http.StatusOK)
+
+		decoder := json.NewDecoder(w.Body)
+		var rest []models.PaymentResourceRest
+		decoder.Decode(&rest)
+		So(len(rest), ShouldBeZeroValue)
+	})
+
+	Convey("Error producing kafka message", t, func() {
+		req := httptest.NewRequest("GET", "/test", nil)
+		w := httptest.NewRecorder()
+
+		paymentDB := models.PaymentResourceDB{
+			ID: "id",
+			Data: models.PaymentResourceDataDB{
+				Amount: "10.00",
+				Links:  models.PaymentLinksDB{Resource: "companieshouse.gov.uk"},
+			},
+			ExternalPaymentStatusURI: "externalPayProvider.gov.uk",
+		}
+		paymentsDB := []models.PaymentResourceDB{paymentDB}
+
+		mockDao := dao.NewMockDAO(mockCtrl)
+		mockDao.EXPECT().GetIncompleteGovPayPayments(gomock.Any()).Return(paymentsDB, nil)
+		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentDB, nil).AnyTimes()
+
+		paymentService = &service.PaymentService{
+			DAO:    mockDao,
+			Config: *cfg,
+		}
+
+		govPayResponse := models.IncomingGovPayResponse{
+			State: models.State{
+				Finished: true,
+				Status:   "success",
+			},
+		}
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		paymentResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "companieshouse.gov.uk", paymentResponse)
+		externalPaymentResponse, _ := httpmock.NewJsonResponder(200, govPayResponse)
+		httpmock.RegisterResponder("GET", "externalPayProvider.gov.uk", externalPaymentResponse)
+
+		handlePaymentMessage = mockProduceKafkaMessageError
+
+		HandleCheckPaymentStatus(w, req)
+		So(w.Code, ShouldEqual, http.StatusOK)
+
+		decoder := json.NewDecoder(w.Body)
+		var rest []models.PaymentResourceRest
+		decoder.Decode(&rest)
+		So(len(rest), ShouldBeZeroValue)
+	})
+
+	Convey("Payment successfully paid", t, func() {
+		req := httptest.NewRequest("GET", "/test", nil)
+		w := httptest.NewRecorder()
+
+		paymentDB := models.PaymentResourceDB{
+			ID: "id",
+			Data: models.PaymentResourceDataDB{
+				Amount: "10.00",
+				Links:  models.PaymentLinksDB{Resource: "companieshouse.gov.uk"},
+			},
+			ExternalPaymentStatusURI: "externalPayProvider.gov.uk",
+		}
+		paymentsDB := []models.PaymentResourceDB{paymentDB}
+
+		mockDao := dao.NewMockDAO(mockCtrl)
+		mockDao.EXPECT().GetIncompleteGovPayPayments(gomock.Any()).Return(paymentsDB, nil)
+		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentDB, nil).AnyTimes()
+		mockDao.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
+
+		paymentService = &service.PaymentService{
+			DAO:    mockDao,
+			Config: *cfg,
+		}
+
+		govPayResponse := models.IncomingGovPayResponse{
+			State: models.State{
+				Finished: true,
+				Status:   "success",
+			},
+		}
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		paymentResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "companieshouse.gov.uk", paymentResponse)
+		externalPaymentResponse, _ := httpmock.NewJsonResponder(200, govPayResponse)
+		httpmock.RegisterResponder("GET", "externalPayProvider.gov.uk", externalPaymentResponse)
+
+		handlePaymentMessage = mockProduceKafkaMessage
+
+		HandleCheckPaymentStatus(w, req)
+		So(w.Code, ShouldEqual, http.StatusOK)
+
+		decoder := json.NewDecoder(w.Body)
+		var rest []models.PaymentResourceRest
+		decoder.Decode(&rest)
+		So(len(rest), ShouldEqual, 1)
+	})
+
+	Convey("Error patching DB", t, func() {
+		req := httptest.NewRequest("GET", "/test", nil)
+		w := httptest.NewRecorder()
+
+		paymentDB := models.PaymentResourceDB{
+			ID: "id",
+			Data: models.PaymentResourceDataDB{
+				Amount: "10.00",
+				Links:  models.PaymentLinksDB{Resource: "companieshouse.gov.uk"},
+			},
+			ExternalPaymentStatusURI: "externalPayProvider.gov.uk",
+		}
+		paymentsDB := []models.PaymentResourceDB{paymentDB}
+
+		mockDao := dao.NewMockDAO(mockCtrl)
+		mockDao.EXPECT().GetIncompleteGovPayPayments(gomock.Any()).Return(paymentsDB, nil)
+		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentDB, nil).AnyTimes()
+		mockDao.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(fmt.Errorf("err"))
+
+		paymentService = &service.PaymentService{
+			DAO:    mockDao,
+			Config: *cfg,
+		}
+
+		govPayResponse := models.IncomingGovPayResponse{
+			State: models.State{
+				Finished: true,
+				Status:   "success",
+			},
+		}
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		paymentResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
+		httpmock.RegisterResponder("GET", "companieshouse.gov.uk", paymentResponse)
+		externalPaymentResponse, _ := httpmock.NewJsonResponder(200, govPayResponse)
+		httpmock.RegisterResponder("GET", "externalPayProvider.gov.uk", externalPaymentResponse)
+
+		handlePaymentMessage = mockProduceKafkaMessage
+
+		HandleCheckPaymentStatus(w, req)
+		So(w.Code, ShouldEqual, http.StatusOK)
+
+		decoder := json.NewDecoder(w.Body)
+		var rest []models.PaymentResourceRest
+		decoder.Decode(&rest)
+		So(len(rest), ShouldEqual, 1)
+	})
 }
