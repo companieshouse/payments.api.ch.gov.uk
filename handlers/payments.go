@@ -222,13 +222,13 @@ func HandleCheckPaymentStatus(w http.ResponseWriter, req *http.Request) {
 
 	if len(*incompletePayments) == 0 {
 		log.InfoR(req, "no in-progress payments found")
+		w.Header().Set(contentType, applicationJsonResponseType)
 		err = json.NewEncoder(w).Encode(updatedPayments)
 		if err != nil {
 			log.ErrorR(req, fmt.Errorf(errorWritingResponse, err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
 		return
 	}
 
@@ -264,10 +264,11 @@ func HandleCheckPaymentStatus(w http.ResponseWriter, req *http.Request) {
 				continue
 			}
 			log.InfoR(req, fmt.Sprintf("kafka message successfully published for paymentID [%s]", pendingPayment.MetaData.ID))
-			paymentSession.Status = status
-			paymentSession.CompletedAt = completedAt
-			updatedPayments = append(updatedPayments, *paymentSession)
 		}
+
+		paymentSession.Status = status
+		paymentSession.CompletedAt = completedAt
+		updatedPayments = append(updatedPayments, *paymentSession)
 
 		// update payment status in DB
 		paymentUpdate := models.PaymentResourceRest{
@@ -291,6 +292,5 @@ func HandleCheckPaymentStatus(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
 	log.InfoR(req, "finished checking payment statuses")
 }
