@@ -207,7 +207,7 @@ func (m *MongoService) GetPaymentResourceByExternalPaymentTransactionID(id strin
 	return &resource, nil
 }
 
-// GetIncompleteGovPayPayments retrieves all in-progress payments which were have existed longer than the expiry limit
+// GetIncompleteGovPayPayments retrieves all in-progress payments which have existed longer than the expiry limit
 func (m *MongoService) GetIncompleteGovPayPayments(cfg *config.Config) ([]models.PaymentResourceDB, error) {
 
 	var pendingPayments []models.PaymentResourceDB
