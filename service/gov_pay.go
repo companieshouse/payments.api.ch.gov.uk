@@ -139,6 +139,37 @@ func (gp *GovPayService) GetPaymentDetails(paymentResource *models.PaymentResour
 	return paymentDetails, Success, nil
 }
 
+// GetPaymentStatus gets the status of a GovPay payment
+// https://docs.payments.service.gov.uk/api_reference/#payment-status-lifecycle
+func (gp *GovPayService) GetPaymentStatus(paymentResource *models.PaymentResourceRest) (finished bool, status string, providerID string, err error) {
+
+	govPayResponse, err := callGovPay(gp, paymentResource)
+	if err != nil {
+		return false, "", "", err
+	}
+
+	if !govPayResponse.State.Finished {
+		return govPayResponse.State.Finished, govPayResponse.State.Status, "", nil
+	}
+
+	if govPayResponse.State.Status == "failed" {
+		errorMappings := map[string]string{
+			"P0010": "payment-method-rejected",
+			"P0020": "payment-expired",
+			"P0030": "payment-cancelled-by-user",
+			"P0040": "payment-cancelled-by-service",
+			"P0050": "payment-provider-error",
+		}
+		return govPayResponse.State.Finished, govPayResponse.State.Status + "_" + errorMappings[govPayResponse.State.Code], "", nil
+	}
+
+	if govPayResponse.State.Status == "success" {
+		return govPayResponse.State.Finished, "paid", govPayResponse.ProviderID, nil
+	}
+
+	return govPayResponse.State.Finished, govPayResponse.State.Status, "", nil
+}
+
 // GetRefundSummary gets refund summary of a GovPay payment
 func (gp *GovPayService) GetRefundSummary(req *http.Request, id string) (*models.PaymentResourceRest, *models.RefundSummary, ResponseType, error) {
 	// Get PaymentSession for the GovPay call
@@ -246,7 +277,7 @@ func (gp *GovPayService) GetRefundStatus(paymentResource *models.PaymentResource
 	}
 
 	govPayResponse := &models.CreateRefundGovPayResponse{}
- 
+
 	err = json.Unmarshal(body, govPayResponse)
 	if err != nil {
 		return nil, Error, fmt.Errorf("error reading response from GovPay: [%s]", err)
@@ -254,7 +285,7 @@ func (gp *GovPayService) GetRefundStatus(paymentResource *models.PaymentResource
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
 		return nil, Error, fmt.Errorf(govPayStatusError, resp.StatusCode, govPayResponse.Status)
 	}
-	
+
 	return govPayResponse, Success, nil
 }
 

@@ -4,12 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
 )
+
+const errorWritingResponse = "error writing response: %w"
 
 // HandleCreatePaymentSession creates a payment session and returns a journey URL for the calling app to redirect to
 func HandleCreatePaymentSession(w http.ResponseWriter, req *http.Request) {
@@ -47,13 +50,13 @@ func HandleCreatePaymentSession(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// response body contains fully decorated REST model
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(contentType, applicationJsonResponseType)
 	w.Header().Set("Location", paymentResource.Links.Journey)
 	w.WriteHeader(http.StatusCreated)
 
 	err = json.NewEncoder(w).Encode(paymentResource)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
+		log.ErrorR(req, fmt.Errorf(errorWritingResponse, err))
 		return
 	}
 
@@ -84,11 +87,11 @@ func HandleGetPaymentSession(w http.ResponseWriter, req *http.Request) {
 		paymentSession.Status = service.Expired.String()
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(contentType, applicationJsonResponseType)
 
 	err = json.NewEncoder(w).Encode(paymentSession)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
+		log.ErrorR(req, fmt.Errorf(errorWritingResponse, err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -191,15 +194,103 @@ func HandleGetPaymentDetails(externalPaymentSvc *service.ExternalPaymentProvider
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(contentType, applicationJsonResponseType)
 
 		err = json.NewEncoder(w).Encode(statusResponse)
 		if err != nil {
-			log.ErrorR(req, fmt.Errorf("error writing response: %v", err))
+			log.ErrorR(req, fmt.Errorf(errorWritingResponse, err))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		log.InfoR(req, "Successful GET request for payment details: ", log.Data{"payment_id": paymentSession.MetaData.ID})
 	})
+}
+
+// HandleCheckPaymentStatus checks the status of incomplete payments and processes appropriately if paid
+func HandleCheckPaymentStatus(w http.ResponseWriter, req *http.Request) {
+	log.InfoR(req, "received request to check payment statuses")
+
+	incompletePayments, err := paymentService.GetIncompletePayments(&paymentService.Config)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf("error getting in-progress payments: %w", err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	updatedPayments := make([]models.PaymentResourceRest, 0)
+
+	if len(*incompletePayments) == 0 {
+		log.InfoR(req, "no in-progress payments found")
+		w.Header().Set(contentType, applicationJsonResponseType)
+		err = json.NewEncoder(w).Encode(updatedPayments)
+		if err != nil {
+			log.ErrorR(req, fmt.Errorf(errorWritingResponse, err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		return
+	}
+
+	log.InfoR(req, fmt.Sprintf("%d in-progress payments found", len(*incompletePayments)))
+
+	// call GovPay for each payment to check status
+	for _, pendingPayment := range *incompletePayments {
+
+		// we need to get session to include costs
+		paymentSession, _, err := paymentService.GetPaymentSession(req, pendingPayment.MetaData.ID)
+		if err != nil {
+			log.ErrorR(req, fmt.Errorf("error getting payment session for paymentID [%s]: [%w]", pendingPayment.MetaData.ID, err))
+			continue
+		}
+		finished, status, providerID, err := externalPaymentService.GovPayService.GetPaymentStatus(paymentSession)
+		if err != nil {
+			log.ErrorR(req, fmt.Errorf("error getting status for paymentID [%s]: [%w]", pendingPayment.MetaData.ID, err))
+			continue
+		}
+
+		if !finished {
+			log.InfoR(req, fmt.Sprintf("Payment [%s] not finished, skipping.", pendingPayment.MetaData.ID))
+			continue
+		}
+
+		completedAt := time.Now().Truncate(time.Millisecond)
+
+		if status == "paid" {
+			// payment has been successful, continue processing
+			err = handlePaymentMessage(pendingPayment.MetaData.ID)
+			if err != nil {
+				log.ErrorR(req, fmt.Errorf("error producing payment kafka message for paymentID [%s]: [%w]", pendingPayment.MetaData.ID, err))
+				continue
+			}
+			log.InfoR(req, fmt.Sprintf("kafka message successfully published for paymentID [%s]", pendingPayment.MetaData.ID))
+		}
+
+		paymentSession.Status = status
+		paymentSession.CompletedAt = completedAt
+		updatedPayments = append(updatedPayments, *paymentSession)
+
+		// update payment status in DB
+		paymentUpdate := models.PaymentResourceRest{
+			Status:      status,
+			ProviderID:  providerID,
+			CompletedAt: completedAt,
+		}
+
+		_, err = paymentService.PatchPaymentSession(req, pendingPayment.MetaData.ID, paymentUpdate)
+		if err != nil {
+			log.ErrorR(req, fmt.Errorf("error patching DB for paymentID [%s]: [%w]", pendingPayment.MetaData.ID, err))
+		}
+	}
+
+	w.Header().Set(contentType, applicationJsonResponseType)
+
+	err = json.NewEncoder(w).Encode(updatedPayments)
+	if err != nil {
+		log.ErrorR(req, fmt.Errorf(errorWritingResponse, err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	log.InfoR(req, "finished checking payment statuses")
 }

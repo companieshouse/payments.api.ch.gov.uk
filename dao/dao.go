@@ -12,6 +12,7 @@ type DAO interface {
 	PatchPaymentResource(id string, paymentUpdate *models.PaymentResourceDB) error
 	GetPaymentResourceByProviderID(providerID string) (*models.PaymentResourceDB, error)
 	GetPaymentResourceByExternalPaymentTransactionID(providerID string) (*models.PaymentResourceDB, error)
+	GetIncompleteGovPayPayments(*config.Config) ([]models.PaymentResourceDB, error)
 	CreateBulkRefundByProviderID(bulkRefunds map[string]models.BulkRefundDB) error
 	CreateBulkRefundByExternalPaymentTransactionID(bulkRefunds map[string]models.BulkRefundDB) error
 	GetPaymentsWithRefundStatus() ([]models.PaymentResourceDB, error)
