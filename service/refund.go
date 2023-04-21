@@ -521,18 +521,18 @@ func (service *RefundService) checkGovPayAndUpdateRefundStatus(req *http.Request
 
 			if err != nil {
 				log.ErrorR(req, fmt.Errorf("error getting payment resource ID [%s]: [%w]", x.ID, err))
-				_, err := service.DAO.PatchRefundReconciliationFailedStatus(x.ID, &x)
+				err := service.DAO.IncrementRefundAttempts(x.ID, &x)
 				if err != nil {
-					log.ErrorR(req, fmt.Errorf("error storing status to DB: [%w]", err))
+					log.ErrorR(req, fmt.Errorf("error incrementing attempts in DB: [%w]", err))
 				}
 				continue
 			}
 
 			if response == NotFound {
 				log.ErrorR(req, fmt.Errorf("not found error from payment service session with payment ID:[%s]", x.ID))
-				_, err := service.DAO.PatchRefundReconciliationFailedStatus(x.ID, &x)
+				err := service.DAO.IncrementRefundAttempts(x.ID, &x)
 				if err != nil {
-					log.ErrorR(req, fmt.Errorf("error storing status to DB: [%w]", err))
+					log.ErrorR(req, fmt.Errorf("error incrementing attempts in DB: [%w]", err))
 				}
 				continue
 			}
@@ -541,9 +541,9 @@ func (service *RefundService) checkGovPayAndUpdateRefundStatus(req *http.Request
 
 			if err != nil {
 				log.ErrorR(req, fmt.Errorf("error getting refund status for ID [%s] [%w]", refund.RefundId, err))
-				_, err := service.DAO.PatchRefundReconciliationFailedStatus(x.ID, &x)
+				err := service.DAO.IncrementRefundAttempts(x.ID, &x)
 				if err != nil {
-					log.ErrorR(req, fmt.Errorf("error storing status to DB: [%w]", err))
+					log.ErrorR(req, fmt.Errorf("error incrementing attempts in DB: [%w]", err))
 				}
 				continue
 			}
@@ -561,11 +561,6 @@ func (service *RefundService) checkGovPayAndUpdateRefundStatus(req *http.Request
 			}
 		} else {
 			log.ErrorR(req, fmt.Errorf("no refund found with payment Id: [%s]", x.ID))
-			_, err := service.DAO.PatchRefundReconciliationFailedStatus(x.ID, &x)
-			if err != nil {
-				log.ErrorR(req, fmt.Errorf("error storing status to DB: [%w]", err))
-			}
-			continue
 		}
 	}
 

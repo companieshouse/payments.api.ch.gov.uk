@@ -181,6 +181,20 @@ func (mr *MockDAOMockRecorder) GetPaymentsWithRefundStatus() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaymentsWithRefundStatus", reflect.TypeOf((*MockDAO)(nil).GetPaymentsWithRefundStatus))
 }
 
+// IncrementRefundAttempts mocks base method.
+func (m *MockDAO) IncrementRefundAttempts(paymentID string, paymentUpdate *models.PaymentResourceDB) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncrementRefundAttempts", paymentID, paymentUpdate)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IncrementRefundAttempts indicates an expected call of IncrementRefundAttempts.
+func (mr *MockDAOMockRecorder) IncrementRefundAttempts(paymentID, paymentUpdate interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementRefundAttempts", reflect.TypeOf((*MockDAO)(nil).IncrementRefundAttempts), paymentID, paymentUpdate)
+}
+
 // PatchPaymentResource mocks base method.
 func (m *MockDAO) PatchPaymentResource(id string, paymentUpdate *models.PaymentResourceDB) error {
 	m.ctrl.T.Helper()
@@ -193,21 +207,6 @@ func (m *MockDAO) PatchPaymentResource(id string, paymentUpdate *models.PaymentR
 func (mr *MockDAOMockRecorder) PatchPaymentResource(id, paymentUpdate interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PatchPaymentResource", reflect.TypeOf((*MockDAO)(nil).PatchPaymentResource), id, paymentUpdate)
-}
-
-// PatchRefundReconciliationFailedStatus mocks base method.
-func (m *MockDAO) PatchRefundReconciliationFailedStatus(id string, paymentUpdate *models.PaymentResourceDB) (models.PaymentResourceDB, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PatchRefundReconciliationFailedStatus", id, paymentUpdate)
-	ret0, _ := ret[0].(models.PaymentResourceDB)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// PatchRefundReconciliationFailedStatus indicates an expected call of PatchRefundReconciliationFailedStatus.
-func (mr *MockDAOMockRecorder) PatchRefundReconciliationFailedStatus(id, paymentUpdate interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PatchRefundReconciliationFailedStatus", reflect.TypeOf((*MockDAO)(nil).PatchRefundReconciliationFailedStatus), id, paymentUpdate)
 }
 
 // PatchRefundStatus mocks base method.

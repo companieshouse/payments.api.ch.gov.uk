@@ -892,7 +892,7 @@ func TestUnitProcessPendingRefunds(t *testing.T) {
 
 	Convey("No payments with paid status found in DB", t, func() {
 		mockDao.EXPECT().GetPaymentsWithRefundPendingStatus().Return([]models.PaymentResourceDB{}, nil)
-		mockDao.EXPECT().PatchRefundReconciliationFailedStatus(gomock.Any(), gomock.Any()).Return(models.PaymentResourceDB{}, nil)
+		mockDao.EXPECT().IncrementRefundAttempts(gomock.Any(), gomock.Any()).Return(nil)
 
 		_, Success, errs := service.ProcessPendingRefunds(req)
 
@@ -1364,7 +1364,7 @@ func TestUnitCheckGovPayAndUpdateRefundStatus(t *testing.T) {
 	Convey("Process pending refunds payments status with payments", t, func() {
 		paymentsPaidDatas = append(paymentsPaidDatas, paymentsPaidData)
 		mockDao.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentsPaidData, nil)
-		mockDao.EXPECT().PatchRefundReconciliationFailedStatus(gomock.Any(), gomock.Any()).Return(models.PaymentResourceDB{}, nil).AnyTimes()
+		mockDao.EXPECT().IncrementRefundAttempts(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 		updatedPayments := service.checkGovPayAndUpdateRefundStatus(req, paymentsPaidDatas)
 		So(len(updatedPayments), ShouldBeZeroValue)

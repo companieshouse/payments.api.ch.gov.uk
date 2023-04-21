@@ -137,3 +137,35 @@ func TestUnitGetPaymentRefunds(t *testing.T) {
 		So(err.Error(), ShouldEqual, "the Find operation must have a Deployment set before Execute can be called")
 	})
 }
+
+func TestUnitIncrementRefundAttempts(t *testing.T) {
+	Convey("Increment refund attempts", t, func() {
+		cfg, _ := config.Get()
+		client = &mongo.Client{}
+		dao := NewDAO(cfg)
+
+		refundData := models.RefundResourceDB{
+			RefundId:          "sasaswewq23wsw",
+			CreatedAt:         "2020-11-19T12:57:30.Z06Z",
+			Amount:            800.0,
+			Status:            "pending",
+			ExternalRefundUrl: "https://pulicapi.payments.service.gov.uk",
+		}
+		refundDatas := []models.RefundResourceDB{refundData}
+
+		resource := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				PaymentMethod: "credit-card",
+				Status:        "pending",
+				CompletedAt:   time.Now(),
+				ProviderID:    "id123",
+			},
+			ExternalPaymentStatusURI:     "companieshouse.gov.uk",
+			ExternalPaymentStatusID:      "id123",
+			ExternalPaymentTransactionID: "id456",
+			Refunds:                      refundDatas,
+		}
+		err := dao.IncrementRefundAttempts("id123", &resource)
+		So(err.Error(), ShouldEqual, "the FindAndModify operation must have a Deployment set before Execute can be called")
+	})
+}
