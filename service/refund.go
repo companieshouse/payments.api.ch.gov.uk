@@ -20,15 +20,16 @@ import (
 )
 
 const (
-	RefundPending           = "pending"
-	RefundUnavailable       = "unavailable"
-	RefundAvailable         = "available"
-	RefundFull              = "full"
-	RefundsStatusSuccess    = "success"
-	RefundsStatusSubmitted  = "submitted"
-	RefundsStatusError      = "error"
-	PaymentMethodCreditCard = "credit-card"
-	PaymentMethodPayPal     = "PayPal"
+	RefundPending             = "pending"
+	RefundUnavailable         = "unavailable"
+	RefundAvailable           = "available"
+	RefundFull                = "full"
+	RefundsStatusSuccess      = "success"
+	RefundsStatusSubmitted    = "submitted"
+	RefundsStatusError        = "error"
+	PaymentMethodCreditCard   = "credit-card"
+	PaymentMethodPayPal       = "PayPal"
+	ErrorIncrementingAttempts = "error incrementing attempts in DB: [%w]"
 )
 
 // BulkRefundStatus Enum Type
@@ -523,7 +524,7 @@ func (service *RefundService) checkGovPayAndUpdateRefundStatus(req *http.Request
 				log.ErrorR(req, fmt.Errorf("error getting payment resource ID [%s]: [%w]", x.ID, err))
 				err := service.DAO.IncrementRefundAttempts(x.ID, &x)
 				if err != nil {
-					log.ErrorR(req, fmt.Errorf("error incrementing attempts in DB: [%w]", err))
+					log.ErrorR(req, fmt.Errorf(ErrorIncrementingAttempts, err))
 				}
 				continue
 			}
@@ -532,7 +533,7 @@ func (service *RefundService) checkGovPayAndUpdateRefundStatus(req *http.Request
 				log.ErrorR(req, fmt.Errorf("not found error from payment service session with payment ID:[%s]", x.ID))
 				err := service.DAO.IncrementRefundAttempts(x.ID, &x)
 				if err != nil {
-					log.ErrorR(req, fmt.Errorf("error incrementing attempts in DB: [%w]", err))
+					log.ErrorR(req, fmt.Errorf(ErrorIncrementingAttempts, err))
 				}
 				continue
 			}
@@ -543,7 +544,7 @@ func (service *RefundService) checkGovPayAndUpdateRefundStatus(req *http.Request
 				log.ErrorR(req, fmt.Errorf("error getting refund status for ID [%s] [%w]", refund.RefundId, err))
 				err := service.DAO.IncrementRefundAttempts(x.ID, &x)
 				if err != nil {
-					log.ErrorR(req, fmt.Errorf("error incrementing attempts in DB: [%w]", err))
+					log.ErrorR(req, fmt.Errorf(ErrorIncrementingAttempts, err))
 				}
 				continue
 			}
