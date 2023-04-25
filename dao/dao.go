@@ -19,8 +19,8 @@ type DAO interface {
 	GetPaymentsWithRefundPendingStatus() ([]models.PaymentResourceDB, error)
 	GetPaymentRefunds(string) ([]models.RefundResourceDB, error)
 	PatchRefundSuccessStatus(id string, isPaid bool, paymentUpdate *models.PaymentResourceDB) (models.PaymentResourceDB, error)
-	PatchRefundReconciliationFailedStatus(id string, paymentUpdate *models.PaymentResourceDB) (models.PaymentResourceDB, error)
 	PatchRefundStatus(id string, isRefunded bool, isFailed bool, refundStatus string, paymentUpdate *models.PaymentResourceDB) (models.PaymentResourceDB, error)
+	IncrementRefundAttempts(paymentID string, paymentUpdate *models.PaymentResourceDB) error
 }
 
 // NewDAO will create a new instance of the DAO interface.

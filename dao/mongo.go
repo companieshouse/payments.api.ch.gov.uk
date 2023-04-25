@@ -376,11 +376,6 @@ func (m *MongoService) PatchRefundSuccessStatus(id string, isRefunded bool, paym
 	return m.PatchRefundStatus(id, isRefunded, false, "refund-success", paymentUpdate)
 }
 
-// PatchRefundReconciliationFailedStatus updates payment refunds status to refund-reconciliation-failed
-func (m *MongoService) PatchRefundReconciliationFailedStatus(id string, paymentUpdate *models.PaymentResourceDB) (models.PaymentResourceDB, error) {
-	return m.PatchRefundStatus(id, false, true, "refund-reconciliation-failed", paymentUpdate)
-}
-
 // PatchRefundStatus updates payment refunds status and inserts a new refunded_at
 func (m *MongoService) PatchRefundStatus(id string, isRefunded bool, isFailed bool, refundStatus string, paymentUpdate *models.PaymentResourceDB) (models.PaymentResourceDB, error) {
 	collection := m.db.Collection(m.CollectionName)
@@ -440,4 +435,29 @@ func (m *MongoService) PatchRefundStatus(id string, isRefunded bool, isFailed bo
 	bson.Unmarshal(bsonBytes, &updatedPayment)
 
 	return updatedPayment, nil
+}
+
+// IncrementRefundAttempts increments the attempt counter for a refund
+func (m *MongoService) IncrementRefundAttempts(paymentID string, paymentUpdate *models.PaymentResourceDB) error {
+	collection := m.db.Collection(m.CollectionName)
+	refunds := paymentUpdate.Refunds[0]
+	attempts := refunds.Attempts + 1
+
+	refundsFilter := options.ArrayFilters{Filters: bson.A{bson.M{"x.refund_id": refunds.RefundId}}}
+	upsert := true
+
+	opts := options.FindOneAndUpdateOptions{
+		ArrayFilters: &refundsFilter,
+		Upsert:       &upsert,
+	}
+
+	patchUpdate := bson.M{
+		"$set": bson.M{
+			"refunds.$[x].attempts": attempts,
+		},
+	}
+
+	result := collection.FindOneAndUpdate(context.Background(), bson.M{"_id": paymentID}, patchUpdate, &opts)
+
+	return result.Err()
 }
