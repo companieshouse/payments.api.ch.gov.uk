@@ -2,14 +2,10 @@ CHS_ENV_HOME ?= $(HOME)/.chs_env
 TESTS        ?= ./...
 
 bin          := payments.api.ch.gov.uk
-chs_envs     := $(CHS_ENV_HOME)/global_env $(CHS_ENV_HOME)/payments.api.ch.gov.uk/env
+chs_envs     := $(CHS_ENV_HOME)/global_env $(CHS_ENV_HOME)/$(bin)/env
 source_env   := for chs_env in $(chs_envs); do test -f $$chs_env && . $$chs_env; done
 xunit_output := test.xml
 lint_output  := lint.txt
-
-commit       := $(shell git rev-parse --short HEAD)
-tag          := $(shell git tag -l 'v*-rc*' --points-at HEAD)
-version      := $(shell if [[ -n "$(tag)" ]]; then echo $(tag) | sed 's/^v//'; else echo $(commit); fi)
 
 .EXPORT_ALL_VARIABLES:
 GO111MODULE = on
@@ -38,15 +34,19 @@ test-integration:
 
 .PHONY: clean
 clean:
-	go mod tidy 
+	go mod tidy
 	rm -f ./$(bin) ./$(bin)-*.zip $(test_path) build.log
 
 .PHONY: package
 package:
+ifndef version
+	$(error No version given. Aborting)
+endif
+	$(info Packaging version: $(version))
 	$(eval tmpdir := $(shell mktemp -d build-XXXXXXXXXX))
 	cp ./$(bin) $(tmpdir)
 	cp ./start.sh $(tmpdir)
-	cd $(tmpdir) && zip -r ../$(bin)-$(version).zip $(bin) start.sh
+	cd $(tmpdir) && zip ../$(bin)-$(version).zip $(bin) start.sh
 	rm -rf $(tmpdir)
 
 .PHONY: dist
