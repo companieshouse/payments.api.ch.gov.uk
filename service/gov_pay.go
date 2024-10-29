@@ -36,6 +36,15 @@ func (gp *GovPayService) CheckPaymentProviderStatus(paymentResource *models.Paym
 		return &models.StatusResponse{Status: "paid"}, govPayResponse.ProviderID, Success, nil
 	} else if state.Finished && state.Code == "P0030" {
 		return &models.StatusResponse{Status: "cancelled"}, "", Success, nil
+	} else if !state.Finished && state.Status == "created" {
+		/*
+			handle payment 'not yet finished' response from GovPay:
+				"state": {
+					"status": "created",
+					"finished": false
+				}
+		*/
+		return &models.StatusResponse{Status: "paid"}, govPayResponse.ProviderID, Created, nil
 	}
 	return &models.StatusResponse{Status: "failed"}, "", Error, nil
 }

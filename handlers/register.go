@@ -114,7 +114,7 @@ func Register(mainRouter *mux.Router, cfg config.Config, paymentsDao dao.DAO) {
 
 	// callback endpoints should not be intercepted by the paymentauth or userauth interceptors, so needs to be it's own subrouter
 	callbackRouter := mainRouter.PathPrefix("/callback").Subrouter()
-	callbackRouter.HandleFunc("/payments/govpay/{payment_id}", HandleGovPayCallback).Methods("GET").Name("handle-govpay-callback")
+	callbackRouter.Handle("/payments/govpay/{payment_id}", HandleGovPayCallback(govPayService)).Methods("GET").Name("handle-govpay-callback")
 	callbackRouter.Handle("/payments/paypal/orders/{payment_id}", HandlePayPalCallback(payPalService)).Methods("GET").Name("handle-paypal-callback")
 
 	// Set middleware for subrouters

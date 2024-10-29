@@ -16,7 +16,7 @@ const (
 	// NotFound response
 	NotFound
 
-	// Success response
+	// Success (terminal) response
 	Success
 
 	// CostsNotFound response
@@ -27,6 +27,9 @@ const (
 
 	// Conflict response
 	Conflict
+
+	// Payment Created (non-terminal) response
+	Created
 )
 
 var vals = [...]string{
@@ -38,6 +41,7 @@ var vals = [...]string{
 	"costs-not-found",
 	"costs-gone",
 	"conflict",
+	"created",
 }
 
 // String representation of `ResponseType`
