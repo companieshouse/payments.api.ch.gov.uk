@@ -134,6 +134,33 @@ func TestUnitCheckProvider(t *testing.T) {
 		So(statusResponse.Status, ShouldEqual, "cancelled")
 		So(err, ShouldBeNil)
 	})
+
+	Convey("Status - created", t, func() {
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		GovPayState := models.State{Status: "created", Finished: false, Code: "created"}
+		IncomingGovPayResponse := models.IncomingGovPayResponse{State: GovPayState, ProviderID: "abc123"}
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, IncomingGovPayResponse)
+		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
+
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty"},
+		}
+
+		paymentResourceRest := models.PaymentResourceRest{
+			MetaData: models.PaymentResourceMetaDataRest{
+				ExternalPaymentStatusURI: "external_uri",
+			},
+			Costs: []models.CostResourceRest{costResource},
+		}
+
+		statusResponse, providerID, responseType, err := mockGovPayService.CheckPaymentProviderStatus(&paymentResourceRest)
+		So(responseType.String(), ShouldEqual, Created.String())
+		So(providerID, ShouldEqual, "abc123")
+		So(statusResponse.Status, ShouldEqual, "paid")
+		So(err, ShouldBeNil)
+	})
 }
 
 func TestUnitGenerateNextURLGovPay(t *testing.T) {

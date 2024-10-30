@@ -62,13 +62,19 @@ func mockProduceKafkaMessage(path string) error {
 func TestUnitHandleGovPayCallback(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
+
+	mockPaymentProvidersService := service.NewMockPaymentProviderService(mockCtrl)
+
 	cfg, _ := config.Get()
 	cfg.DomainAllowList = "http://dummy-url"
 
 	Convey("Payment ID not supplied", t, func() {
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		w := httptest.NewRecorder()
-		HandleGovPayCallback(w, req)
+
+		handler := HandleGovPayCallback(mockPaymentProvidersService)
+		handler.ServeHTTP(w, req)
+
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
 
@@ -77,10 +83,13 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		paymentService = createMockPaymentService(mock, cfg)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(nil, fmt.Errorf("error"))
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
 		w := httptest.NewRecorder()
-		HandleGovPayCallback(w, req)
+
+		handler := HandleGovPayCallback(mockPaymentProvidersService)
+		handler.ServeHTTP(w, req)
+
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
@@ -89,15 +98,19 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		paymentService = createMockPaymentService(mock, cfg)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(nil, nil)
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
 		w := httptest.NewRecorder()
-		HandleGovPayCallback(w, req)
+
+		handler := HandleGovPayCallback(mockPaymentProvidersService)
+		handler.ServeHTTP(w, req)
+
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 	})
 
 	Convey("Invalid expiry time", t, func() {
 		cfg.ExpiryTimeInMinutes = "invalid"
+
 		mock := dao.NewMockDAO(mockCtrl)
 		paymentService = createMockPaymentService(mock, cfg)
 		paymentSession := models.PaymentResourceDB{
@@ -113,13 +126,16 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		w := httptest.NewRecorder()
-		HandleGovPayCallback(w, req)
+
+		handler := HandleGovPayCallback(mockPaymentProvidersService)
+		handler.ServeHTTP(w, req)
+
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
@@ -141,13 +157,16 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		w := httptest.NewRecorder()
-		HandleGovPayCallback(w, req)
+
+		handler := HandleGovPayCallback(mockPaymentProvidersService)
+		handler.ServeHTTP(w, req)
+
 		So(w.Code, ShouldEqual, http.StatusForbidden)
 	})
 
@@ -168,13 +187,16 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
 		w := httptest.NewRecorder()
-		HandleGovPayCallback(w, req)
+
+		handler := HandleGovPayCallback(mockPaymentProvidersService)
+		handler.ServeHTTP(w, req)
+
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
@@ -195,13 +217,16 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
 		w := httptest.NewRecorder()
-		HandleGovPayCallback(w, req)
+
+		handler := HandleGovPayCallback(mockPaymentProvidersService)
+		handler.ServeHTTP(w, req)
+
 		So(w.Code, ShouldEqual, http.StatusPreconditionFailed)
 	})
 
@@ -218,17 +243,25 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 				CreatedAt: time.Now(),
 			},
 		}
+		statusResponse := models.StatusResponse{
+			Status: paypal.OrderStatusVoided,
+		}
+		mockPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, "123", service.Success, nil)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
 		w := httptest.NewRecorder()
-		HandleGovPayCallback(w, req)
+
+		handler := HandleGovPayCallback(mockPaymentProvidersService)
+		handler.ServeHTTP(w, req)
+
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
@@ -245,21 +278,29 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 				CreatedAt: time.Now(),
 			},
 		}
+		statusResponse := models.StatusResponse{
+			Status: paypal.OrderStatusVoided,
+		}
+		mockPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, "123", service.Success, nil)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
 
 		govPayResponse := models.IncomingGovPayResponse{}
-		govPayJSONResponse, _ := httpmock.NewJsonResponder(200, govPayResponse)
-		httpmock.RegisterResponder("GET", cfg.GovPayURL, govPayJSONResponse)
+		govPayJSONResponse, _ := httpmock.NewJsonResponder(http.StatusOK, govPayResponse)
+		httpmock.RegisterResponder(http.MethodGet, cfg.GovPayURL, govPayJSONResponse)
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
 		w := httptest.NewRecorder()
-		HandleGovPayCallback(w, req)
+
+		handler := HandleGovPayCallback(mockPaymentProvidersService)
+		handler.ServeHTTP(w, req)
+
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
@@ -276,23 +317,31 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 				CreatedAt: time.Now(),
 			},
 		}
+		statusResponse := models.StatusResponse{
+			Status: paypal.OrderStatusVoided,
+		}
+		mockPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, "123", service.Success, nil)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jSONResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jSONResponse)
+		jSONResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jSONResponse)
 
 		govPayResponse := models.IncomingGovPayResponse{}
-		govPayJSONResponse, _ := httpmock.NewJsonResponder(200, govPayResponse)
-		httpmock.RegisterResponder("GET", cfg.GovPayURL, govPayJSONResponse)
+		govPayJSONResponse, _ := httpmock.NewJsonResponder(http.StatusOK, govPayResponse)
+		httpmock.RegisterResponder(http.MethodGet, cfg.GovPayURL, govPayJSONResponse)
 
 		handlePaymentMessage = mockProduceKafkaMessageError
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
 		w := httptest.NewRecorder()
-		HandleGovPayCallback(w, req)
+
+		handler := HandleGovPayCallback(mockPaymentProvidersService)
+		handler.ServeHTTP(w, req)
+
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 	})
 
@@ -311,26 +360,90 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 			},
 			ExternalPaymentStatusURI: "http://dummy-url",
 		}
+		statusResponse := models.StatusResponse{
+			Status: paypal.OrderStatusVoided,
+		}
+		mockPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, "123", service.Success, nil)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jSONResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jSONResponse)
+		jSONResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jSONResponse)
 
-		govPayResponse := models.IncomingGovPayResponse{}
-		govPayJSONResponse, _ := httpmock.NewJsonResponder(200, govPayResponse)
-		httpmock.RegisterResponder("GET", cfg.GovPayURL, govPayJSONResponse)
+		govPayJSONResponse, _ := httpmock.NewJsonResponder(
+			http.StatusOK,
+			models.IncomingGovPayResponse{
+				State: models.State{
+					Finished: true,
+					Status:   "success",
+				},
+			},
+		)
+
+		httpmock.RegisterResponder(http.MethodGet, cfg.GovPayURL, govPayJSONResponse)
 
 		handlePaymentMessage = mockProduceKafkaMessage
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
 		w := httptest.NewRecorder()
-		HandleGovPayCallback(w, req)
+
+		handler := HandleGovPayCallback(mockPaymentProvidersService)
+		handler.ServeHTTP(w, req)
+
 		So(w.Code, ShouldEqual, http.StatusSeeOther)
 		So(paymentSession.Data.CompletedAt, ShouldNotBeZeroValue)
+	})
+
+	Convey("Created callback with redirect", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		paymentService = createMockPaymentService(mock, cfg)
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount:        "10.00",
+				PaymentMethod: "credit-card",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				CreatedAt: time.Now(),
+			},
+			ExternalPaymentStatusURI: "http://dummy-url",
+		}
+		statusResponse := models.StatusResponse{
+			Status: "in-progress",
+		}
+		mockPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, "123", service.Created, nil)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
+		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jSONResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jSONResponse)
+
+		govPayJSONResponse, _ := httpmock.NewJsonResponder(
+			http.StatusOK,
+			models.IncomingGovPayResponse{
+				State: models.State{
+					Finished: false,
+					Status:   "created",
+				},
+			},
+		)
+
+		httpmock.RegisterResponder(http.MethodGet, cfg.GovPayURL, govPayJSONResponse)
+
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "123"})
+		w := httptest.NewRecorder()
+
+		handler := HandleGovPayCallback(mockPaymentProvidersService)
+		handler.ServeHTTP(w, req)
+
+		So(w.Code, ShouldEqual, http.StatusSeeOther)
+		So(paymentSession.Data.CompletedAt, ShouldBeZeroValue)
 	})
 
 	Convey("Successful message preparation with prepareKafkaMessage", t, func() {
@@ -339,20 +452,20 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 
 		// This is the schema that is used by the producer
 		schema := `{
-			"type": "record",
-			"name": "payment_processed",
-			"namespace": "payments",
-			"fields": [
-			{
-				"name": "payment_resource_id",
-				"type": "string"
-			},
-			{
-				"name": "refund_id",
-				"type": "string"
-			}
-			]
-		}`
+				"type": "record",
+				"name": "payment_processed",
+				"namespace": "payments",
+				"fields": [
+				{
+					"name": "payment_resource_id",
+					"type": "string"
+				},
+				{
+					"name": "refund_id",
+					"type": "string"
+				}
+				]
+			}`
 
 		producerSchema := &avro.Schema{
 			Definition: schema,
@@ -377,20 +490,20 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 
 		// This is the schema that is used by the producer, the type is in the incorrect type, so should error when marshalling
 		schema := `{
-			"type": "record",
-			"name": "payment_processed",
-			"namespace": "payments",
-			"fields": [
-			{
-				"name": "payment_resource_id",
-				"type": "int"
-			},
-{
-				"name": "refund_id",
-				"type": "int"
-			}
-			]
-		}`
+				"type": "record",
+				"name": "payment_processed",
+				"namespace": "payments",
+				"fields": [
+				{
+					"name": "payment_resource_id",
+					"type": "int"
+				},
+	{
+					"name": "refund_id",
+					"type": "int"
+				}
+				]
+			}`
 
 		producerSchema := &avro.Schema{
 			Definition: schema,
@@ -474,8 +587,8 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
 
 		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
 		So(res.Code, ShouldEqual, http.StatusInternalServerError)
@@ -503,8 +616,8 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
 
 		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
 		So(res.Code, ShouldEqual, http.StatusInternalServerError)
@@ -531,8 +644,8 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
 
 		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
 		So(res.Code, ShouldEqual, http.StatusForbidden)
@@ -559,8 +672,8 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
 
 		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
 		So(res.Code, ShouldEqual, http.StatusPreconditionFailed)
@@ -592,8 +705,8 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
 
 		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
 		So(res.Code, ShouldEqual, http.StatusInternalServerError)
@@ -625,8 +738,8 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
 
 		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
 		So(res.Code, ShouldEqual, http.StatusInternalServerError)
@@ -659,8 +772,8 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
 
 		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
 		So(res.Code, ShouldEqual, http.StatusInternalServerError)
@@ -708,8 +821,8 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
 
 		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
 		So(res.Code, ShouldEqual, http.StatusInternalServerError)
@@ -759,8 +872,8 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
 
 		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
 		So(res.Code, ShouldEqual, http.StatusInternalServerError)
@@ -794,8 +907,8 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
 
 		handlePaymentMessage = mockProduceKafkaMessage
 
@@ -848,8 +961,8 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
 
 		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
 		So(res.Code, ShouldEqual, http.StatusSeeOther)
@@ -901,8 +1014,8 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
 
 		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
 		So(res.Code, ShouldEqual, http.StatusSeeOther)
@@ -954,8 +1067,8 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
-		jsonResponse, _ := httpmock.NewJsonResponder(200, defaultCosts)
-		httpmock.RegisterResponder("GET", "http://dummy-url", jsonResponse)
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
 
 		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
 		So(res.Code, ShouldEqual, http.StatusSeeOther)
