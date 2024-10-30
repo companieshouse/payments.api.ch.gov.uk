@@ -44,6 +44,9 @@ func (gp *GovPayService) CheckPaymentProviderStatus(paymentResource *models.Paym
 					"finished": false
 				}
 		*/
+		// return 'paid' for payments still in 'created' state so users redirected to
+		// confirmation screen. No kafka message created and payments will be processed
+		// by the backend. If payment fails, user will receive an email informing them.
 		return &models.StatusResponse{Status: "paid"}, govPayResponse.ProviderID, Created, nil
 	}
 	return &models.StatusResponse{Status: "failed"}, "", Error, nil
