@@ -5,12 +5,16 @@ custom_build(
   deps = [
     './',
   ],
+  live_update = [
+    sync('./payments.api.ch.gov.uk', '/app/app'),
+    restart_container(),
+  ],
   ignore = [
     'LICENSE',
     'Makefile',
     'Readme',
     '.github',
     '.gitignore',
-    '.dockerignore'
+    '.dockerignore',
   ]
 )
