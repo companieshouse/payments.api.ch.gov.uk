@@ -198,6 +198,40 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		So(externalPaymentJourney.NextURL, ShouldEqual, "response_url")
 	})
 
+	Convey("Create External GovPay Payment Journey for penalty-lfp - success", t, func() {
+
+		mockDao.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
+
+		req := httptest.NewRequest("", "/test", nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusCreated, &models.IncomingGovPayResponse{
+			GovPayLinks: models.GovPayLinks{
+				NextURL: models.NextURL{
+					HREF: "response_url",
+				},
+			},
+		})
+		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
+
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty-lfp"},
+		}
+
+		paymentSession := models.PaymentResourceRest{
+			PaymentMethod: "credit-card",
+			Amount:        "4",
+			Status:        InProgress.String(),
+			Costs:         []models.CostResourceRest{costResource},
+		}
+
+		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession, mockExternalPaymentProvidersService)
+		So(err, ShouldBeNil)
+		So(responseType.String(), ShouldEqual, Success.String())
+		So(externalPaymentJourney.NextURL, ShouldEqual, "response_url")
+	})
+
 	Convey("Create External GovPay Payment Journey for orderable-item - success", t, func() {
 
 		mockDao.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
