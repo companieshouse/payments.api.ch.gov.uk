@@ -350,10 +350,12 @@ func addGovPayHeaders(request *http.Request, paymentResource *models.PaymentReso
 	legacyBearer := BearerToken + gp.PaymentService.Config.GovPayBearerTokenLegacy
 
 	govPayTokens := map[string]string{
-		"penalty":          treasuryBearer,
-		"data-maintenance": chBearer,
-		"orderable-item":   chBearer,
-		"legacy":           legacyBearer,
+		"penalty":           treasuryBearer,
+		"penalty-lfp":       treasuryBearer,
+		"data-maintenance":  chBearer,
+		"orderable-item":    chBearer,
+		"penalty-sanctions": chBearer,
+		"legacy":            legacyBearer,
 	}
 
 	token := govPayTokens[paymentResource.Costs[0].ClassOfPayment[0]]

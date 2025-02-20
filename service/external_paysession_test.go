@@ -232,6 +232,40 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		So(externalPaymentJourney.NextURL, ShouldEqual, "response_url")
 	})
 
+	Convey("Create External GovPay Payment Journey for penalty-sanctions - success", t, func() {
+
+		mockDao.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
+
+		req := httptest.NewRequest("", "/test", nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusCreated, &models.IncomingGovPayResponse{
+			GovPayLinks: models.GovPayLinks{
+				NextURL: models.NextURL{
+					HREF: "response_url",
+				},
+			},
+		})
+		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
+
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty-sanctions"},
+		}
+
+		paymentSession := models.PaymentResourceRest{
+			PaymentMethod: "credit-card",
+			Amount:        "3",
+			Status:        InProgress.String(),
+			Costs:         []models.CostResourceRest{costResource},
+		}
+
+		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession, mockExternalPaymentProvidersService)
+		So(err, ShouldBeNil)
+		So(responseType.String(), ShouldEqual, Success.String())
+		So(externalPaymentJourney.NextURL, ShouldEqual, "response_url")
+	})
+
 	Convey("Error communicating with Paypal", t, func() {
 
 		mockPayPalSDK.EXPECT().CreateOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("error"))
@@ -297,6 +331,34 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 
 		costResource := models.CostResourceRest{
 			ClassOfPayment: []string{"orderable-item"},
+		}
+
+		paymentSession := models.PaymentResourceRest{
+			PaymentMethod: "PayPal",
+			Amount:        "3",
+			Status:        InProgress.String(),
+			Costs:         []models.CostResourceRest{costResource},
+			Links: models.PaymentLinksRest{
+				Self: "payments/1234",
+			},
+		}
+
+		externalPaymentJourney, responseType, err := mockPaymentService.CreateExternalPaymentJourney(req, &paymentSession, mockExternalPaymentProvidersService)
+		So(err, ShouldBeNil)
+		So(responseType.String(), ShouldEqual, Success.String())
+		So(externalPaymentJourney.NextURL, ShouldEqual, "response_url")
+	})
+
+	Convey("Create an External PayPal Payment Journey for penalty-sanctions - success", t, func() {
+
+		paypalResponse := CreatePayPalOrderResponse("response_url")
+		mockPayPalSDK.EXPECT().CreateOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&paypalResponse, nil)
+		mockDao.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
+
+		req := httptest.NewRequest("", "/test", nil)
+
+		costResource := models.CostResourceRest{
+			ClassOfPayment: []string{"penalty-sanctions"},
 		}
 
 		paymentSession := models.PaymentResourceRest{
