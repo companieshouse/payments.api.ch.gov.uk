@@ -351,11 +351,11 @@ func addGovPayHeaders(request *http.Request, paymentResource *models.PaymentReso
 
 	govPayTokens := map[string]string{
 		"penalty":           treasuryBearer,
-		"penalty-lfp":       treasuryBearer,
 		"data-maintenance":  chBearer,
 		"orderable-item":    chBearer,
-		"penalty-sanctions": chBearer,
 		"legacy":            legacyBearer,
+		"penalty-lfp":       treasuryBearer,
+		"penalty-sanctions": chBearer,
 	}
 
 	token := govPayTokens[paymentResource.Costs[0].ClassOfPayment[0]]

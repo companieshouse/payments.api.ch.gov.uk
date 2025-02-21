@@ -367,7 +367,7 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		So(err, ShouldBeNil)
 	})
 
-	Convey("Valid request to GovPay and returned NextURL for penalty lfp", t, func() {
+	Convey("Valid request to GovPay and returned NextURL for late filing penalty", t, func() {
 
 		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
 
@@ -466,7 +466,7 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		So(err, ShouldBeNil)
 	})
 
-	Convey("Valid request to GovPay and returned NextURL for penalty sanctions", t, func() {
+	Convey("Valid request to GovPay and returned NextURL for sanctions penalty", t, func() {
 
 		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
 
