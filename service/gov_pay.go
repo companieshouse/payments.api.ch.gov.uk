@@ -349,6 +349,11 @@ func addGovPayHeaders(request *http.Request, paymentResource *models.PaymentReso
 	chBearer := BearerToken + gp.PaymentService.Config.GovPayBearerTokenChAccount
 	legacyBearer := BearerToken + gp.PaymentService.Config.GovPayBearerTokenLegacy
 
+	//Print bearer values
+	fmt.Println("Treasury Bearer:", treasuryBearer)
+	fmt.Println("CH Bearer:", chBearer)
+	fmt.Println("Legacy Bearer:", legacyBearer)
+
 	govPayTokens := map[string]string{
 		"penalty":           treasuryBearer,
 		"data-maintenance":  chBearer,
@@ -359,9 +364,16 @@ func addGovPayHeaders(request *http.Request, paymentResource *models.PaymentReso
 	}
 
 	token := govPayTokens[paymentResource.Costs[0].ClassOfPayment[0]]
+
+	// Print the token for debugging purposes
+	fmt.Println("Selected Token:", token)
+
 	if token == "" {
 		return fmt.Errorf("payment class [%s] not recognised", paymentResource.Costs[0].ClassOfPayment[0])
 	}
+
+	// Log token in headers
+	fmt.Println("Adding Bearer token to request header:", token)
 
 	request.Header.Add("authorization", token)
 	request.Header.Add("accept", "application/json")
