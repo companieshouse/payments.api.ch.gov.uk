@@ -164,5 +164,5 @@ variable "eric_memory" {
 variable "proxy_bypass_paths" {
   type = string
   description = "The paths that will not be authenticated via eric"
-  default = "api-payments.cidev.aws.chdev.org+/callback/payments/*/*|/callback/payments/*/*/*"
+  default = "/callback/payments/*/*|/callback/payments/*/*/*"
 }
