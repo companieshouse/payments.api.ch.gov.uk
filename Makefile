@@ -6,6 +6,8 @@ chs_envs     := $(CHS_ENV_HOME)/global_env $(CHS_ENV_HOME)/$(bin)/env
 source_env   := for chs_env in $(chs_envs); do test -f $$chs_env && . $$chs_env; done
 xunit_output := test.xml
 lint_output  := lint.txt
+govulncheck   := golang.org/x/vuln/cmd/govulncheck@latest
+nancycheck    := github.com/sonatype-nexus-community/nancy@latest
 
 .EXPORT_ALL_VARIABLES:
 GO111MODULE = on
@@ -18,7 +20,7 @@ fmt:
 	go fmt ./...
 
 .PHONY: build
-build: fmt
+build: fmt depnancycheck depvulncheck
 	go build
 
 .PHONY: test
@@ -64,3 +66,13 @@ lint:
 	go get -u github.com/alecthomas/gometalinter
 	gometalinter --install
 	gometalinter ./... > $(lint_output); true
+
+.PHONY: depnancycheck
+depnancycheck:
+	go install $(nancycheck)
+	go list -json -deps ./... | $(GOPATH)/bin/nancy sleuth --loud
+
+.PHONY: depvulncheck
+depvulncheck:
+	go install $(govulncheck)
+	CGO_ENABLED=1 $(GOPATH)/bin/govulncheck -show verbose ./...
