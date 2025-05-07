@@ -71,7 +71,6 @@ func TestUnitGetPaymentRefunds(t *testing.T) {
 			ExternalRefundUrl: "https://pulicapi.payments.service.gov.uk",
 		}
 		refundDatas := []models.RefundResourceDB{refundData}
-		
 
 		paymentService = &service.PaymentService{
 			DAO:    mockDao,
