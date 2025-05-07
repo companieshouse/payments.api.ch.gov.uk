@@ -1,4 +1,5 @@
 CHS_ENV_HOME ?= $(HOME)/.chs_env
+GOPATH ?= $(OLDPWD)
 TESTS        ?= ./...
 
 bin          := payments.api.ch.gov.uk
