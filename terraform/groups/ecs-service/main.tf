@@ -85,7 +85,6 @@ module "ecs-service" {
 
 }
 
-
 module "secrets" {
   source = "git@github.com:companieshouse/terraform-modules//aws/ecs/secrets?ref=1.0.300"
 
