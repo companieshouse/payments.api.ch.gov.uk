@@ -14,7 +14,7 @@ locals {
   healthcheck_matcher         = "200"
   vpc_name                    = local.stack_secrets["vpc_name"]
   s3_config_bucket            = data.vault_generic_secret.shared_s3.data["config_bucket_name"]
-  app_environment_filename    = "payments-api.env"
+  app_environment_filename    = "payments.api.ch.gov.uk.env"
   eric_environment_filename   = "eric.env"
   use_set_environment_files   = var.use_set_environment_files
   application_subnet_ids      = data.aws_subnets.application.ids
