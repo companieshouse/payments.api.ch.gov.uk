@@ -74,7 +74,7 @@ func TestUnitGetPayPalClient(t *testing.T) {
 		c, err := GetPayPalClient(*cfg)
 		So(c, ShouldBeNil)
 		So(err.Error(), ShouldEqual,
-			"error creating paypal client: [ClientID, Secret and APIBase are required to create a Client]")
+			"paypal client id not found in config")
 	})
 }
 
