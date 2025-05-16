@@ -9,7 +9,7 @@ locals {
   docker_repo                 = "payments.api.ch.gov.uk"
   kms_alias                   = "alias/${var.aws_profile}/environment-services-kms"
   lb_listener_rule_priority   = 50
-  lb_listener_paths           = ["/payments", "/payments/*", "/payments/*/refunds", "/private/payments/*", "/private/payments/*/external-journey", "/callback/payments/govpay/*", "/callback/payments/paypal/orders/*" ]
+  lb_listener_paths           = ["/payments", "/payments/*", "/payments/*/refunds", "/private/payments/*", "/private/payments/*/external-journey", "/callback/payments/govpay/*", "/callback/payments/paypal/orders/*", "/admin/payments/bulk-refunds/*" ]
   healthcheck_path            = "/healthcheck"
   healthcheck_matcher         = "200"
   vpc_name                    = local.stack_secrets["vpc_name"]
