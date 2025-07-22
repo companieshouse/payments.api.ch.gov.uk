@@ -208,6 +208,7 @@ func (m *MongoService) GetPaymentResourceByExternalPaymentTransactionID(id strin
 }
 
 // GetIncompleteGovPayPayments retrieves all in-progress payments which have existed longer than the expiry limit
+// Ignores any payments which are older than GovPayMaxCheckingDays, these are assumed to no longer be valid.
 func (m *MongoService) GetIncompleteGovPayPayments(cfg *config.Config) ([]models.PaymentResourceDB, error) {
 
 	var pendingPayments []models.PaymentResourceDB
@@ -220,6 +221,7 @@ func (m *MongoService) GetIncompleteGovPayPayments(cfg *config.Config) ([]models
 		"data.status":         "in-progress",
 		"data.created_at": bson.M{
 			"$lt": now.Add(time.Minute * -time.Duration(cfg.GovPayExpiryTime)),
+			"$gt": now.Add(time.Hour * 24 * -time.Duration(cfg.GovPayMaxCheckingDays)),
 		},
 	}
 
