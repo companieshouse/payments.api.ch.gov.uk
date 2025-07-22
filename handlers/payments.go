@@ -250,7 +250,7 @@ func HandleCheckPaymentStatus(w http.ResponseWriter, req *http.Request) {
 		}
 
 		if !finished {
-			log.InfoR(req, fmt.Sprintf("Payment [%s] not finished, skipping.", pendingPayment.MetaData.ID))
+			log.InfoR(req, fmt.Sprintf("Payment [%s] with status [%s] not finished, skipping.", pendingPayment.MetaData.ID, status))
 			continue
 		}
 

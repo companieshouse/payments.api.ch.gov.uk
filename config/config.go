@@ -27,6 +27,7 @@ type Config struct {
 	GovPayBearerTokenLegacy    string   `env:"GOV_PAY_BEARER_TOKEN_LEGACY"     flag:"gov-pay-bearer-token-legacy"       flagDesc:"Bearer Token used to authenticate API calls with GovPay for payments on legacy Companies House services"`
 	GovPaySandbox              bool     `env:"GOV_PAY_SANDBOX"                 flag:"gov-pay-sandbox"                   flagDesc:"Gov Pay Sandbox - returns different refund status values"`
 	GovPayExpiryTime           int      `env:"GOV_PAY_EXPIRY_TIME"             flag:"gov-pay-expiry_time"               flagDesc:"Gov Pay Expiry Time in minutes"`
+	GovPayMaxCheckingDays      int      `env:"GOV_PAY_MAX_CHECKING_DAYS"       flag:"gov-pay-max-checking-days"         flagDesc:"Gov Pay Max Allowed Days for rechecking payment"`
 	ExpiryTimeInMinutes        string   `env:"EXPIRY_TIME_IN_MINUTES"          flag:"expiry-time-in-minutes"            flagDesc:"The expiry time for the payment session in minutes"`
 	BrokerAddr                 []string `env:"KAFKA_BROKER_ADDR"               flag:"broker-addr"                       flagDesc:"Kafka broker address"`
 	SchemaRegistryURL          string   `env:"SCHEMA_REGISTRY_URL"             flag:"schema-registry-url"               flagDesc:"Schema registry url"`
@@ -42,10 +43,12 @@ type Config struct {
 // with default values.
 func DefaultConfig() *Config {
 	return &Config{
-		Database:            "payments",
-		Collection:          "payments",
-		ExpiryTimeInMinutes: "90",
-		RefundBatchSize:     20,
+		Database:              "payments",
+		Collection:            "payments",
+		ExpiryTimeInMinutes:   "90",
+		GovPayExpiryTime:      90,
+		GovPayMaxCheckingDays: 30,
+		RefundBatchSize:       20,
 	}
 }
 
