@@ -137,7 +137,7 @@ func TestUnitCreatePaymentAndGenerateNextURL(t *testing.T) {
 		req := httptest.NewRequest("", "/test", nil)
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentSession := models.PaymentResourceRest{
@@ -163,7 +163,7 @@ func TestUnitCreatePaymentAndGenerateNextURL(t *testing.T) {
 		req := httptest.NewRequest("", "/test", nil)
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentSession := models.PaymentResourceRest{
@@ -194,7 +194,7 @@ func TestUnitCreatePaymentAndGenerateNextURL(t *testing.T) {
 		req := httptest.NewRequest("", "/test", nil)
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentSession := models.PaymentResourceRest{
@@ -247,7 +247,7 @@ func TestUnitCreatePaymentAndGenerateNextURL(t *testing.T) {
 		req := httptest.NewRequest("", "/test", nil)
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentSession := models.PaymentResourceRest{
