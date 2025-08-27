@@ -110,6 +110,12 @@ variable "cloudwatch_alarms_enabled" {
   default     = true
 }
 
+variable "multilb_cloudwatch_alarms_enabled" {
+  description = "Whether to create a standard set of cloudwatch alarms for the service in multilb setup.  Requires an SNS topic to have already been created for the stack."
+  type        = bool
+  default     = true
+}
+
 # ------------------------------------------------------------------------------
 # Service environment variable configs
 # ------------------------------------------------------------------------------

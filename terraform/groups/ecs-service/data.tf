@@ -42,6 +42,14 @@ data "aws_lb_listener" "service_lb_listener" {
   port = 443
 }
 
+data "aws_lb" "secondary_lb" {
+  name = "${var.environment}-chs-int-payments-api"
+}
+
+data "aws_lb_listener" "secondary_lb_listener" {
+  load_balancer_arn = data.aws_lb.secondary_lb.arn
+  port = 443
+}
 
 # retrieve all secrets for this stack using the stack path
 data "aws_ssm_parameters_by_path" "secrets" {
