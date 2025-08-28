@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Start script for payments-api
-PORT="20188"
+PORT="3055"
 
 # Read brokers and topics from environment and split on comma
 IFS=',' read -ra BROKERS <<< "${KAFKA_BROKER_ADDR}"

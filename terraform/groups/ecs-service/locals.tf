@@ -4,7 +4,7 @@ locals {
   name_prefix                 = "${local.stack_name}-${var.environment}"
   global_prefix               = "global-${var.environment}"
   service_name                = "payments-api"
-  container_port              = "20188"
+  container_port              = "3055"
   eric_port                   = "10000"
   docker_repo                 = "payments.api.ch.gov.uk"
   kms_alias                   = "alias/${var.aws_profile}/environment-services-kms"
@@ -41,7 +41,7 @@ locals {
     trimprefix(sec.name, "/${local.global_prefix}/") => sec.arn
   }
 
-  global_secret_list = flatten([for key, value in local.global_secrets_arn_map : 
+  global_secret_list = flatten([for key, value in local.global_secrets_arn_map :
     { "name" = upper(key), "valueFrom" = value }
   ])
 
@@ -56,7 +56,7 @@ locals {
       trimprefix(sec.name, "/${local.service_name}-${var.environment}/") => sec.arn
   }
 
-  service_secret_list = flatten([for key, value in local.service_secrets_arn_map : 
+  service_secret_list = flatten([for key, value in local.service_secrets_arn_map :
     { "name" = upper(key), "valueFrom" = value }
   ])
 
