@@ -3,6 +3,7 @@ GOPATH ?= $(OLDPWD)
 TESTS        ?= ./...
 
 bin          := payments.api.ch.gov.uk
+version      ?= unversioned
 chs_envs     := $(CHS_ENV_HOME)/global_env $(CHS_ENV_HOME)/$(bin)/env
 source_env   := for chs_env in $(chs_envs); do test -f $$chs_env && . $$chs_env; done
 xunit_output := test.xml
@@ -13,6 +14,10 @@ nancycheck    := github.com/sonatype-nexus-community/nancy@latest
 .EXPORT_ALL_VARIABLES:
 GO111MODULE = on
 
+.PHONY:
+arch:
+	@echo OS: $(shell uname) ARCH: $(shell uname -p)
+
 .PHONY: all
 all: build
 
@@ -21,8 +26,12 @@ fmt:
 	go fmt ./...
 
 .PHONY: build
-build: fmt depnancycheck depvulncheck
-	go build
+build: arch fmt depnancycheck depvulncheck
+ifeq ($(shell uname; uname -p), Darwin arm)
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CC=x86_64-linux-musl-gcc CXX=x86_64-linux-musl-g++ go build --ldflags '-linkmode external -extldflags "-static"' -o ecs-image-build/app/$(bin)
+else
+	go build -o ecs-image-build/app/$(bin)
+endif
 
 .PHONY: test
 test: test-unit test-integration
@@ -38,7 +47,7 @@ test-integration:
 .PHONY: clean
 clean:
 	go mod tidy
-	rm -f ./$(bin) ./$(bin)-*.zip $(test_path) build.log
+	rm -rf ./ecs-image-build/app ./$(bin)-*.zip $(test_path) build.log
 
 .PHONY: package
 package:
@@ -47,7 +56,7 @@ ifndef version
 endif
 	$(info Packaging version: $(version))
 	$(eval tmpdir := $(shell mktemp -d build-XXXXXXXXXX))
-	cp ./$(bin) $(tmpdir)
+	cp ./ecs-image-build/app/$(bin) $(tmpdir)
 	cp ./start.sh $(tmpdir)
 	cd $(tmpdir) && zip ../$(bin)-$(version).zip $(bin) start.sh
 	rm -rf $(tmpdir)
@@ -77,3 +86,8 @@ depnancycheck:
 depvulncheck:
 	go install $(govulncheck)
 	CGO_ENABLED=1 $(GOPATH)/bin/govulncheck -show verbose ./...
+
+.PHONY: docker-image
+docker-image: dist
+	chmod +x build-docker-local.sh
+	./build-docker-local.sh

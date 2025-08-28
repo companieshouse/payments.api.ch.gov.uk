@@ -118,11 +118,11 @@ A summary/Choose payment method screen is shown depending on what `allowed_payme
 
 ## Returning to the payments Service
 
-
-
 ## Docker support
 
-Pull image from private CH registry by running `docker pull 169942020521.dkr.ecr.eu-west-1.amazonaws.com/local/payments.api.ch.gov.uk:latest` command or run the following steps to build image locally:
+Pull image from ch-shared-services registry by running `docker pull 416670754337.dkr.ecr.eu-west-2.amazonaws.com/payments.api.ch.gov.uk:latest` command.
 
-1. `export SSH_PRIVATE_KEY_PASSPHRASE='[your SSH key passhprase goes here]'` (optional, set only if SSH key is passphrase protected)
-2. `DOCKER_BUILDKIT=0 docker build --build-arg SSH_PRIVATE_KEY="$(cat ~/.ssh/id_rsa)" --build-arg SSH_PRIVATE_KEY_PASSPHRASE -t 169942020521.dkr.ecr.eu-west-1.amazonaws.com/local/payments.api.ch.gov.uk:latest .`
+Alternatively, ensure you have the cross-compiler installed and use the Makefile to run the docker build command locally:
+1. `brew install filosottile/musl-cross/musl-cross`
+2. `make docker-image`
+
