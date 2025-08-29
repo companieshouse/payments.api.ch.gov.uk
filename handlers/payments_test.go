@@ -383,7 +383,7 @@ func TestUnitHandleGetPaymentDetails(t *testing.T) {
 			},
 			Costs: []models.CostResourceRest{
 				{
-					ClassOfPayment: []string{"penalty"},
+					ClassOfPayment: []string{"penalty-lfp"},
 				},
 			},
 		}
@@ -438,7 +438,7 @@ func TestUnitHandleGetPaymentDetails(t *testing.T) {
 			},
 			Costs: []models.CostResourceRest{
 				{
-					ClassOfPayment: []string{"penalty"},
+					ClassOfPayment: []string{"penalty-lfp"},
 				},
 			},
 		}

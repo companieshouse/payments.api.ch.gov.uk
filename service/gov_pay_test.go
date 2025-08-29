@@ -37,7 +37,7 @@ func TestUnitCheckProvider(t *testing.T) {
 		jsonResponse := httpmock.NewErrorResponder(errors.New("error"))
 		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentResourceRest := models.PaymentResourceRest{
@@ -64,7 +64,7 @@ func TestUnitCheckProvider(t *testing.T) {
 		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentResourceRest := models.PaymentResourceRest{
@@ -91,7 +91,7 @@ func TestUnitCheckProvider(t *testing.T) {
 		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentResourceRest := models.PaymentResourceRest{
@@ -118,7 +118,7 @@ func TestUnitCheckProvider(t *testing.T) {
 		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentResourceRest := models.PaymentResourceRest{
@@ -145,7 +145,7 @@ func TestUnitCheckProvider(t *testing.T) {
 		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentResourceRest := models.PaymentResourceRest{
@@ -179,7 +179,7 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, httpmock.NewErrorResponder(fmt.Errorf("error")))
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentResource := models.PaymentResourceRest{
@@ -236,7 +236,7 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, httpmock.NewErrorResponder(fmt.Errorf("error")))
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentResource := models.PaymentResourceRest{
@@ -261,7 +261,7 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentResource := models.PaymentResourceRest{
@@ -287,7 +287,7 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentResource := models.PaymentResourceRest{
@@ -320,7 +320,7 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentResource := models.PaymentResourceRest{
@@ -351,7 +351,7 @@ func TestUnitGenerateNextURLGovPay(t *testing.T) {
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentResource := models.PaymentResourceRest{
@@ -550,7 +550,7 @@ func TestUnitGetGovPayPaymentDetails(t *testing.T) {
 		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentResourceRest := models.PaymentResourceRest{
@@ -576,7 +576,7 @@ func TestUnitGetGovPayPaymentDetails(t *testing.T) {
 		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, incomingGovPayResponse)
 		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentResource := models.PaymentResourceRest{
@@ -618,7 +618,7 @@ func TestUnitGetPaymentStatus(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 		payment := models.PaymentResourceRest{
 			MetaData: models.PaymentResourceMetaDataRest{
@@ -649,7 +649,7 @@ func TestUnitGetPaymentStatus(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 		payment := models.PaymentResourceRest{
 			MetaData: models.PaymentResourceMetaDataRest{
@@ -681,7 +681,7 @@ func TestUnitGetPaymentStatus(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 		payment := models.PaymentResourceRest{
 			MetaData: models.PaymentResourceMetaDataRest{
@@ -713,7 +713,7 @@ func TestUnitGetPaymentStatus(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 		payment := models.PaymentResourceRest{
 			MetaData: models.PaymentResourceMetaDataRest{
@@ -993,7 +993,7 @@ func TestUnitGovPayCreateRefund(t *testing.T) {
 		refundRequest := fixtures.GetCreateRefundGovPayRequest(800, 800)
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentResource := &models.PaymentResourceRest{
@@ -1021,7 +1021,7 @@ func TestUnitGovPayCreateRefund(t *testing.T) {
 		refundRequest := fixtures.GetCreateRefundGovPayRequest(800, 800)
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentResource := &models.PaymentResourceRest{
@@ -1087,7 +1087,7 @@ func TestUnitGetGovPayRefundStatus(t *testing.T) {
 	Convey("Error sending request to GovPay", t, func() {
 		refundId := "321"
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentResource := &models.PaymentResourceRest{
@@ -1114,7 +1114,7 @@ func TestUnitGetGovPayRefundStatus(t *testing.T) {
 	Convey("Successful request to GovPay", t, func() {
 		refundID := "321"
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentResource := &models.PaymentResourceRest{

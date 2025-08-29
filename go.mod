@@ -1,6 +1,6 @@
 module github.com/companieshouse/payments.api.ch.gov.uk
 
-go 1.24.2
+go 1.24
 
 require (
 	github.com/companieshouse/chs.go v1.2.10
