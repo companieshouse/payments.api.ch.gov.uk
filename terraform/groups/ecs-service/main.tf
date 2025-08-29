@@ -94,7 +94,8 @@ module "ecs-service" {
   task_secrets                = local.task_secrets
   app_environment_filename    = local.app_environment_filename
   use_set_environment_files   = local.use_set_environment_files
-
+  
+  create_service_dashboard = true
 }
 
 module "secrets" {
