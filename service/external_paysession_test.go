@@ -70,7 +70,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty", "data-maintenance", "orderable-item"},
+			ClassOfPayment: []string{"penalty-lfp", "data-maintenance", "orderable-item"},
 			Description:    "mismatched cost resource",
 		}
 
@@ -95,8 +95,8 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		defer httpmock.DeactivateAndReset()
 
 		costResource1 := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
-			Description:    "penalty cost resource",
+			ClassOfPayment: []string{"penalty-lfp"},
+			Description:    "penalty-lfp cost resource",
 		}
 
 		costResource2 := models.CostResourceRest{
@@ -148,7 +148,7 @@ func TestUnitCreateExternalPayment(t *testing.T) {
 		httpmock.RegisterResponder("POST", cfg.GovPayURL, jsonResponse)
 
 		costResource := models.CostResourceRest{
-			ClassOfPayment: []string{"penalty"},
+			ClassOfPayment: []string{"penalty-lfp"},
 		}
 
 		paymentSession := models.PaymentResourceRest{
