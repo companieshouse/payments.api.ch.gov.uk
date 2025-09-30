@@ -347,6 +347,7 @@ func addGovPayHeaders(request *http.Request, paymentResource *models.PaymentReso
 	BearerToken := "Bearer "
 	treasuryBearer := BearerToken + gp.PaymentService.Config.GovPayBearerTokenTreasury
 	chBearer := BearerToken + gp.PaymentService.Config.GovPayBearerTokenChAccount
+	sanctionsBearer := BearerToken + gp.PaymentService.Config.GovPayBearerTokenSanctionsAccount
 	legacyBearer := BearerToken + gp.PaymentService.Config.GovPayBearerTokenLegacy
 
 	govPayTokens := map[string]string{
@@ -354,11 +355,11 @@ func addGovPayHeaders(request *http.Request, paymentResource *models.PaymentReso
 		"orderable-item":    chBearer,
 		"legacy":            legacyBearer,
 		"penalty-lfp":       treasuryBearer,
-		"penalty-sanctions": chBearer,
+		"penalty-sanctions": sanctionsBearer,
 	}
 
 	token := govPayTokens[paymentResource.Costs[0].ClassOfPayment[0]]
-	if token == "" {
+	if token == "" || token == BearerToken {
 		return fmt.Errorf("payment class [%s] not recognised", paymentResource.Costs[0].ClassOfPayment[0])
 	}
 
