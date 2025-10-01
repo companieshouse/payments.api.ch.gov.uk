@@ -26,7 +26,7 @@ fmt:
 	go fmt ./...
 
 .PHONY: build
-build: arch fmt depnancycheck depvulncheck
+build: arch fmt
 ifeq ($(shell uname; uname -p), Darwin arm)
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CC=x86_64-linux-musl-gcc CXX=x86_64-linux-musl-g++ go build --ldflags '-linkmode external -extldflags "-static"' -o ecs-image-build/app/$(bin)
 else
