@@ -1176,7 +1176,7 @@ func TestUnitCallToGovPay(t *testing.T) {
 		So(err.Error(), ShouldEqual, "error generating request for GovPay: [parse "+`"\n"`+": net/url: invalid control character in URL]")
 	})
 
-	Convey("Error adding GovPay headers", t, func() {
+	Convey("Error adding GovPay headers - invalid payment class", t, func() {
 		resource := &models.PaymentResourceRest{
 			MetaData: models.PaymentResourceMetaDataRest{
 				ExternalPaymentStatusURI: "external_uri",
@@ -1195,7 +1195,7 @@ func TestUnitCallToGovPay(t *testing.T) {
 		So(err.Error(), ShouldEqual, "error adding GovPay headers: [payment class [invalid] not recognised]")
 	})
 
-	Convey("Successful call to GOV.UK Pay", t, func() {
+	Convey("Successful call to GOV.UK Pay CHS account", t, func() {
 		resource := &models.PaymentResourceRest{
 			MetaData: models.PaymentResourceMetaDataRest{
 				ExternalPaymentStatusURI: "external_uri",
@@ -1215,12 +1215,92 @@ func TestUnitCallToGovPay(t *testing.T) {
 		mock := dao.NewMockDAO(mockCtrl)
 		mockPaymentService := createMockPaymentService(mock, cfg)
 		mockGovPayService := CreateMockGovPayService(&mockPaymentService)
-		mockGovPayService.PaymentService.Config.GovPayBearerTokenLegacy = "legacy"
+		mockGovPayService.PaymentService.Config.GovPayBearerTokenChAccount = "api_test_chs"
 
 		response, err := callGovPay(&mockGovPayService, resource)
 		So(response.PaymentID, ShouldEqual, "1234")
 		So(err, ShouldBeNil)
+	})
 
+	Convey("Successful call to GOV.UK Pay legacy service", t, func() {
+		resource := &models.PaymentResourceRest{
+			MetaData: models.PaymentResourceMetaDataRest{
+				ExternalPaymentStatusURI: "external_uri",
+			},
+			Costs: []models.CostResourceRest{
+				{ClassOfPayment: []string{"legacy"}},
+			},
+		}
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		IncomingGovPayResponse := models.IncomingGovPayResponse{CardBrand: "Visa", PaymentID: "1234"}
+
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, IncomingGovPayResponse)
+		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
+
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockGovPayService := CreateMockGovPayService(&mockPaymentService)
+		mockGovPayService.PaymentService.Config.GovPayBearerTokenLegacy = "api_test_legacy"
+
+		response, err := callGovPay(&mockGovPayService, resource)
+		So(response.PaymentID, ShouldEqual, "1234")
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Successful call to GOV.UK Pay treasury account", t, func() {
+		resource := &models.PaymentResourceRest{
+			MetaData: models.PaymentResourceMetaDataRest{
+				ExternalPaymentStatusURI: "external_uri",
+			},
+			Costs: []models.CostResourceRest{
+				{ClassOfPayment: []string{"penalty-lfp"}},
+			},
+		}
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		IncomingGovPayResponse := models.IncomingGovPayResponse{CardBrand: "Visa", PaymentID: "1234"}
+
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, IncomingGovPayResponse)
+		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
+
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockGovPayService := CreateMockGovPayService(&mockPaymentService)
+		mockGovPayService.PaymentService.Config.GovPayBearerTokenTreasury = "api_test_treasury"
+
+		response, err := callGovPay(&mockGovPayService, resource)
+		So(response.PaymentID, ShouldEqual, "1234")
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Successful call to GOV.UK Pay penalty sanctions account", t, func() {
+		resource := &models.PaymentResourceRest{
+			MetaData: models.PaymentResourceMetaDataRest{
+				ExternalPaymentStatusURI: "external_uri",
+			},
+			Costs: []models.CostResourceRest{
+				{ClassOfPayment: []string{"penalty-sanctions"}},
+			},
+		}
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		IncomingGovPayResponse := models.IncomingGovPayResponse{CardBrand: "Visa", PaymentID: "1234"}
+
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, IncomingGovPayResponse)
+		httpmock.RegisterResponder("GET", "external_uri", jsonResponse)
+
+		mock := dao.NewMockDAO(mockCtrl)
+		mockPaymentService := createMockPaymentService(mock, cfg)
+		mockGovPayService := CreateMockGovPayService(&mockPaymentService)
+		mockGovPayService.PaymentService.Config.GovPayBearerTokenSanctionsAccount = "api_test_sanctions"
+
+		response, err := callGovPay(&mockGovPayService, resource)
+		So(response.PaymentID, ShouldEqual, "1234")
+		So(err, ShouldBeNil)
 	})
 }
 

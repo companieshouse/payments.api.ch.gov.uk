@@ -18,27 +18,28 @@ In order to run this API locally you will need to install the following:
 
 ## Configuration
 
-Variable                         | Default   | Description
-:--------------------------------|:----------|:------------
-`BIND_ADDR`                      |           | Payments API Port
-`MONGODB_URL`                    |           | MongoDB URL
-`MONGODB_DATABASE`               | `payments`| MongoDB database name
-`MONGODB_COLLECTION`             | `payments`| MongoDB collection name
-`DOMAIN_ALLOW_LIST`              |           | List of valid domains for the Resource URL
-`PAYMENTS_WEB_URL`               |           | URL for the [Payments Web](https://github.com/companieshouse/payments.web.ch.gov.uk) service
-`PAYMENTS_API_URL`               |           | URL for the Payments API
-`GOV_PAY_URL`                    |           | URL for [GOV.UK Pay](https://www.payments.service.gov.uk)
-`GOV_PAY_BEARER_TOKEN_TREASURY`  |           | Treasury Bearer Token for [GOV.UK Pay](https://www.payments.service.gov.uk)
-`GOV_PAY_BEARER_TOKEN_CH_ACCOUNT`|           | CH Accont Bearer Token for [GOV.UK Pay](https://www.payments.service.gov.uk)
-`GOV_PAY_BEARER_TOKEN_LEGACY`    |           | Legacy Service Bearer Token for [GOV.UK Pay](https://www.payments.service.gov.uk)
-`EXPIRY_TIME_IN_MINUTES`         |           | Number of minutes before a payment session expires
-`KAFKA_BROKER_ADDR`              |           | Kafka Broker address
-`SCHEMA_REGISTRY_URL`            |           | Schema Registry URL
-`CHS_API_KEY`                    |           | API access key
-`SECURE_APP_COSTS_REGEX`         |           | Regex to match secure app costs resource
-`PAYPAL_ENV`                     |           | live or test
-`PAYPAL_CLIENT_ID`               |           | PayPal Client ID
-`PAYPAL_SECRET`                  |           | Paypal Secret
+ Variable                                 | Default    | Description
+:-----------------------------------------|:-----------|:---------------------------------------------------------------------------------------------
+ `BIND_ADDR`                              |            | Payments API Port
+ `MONGODB_URL`                            |            | MongoDB URL
+ `MONGODB_DATABASE`                       | `payments` | MongoDB database name
+ `MONGODB_COLLECTION`                     | `payments` | MongoDB collection name
+ `DOMAIN_ALLOW_LIST`                      |            | List of valid domains for the Resource URL
+ `PAYMENTS_WEB_URL`                       |            | URL for the [Payments Web](https://github.com/companieshouse/payments.web.ch.gov.uk) service
+ `PAYMENTS_API_URL`                       |            | URL for the Payments API
+ `GOV_PAY_URL`                            |            | URL for [GOV.UK Pay](https://www.payments.service.gov.uk)
+ `GOV_PAY_BEARER_TOKEN_TREASURY`          |            | Treasury Bearer Token for [GOV.UK Pay](https://www.payments.service.gov.uk)
+ `GOV_PAY_BEARER_TOKEN_CH_ACCOUNT`        |            | CH Account Bearer Token for [GOV.UK Pay](https://www.payments.service.gov.uk)
+ `GOV_PAY_BEARER_TOKEN_SANCTIONS_ACCOUNT` |            | Sanctions Account Bearer Token for [GOV.UK Pay](https://www.payments.service.gov.uk)
+ `GOV_PAY_BEARER_TOKEN_LEGACY`            |            | Legacy Service Bearer Token for [GOV.UK Pay](https://www.payments.service.gov.uk)
+ `EXPIRY_TIME_IN_MINUTES`                 |            | Number of minutes before a payment session expires
+ `KAFKA_BROKER_ADDR`                      |            | Kafka Broker address
+ `SCHEMA_REGISTRY_URL`                    |            | Schema Registry URL
+ `CHS_API_KEY`                            |            | API access key
+ `SECURE_APP_COSTS_REGEX`                 |            | Regex to match secure app costs resource
+ `PAYPAL_ENV`                             |            | live or test
+ `PAYPAL_CLIENT_ID`                       |            | PayPal Client ID
+ `PAYPAL_SECRET`                          |            | Paypal Secret
 
 ## Endpoints
 
