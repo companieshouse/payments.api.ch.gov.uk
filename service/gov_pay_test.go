@@ -1195,26 +1195,6 @@ func TestUnitCallToGovPay(t *testing.T) {
 		So(err.Error(), ShouldEqual, "error adding GovPay headers: [payment class [invalid] not recognised]")
 	})
 
-	Convey("Error adding GovPay headers - invalid config", t, func() {
-		resource := &models.PaymentResourceRest{
-			MetaData: models.PaymentResourceMetaDataRest{
-				ExternalPaymentStatusURI: "external_uri",
-			},
-			Costs: []models.CostResourceRest{
-				{ClassOfPayment: []string{"penalty-sanctions"}},
-			},
-		}
-
-		mock := dao.NewMockDAO(mockCtrl)
-		mockPaymentService := createMockPaymentService(mock, cfg)
-		mockGovPayService := CreateMockGovPayService(&mockPaymentService)
-		mockGovPayService.PaymentService.Config.GovPayBearerTokenChAccount = "api_test_chs"
-
-		response, err := callGovPay(&mockGovPayService, resource)
-		So(response, ShouldBeNil)
-		So(err.Error(), ShouldEqual, "error adding GovPay headers: [payment class [penalty-sanctions] not recognised]")
-	})
-
 	Convey("Successful call to GOV.UK Pay CHS account", t, func() {
 		resource := &models.PaymentResourceRest{
 			MetaData: models.PaymentResourceMetaDataRest{

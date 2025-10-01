@@ -359,7 +359,7 @@ func addGovPayHeaders(request *http.Request, paymentResource *models.PaymentReso
 	}
 
 	token := govPayTokens[paymentResource.Costs[0].ClassOfPayment[0]]
-	if token == "" || token == BearerToken {
+	if token == "" {
 		return fmt.Errorf("payment class [%s] not recognised", paymentResource.Costs[0].ClassOfPayment[0])
 	}
 
