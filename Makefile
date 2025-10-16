@@ -9,7 +9,6 @@ source_env   := for chs_env in $(chs_envs); do test -f $$chs_env && . $$chs_env;
 xunit_output := test.xml
 lint_output  := lint.txt
 govulncheck   := golang.org/x/vuln/cmd/govulncheck@latest
-nancycheck    := github.com/sonatype-nexus-community/nancy@latest
 
 .EXPORT_ALL_VARIABLES:
 GO111MODULE = on
@@ -26,7 +25,7 @@ fmt:
 	go fmt ./...
 
 .PHONY: build
-build: arch fmt
+build: arch fmt depvulncheck
 ifeq ($(shell uname; uname -p), Darwin arm)
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CC=x86_64-linux-musl-gcc CXX=x86_64-linux-musl-g++ go build --ldflags '-linkmode external -extldflags "-static"' -o ecs-image-build/app/$(bin)
 else
@@ -76,11 +75,6 @@ lint:
 	go get -u github.com/alecthomas/gometalinter
 	gometalinter --install
 	gometalinter ./... > $(lint_output); true
-
-.PHONY: depnancycheck
-depnancycheck:
-	go install $(nancycheck)
-	go list -json -deps ./... | $(GOPATH)/bin/nancy sleuth --loud
 
 .PHONY: depvulncheck
 depvulncheck:
