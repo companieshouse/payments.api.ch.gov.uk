@@ -108,6 +108,35 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 	})
 
+	Convey("Payment session is already paid", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		paymentService = createMockPaymentService(mock, cfg)
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount: "10.00",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				Status: service.Paid.String(),
+			},
+		}
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
+
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
+		w := httptest.NewRecorder()
+
+		handler := HandleGovPayCallback(mockPaymentProvidersService)
+		handler.ServeHTTP(w, req)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+	})
+
 	Convey("Invalid expiry time", t, func() {
 		cfg.ExpiryTimeInMinutes = "invalid"
 
@@ -565,6 +594,30 @@ func TestUnitHandlePayPalCallback(t *testing.T) {
 
 		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
 		So(res.Code, ShouldEqual, http.StatusNotFound)
+	})
+
+	Convey("Payment session is already paid", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		cfg, _ := config.Get()
+		paymentService = createMockPaymentService(mock, cfg)
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount: "10.00",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				Status: service.Paid.String(),
+			},
+		}
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
+
+		res := serveHandlePayPalCallback(mockExternalPaymentProvidersService, true)
+		So(res.Code, ShouldEqual, http.StatusBadRequest)
 	})
 
 	Convey("Invalid expiry time", t, func() {

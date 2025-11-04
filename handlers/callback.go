@@ -43,6 +43,12 @@ func HandleGovPayCallback(gp service.PaymentProviderService) http.Handler {
 			return
 		}
 
+		if paymentSession.Status == service.Paid.String() {
+			log.ErrorR(req, fmt.Errorf("payment session is already paid. id: %s", id))
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
 		// Check if the payment session is expired
 		isExpired, err := service.IsExpired(*paymentSession, &paymentService.Config)
 		if err != nil {
@@ -146,6 +152,12 @@ func HandlePayPalCallback(externalPaymentSvc service.PaymentProviderService) htt
 		if paymentSession == nil {
 			log.ErrorR(req, fmt.Errorf("payment session not found. id: %s", paymentID))
 			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		if paymentSession.Status == service.Paid.String() {
+			log.ErrorR(req, fmt.Errorf("payment session is already paid. id: %s", paymentID))
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
