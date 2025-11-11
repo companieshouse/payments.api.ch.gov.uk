@@ -78,8 +78,12 @@ lint:
 
 .PHONY: depvulncheck
 depvulncheck:
+ifeq ($(shell uname; uname -p), Darwin arm)
+		@echo "Skipping govulncheck on macOS ARM"
+else
 	go install $(govulncheck)
 	CGO_ENABLED=1 $(GOPATH)/bin/govulncheck -show verbose ./...
+endif
 
 .PHONY: docker-image
 docker-image: dist

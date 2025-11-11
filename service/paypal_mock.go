@@ -65,18 +65,18 @@ func (mr *MockPayPalSDKMockRecorder) CapturedDetail(ctx, captureID interface{}) 
 }
 
 // CreateOrder mocks base method.
-func (m *MockPayPalSDK) CreateOrder(ctx context.Context, intent string, purchaseUnits []paypal.PurchaseUnitRequest, payer *paypal.CreateOrderPayer, appContext *paypal.ApplicationContext) (*paypal.Order, error) {
+func (m *MockPayPalSDK) CreateOrder(ctx context.Context, intent string, purchaseUnits []paypal.PurchaseUnitRequest, paymentSource *paypal.PaymentSource, appContext *paypal.ApplicationContext) (*paypal.Order, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateOrder", ctx, intent, purchaseUnits, payer, appContext)
+	ret := m.ctrl.Call(m, "CreateOrder", ctx, intent, purchaseUnits, paymentSource, appContext)
 	ret0, _ := ret[0].(*paypal.Order)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateOrder indicates an expected call of CreateOrder.
-func (mr *MockPayPalSDKMockRecorder) CreateOrder(ctx, intent, purchaseUnits, payer, appContext interface{}) *gomock.Call {
+func (mr *MockPayPalSDKMockRecorder) CreateOrder(ctx, intent, purchaseUnits, paymentSource, appContext interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrder", reflect.TypeOf((*MockPayPalSDK)(nil).CreateOrder), ctx, intent, purchaseUnits, payer, appContext)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrder", reflect.TypeOf((*MockPayPalSDK)(nil).CreateOrder), ctx, intent, purchaseUnits, paymentSource, appContext)
 }
 
 // GetAccessToken mocks base method.
