@@ -14,7 +14,15 @@ import (
 )
 
 // ProducerTopic is the topic to which the payment processed kafka message is sent
-const ProducerTopic = "payment-processed"
+var ProducerTopic string
+
+func init() {
+	cfg, err := config.Get()
+	if err != nil {
+		panic(fmt.Sprintf("failed to get config: %v", err))
+	}
+	ProducerTopic = cfg.PaymentProcessedTopic
+}
 
 // ProducerSchemaName is the schema which will be used to send the payment processed kafka message with
 const ProducerSchemaName = "payment-processed"
