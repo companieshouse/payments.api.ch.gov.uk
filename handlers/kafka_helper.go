@@ -13,9 +13,6 @@ import (
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 )
 
-// ProducerTopic is the topic to which the payment processed kafka message is sent
-const ProducerTopic = "payment-processed"
-
 // ProducerSchemaName is the schema which will be used to send the payment processed kafka message with
 const ProducerSchemaName = "payment-processed"
 
@@ -97,6 +94,11 @@ func produceKafkaMessage(paymentID string, refundID string) error {
 
 // prepareKafkaMessage is pulled out of produceKafkaMessage() to allow unit testing of non-kafka portion of code
 func prepareKafkaMessage(paymentID string, refundID string, paymentProcessedSchema avro.Schema) (*producer.Message, error) {
+	cfg, err := config.Get()
+	if err != nil {
+		err = fmt.Errorf("error getting config for kafka message production: [%v]", err)
+		return nil, err
+	}
 	paymentProcessedMessage := paymentProcessed{Attempt: 0, PaymentSessionID: paymentID, RefundId: refundID}
 
 	messageBytes, err := paymentProcessedSchema.Marshal(paymentProcessedMessage)
@@ -107,7 +109,7 @@ func prepareKafkaMessage(paymentID string, refundID string, paymentProcessedSche
 
 	producerMessage := &producer.Message{
 		Value: messageBytes,
-		Topic: ProducerTopic,
+		Topic: cfg.PaymentProcessedTopic,
 	}
 	return producerMessage, nil
 }
