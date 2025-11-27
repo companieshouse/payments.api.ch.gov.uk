@@ -38,7 +38,6 @@ type Config struct {
 	PaypalClientID                    string   `env:"PAYPAL_CLIENT_ID"                flag:"paypal-client-id"                  flagDesc:"PayPal Client ID"`
 	PaypalSecret                      string   `env:"PAYPAL_SECRET"                   flag:"paypal-secret"                     flagDesc:"PayPal Secret"`
 	RefundBatchSize                   int      `env:"REFUND_BATCH_SIZE"               flag:"refund-batch-size"                 flagDesc:"Refund batch size"`
-	PaymentProcessedTopic             string   `env:"PAYMENT_PROCESSED_TOPIC"         flag:"payment-processed-topic"           flagDesc:"Payment processed topic"`
 }
 
 // DefaultConfig returns a pointer to a Config instance that has been populated
@@ -51,7 +50,6 @@ func DefaultConfig() *Config {
 		GovPayExpiryTime:      90,
 		GovPayMaxCheckingDays: 30,
 		RefundBatchSize:       20,
-		PaymentProcessedTopic: "cidev-payment-processed",
 	}
 }
 
