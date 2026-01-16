@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/plutov/paypal/v4"
 
 	"github.com/companieshouse/chs.go/avro"
@@ -169,6 +170,39 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 	})
 
 	cfg.ExpiryTimeInMinutes = "60"
+	Convey("Error getting payment status", t, func() {
+		mock := dao.NewMockDAO(mockCtrl)
+		paymentService = createMockPaymentService(mock, cfg)
+		paymentSession := models.PaymentResourceDB{
+			Data: models.PaymentResourceDataDB{
+				Amount: "10.00",
+				Links: models.PaymentLinksDB{
+					Resource: "http://dummy-url",
+				},
+				CreatedAt: time.Now().Add(time.Hour * -2),
+			},
+		}
+		statusResponse := models.StatusResponse{
+			Status: service.Expired.String(),
+		}
+		mockPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, "123", service.Error, errors.New("error")).Times(1)
+		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil)
+
+		httpmock.Activate()
+		defer httpmock.DeactivateAndReset()
+		jsonResponse, _ := httpmock.NewJsonResponder(http.StatusOK, defaultCosts)
+		httpmock.RegisterResponder(http.MethodGet, "http://dummy-url", jsonResponse)
+
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req = mux.SetURLVars(req, map[string]string{"payment_id": "1234"})
+		w := httptest.NewRecorder()
+
+		handler := HandleGovPayCallback(mockPaymentProvidersService)
+		handler.ServeHTTP(w, req)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+	})
+
 	Convey("Payment session expired", t, func() {
 		mock := dao.NewMockDAO(mockCtrl)
 		paymentService = createMockPaymentService(mock, cfg)
@@ -181,6 +215,10 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 				CreatedAt: time.Now().Add(time.Hour * -2),
 			},
 		}
+		statusResponse := models.StatusResponse{
+			Status: service.Expired.String(),
+		}
+		mockPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, "123", service.Error, nil)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(nil)
 
@@ -211,6 +249,10 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 				CreatedAt: time.Now().Add(time.Hour * -2),
 			},
 		}
+		statusResponse := models.StatusResponse{
+			Status: service.Expired.String(),
+		}
+		mockPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, "123", service.Error, nil)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 		mock.EXPECT().PatchPaymentResource("1234", gomock.Any()).Return(fmt.Errorf("error"))
 
@@ -242,6 +284,10 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 				CreatedAt: time.Now(),
 			},
 		}
+		statusResponse := models.StatusResponse{
+			Status: service.Paid.String(),
+		}
+		mockPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, "123", service.Created, nil)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
 
 		httpmock.Activate()
@@ -312,7 +358,7 @@ func TestUnitHandleGovPayCallback(t *testing.T) {
 		}
 		mockPaymentProvidersService.EXPECT().CheckPaymentProviderStatus(gomock.Any()).Return(&statusResponse, "123", service.Success, nil)
 		mock.EXPECT().GetPaymentResource(gomock.Any()).Return(&paymentSession, nil).AnyTimes()
-		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(nil)
+		mock.EXPECT().PatchPaymentResource(gomock.Any(), gomock.Any()).Return(errors.New("error"))
 
 		httpmock.Activate()
 		defer httpmock.DeactivateAndReset()
