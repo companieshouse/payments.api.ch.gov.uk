@@ -57,7 +57,16 @@ func HandleGovPayCallback(gp service.PaymentProviderService) http.Handler {
 			return
 		}
 
-		if isExpired {
+		// Get the state of a GovPay payment
+		statusResponse, providerID, responseType, err := gp.CheckPaymentProviderStatus(paymentSession)
+
+		if err != nil {
+			log.ErrorR(req, fmt.Errorf("error getting payment status from govpay: [%v]", err), log.Data{"service_response_type": responseType.String()})
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if isExpired && responseType != service.Success {
 			// Set the status of the payment
 			paymentSession.Status = service.Expired.String()
 			_, err := paymentService.PatchPaymentSession(req, id, *paymentSession)
@@ -75,15 +84,6 @@ func HandleGovPayCallback(gp service.PaymentProviderService) http.Handler {
 		if paymentSession.PaymentMethod != "credit-card" {
 			log.ErrorR(req, fmt.Errorf("payment method, [%s], for resource [%s] not recognised", paymentSession.PaymentMethod, id))
 			w.WriteHeader(http.StatusPreconditionFailed)
-			return
-		}
-
-		// Get the state of a GovPay payment
-		statusResponse, providerID, responseType, err := gp.CheckPaymentProviderStatus(paymentSession)
-
-		if err != nil {
-			log.ErrorR(req, fmt.Errorf("error getting payment status from govpay: [%v]", err), log.Data{"service_response_type": responseType.String()})
-			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
