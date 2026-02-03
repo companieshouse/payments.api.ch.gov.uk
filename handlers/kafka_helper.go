@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/companieshouse/chs.go/avro"
 	"github.com/companieshouse/chs.go/avro/schema"
@@ -31,24 +32,29 @@ func produceRefundMessage(paymentID string, refundID string) error {
 	return produceKafkaMessage(paymentID, refundID)
 }
 
+// IMPORTANT:
+// redirectURI already contains query params in some flows.
+// String concatenation caused duplicate '?' and broken redirects.
+// Always parse and rebuild using url.Parse + RawQuery.
 // redirectUser redirects user to the provided redirect_uri with query params
 func redirectUser(w http.ResponseWriter, r *http.Request, redirectURI string, params models.RedirectParams) {
 	// Redirect the user to the redirect_uri, passing the state, ref and status as query params
-	req, err := http.NewRequest("GET", redirectURI, nil)
+	redirectURL, err := url.Parse(redirectURI)
 	if err != nil {
-		log.ErrorR(req, fmt.Errorf("error redirecting user: [%s]", err))
+		log.ErrorR(r, err, log.Data{"redirect_uri": redirectURI})
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	query := req.URL.Query()
+
+	query := redirectURL.Query()
 	query.Add("state", params.State)
 	query.Add("ref", params.Ref)
 	query.Add("status", params.Status)
 
-	generatedURL := fmt.Sprintf("%s?%s", redirectURI, query.Encode())
-	log.InfoR(r, "Redirecting to:", log.Data{"generated_url": generatedURL})
+	redirectURL.RawQuery = query.Encode()
 
-	http.Redirect(w, r, generatedURL, http.StatusSeeOther)
+	http.Redirect(w, r, redirectURL.String(), http.StatusSeeOther)
+
 }
 
 // produceKafkaMessage handles creating a producer, marshalling the payment id into the correct avro schema and sending
