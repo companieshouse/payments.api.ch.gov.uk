@@ -41,6 +41,7 @@ func redirectUser(w http.ResponseWriter, r *http.Request, redirectURI string, pa
 	// Redirect the user to the redirect_uri, passing the state, ref and status as query params
 	redirectURL, err := url.Parse(redirectURI)
 	if err != nil {
+		log.ErrorR(r, err, log.Data{"redirect_uri": redirectURI})
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
