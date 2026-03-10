@@ -1,4 +1,4 @@
-environment = "cidev"
+environment = "rebel1"
 aws_profile = "development-eu-west-2"
 
 # Scheduled scaling of tasks
