@@ -54,7 +54,7 @@ func GetPayPalClient(cfg config.Config) (*paypal.Client, error) {
 // in this service
 type PayPalSDK interface {
 	GetAccessToken(ctx context.Context) (*paypal.TokenResponse, error)
-	CreateOrder(ctx context.Context, intent string, purchaseUnits []paypal.PurchaseUnitRequest, payer *paypal.CreateOrderPayer, appContext *paypal.ApplicationContext) (*paypal.Order, error)
+	CreateOrder(ctx context.Context, intent string, purchaseUnits []paypal.PurchaseUnitRequest, paymentSource *paypal.PaymentSource, appContext *paypal.ApplicationContext) (*paypal.Order, error)
 	GetOrder(ctx context.Context, orderID string) (*paypal.Order, error)
 	CaptureOrder(ctx context.Context, orderID string, captureOrderRequest paypal.CaptureOrderRequest) (*paypal.CaptureOrderResponse, error)
 	CapturedDetail(ctx context.Context, captureID string) (*paypal.CaptureDetailsResponse, error)
