@@ -12,6 +12,7 @@ govulncheck   := golang.org/x/vuln/cmd/govulncheck@latest
 
 .EXPORT_ALL_VARIABLES:
 GO111MODULE = on
+GO_VERSION=go1.26.5
 
 .PHONY:
 arch:
@@ -78,7 +79,7 @@ lint:
 
 .PHONY: depvulncheck
 depvulncheck:
-	go install $(govulncheck)
+	GOTOOLCHAIN=$(GO_VERSION) go install $(govulncheck)
 	CGO_ENABLED=1 $(GOPATH)/bin/govulncheck -show verbose ./...
 
 .PHONY: docker-image
