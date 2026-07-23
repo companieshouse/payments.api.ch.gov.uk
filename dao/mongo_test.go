@@ -6,7 +6,7 @@ import (
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
-	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -56,7 +56,7 @@ func TestUnitPatchPaymentResource(t *testing.T) {
 			BulkRefund:                   []models.BulkRefundDB{{}},
 		}
 		err := dao.PatchPaymentResource("id123", &resource)
-		So(err.Error(), ShouldEqual, "the Update operation must have a Deployment set before Execute can be called")
+		So(err.Error(), ShouldEqual, "the update operation must have a Deployment set before Execute can be called")
 	})
 }
 

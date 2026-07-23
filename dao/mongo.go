@@ -10,9 +10,9 @@ import (
 	"github.com/companieshouse/chs.go/log"
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 const deadline = 5 * time.Second
@@ -25,6 +25,9 @@ const (
 	bulkRefundStatus             = "bulk_refunds.status"
 	dataProviderID               = "data.provider_id"
 	externalPaymentTransactionID = "external_payment_transaction_id"
+	refundsStatus                = "refunds.$[x].status"
+	refundsRefundedAt            = "refunds.$[x].refunded_at"
+	refundsAttempts              = "refunds.$[x].attempts"
 )
 
 // MongoService is an implementation of the Service interface using MongoDB as the backend driver.
@@ -36,7 +39,7 @@ type MongoService struct {
 
 // MongoDatabaseInterface is an interface that describes the mongodb driver
 type MongoDatabaseInterface interface {
-	Collection(name string, opts ...*options.CollectionOptions) *mongo.Collection
+	Collection(name string, opts ...options.Lister[options.CollectionOptions]) *mongo.Collection
 }
 
 func getMongoDatabase(mongoDBURL, databaseName string) MongoDatabaseInterface {
@@ -48,10 +51,8 @@ func getMongoClient(mongoDBURL string) *mongo.Client {
 		return client
 	}
 
-	ctx := context.Background()
-
 	clientOptions := options.Client().ApplyURI(mongoDBURL)
-	client, err := mongo.Connect(ctx, clientOptions)
+	client, err := mongo.Connect(clientOptions)
 
 	// Assume the caller of this func cannot handle the case where there is no database connection
 	// so the service must crash here as it cannot continue.
@@ -59,6 +60,8 @@ func getMongoClient(mongoDBURL string) *mongo.Client {
 		log.Error(err)
 		os.Exit(1)
 	}
+
+	ctx := context.Background()
 
 	// Check we can connect to the mongodb instance. Failure here should result in a crash.
 	pingContext, cancel := context.WithDeadline(ctx, time.Now().Add(deadline))
@@ -384,44 +387,40 @@ func (m *MongoService) PatchRefundStatus(id string, isRefunded bool, isFailed bo
 	refunds := paymentUpdate.Refunds[0]
 	attempts := refunds.Attempts + 1
 
-	refundsFilter := options.ArrayFilters{Filters: bson.A{bson.M{"x.refund_id": refunds.RefundId}}}
-	upsert := true
+	refundsFilter := []any{bson.A{bson.M{"x.refund_id": refunds.RefundId}}}
 
-	after := options.After
-
-	opts := options.FindOneAndUpdateOptions{
-		ArrayFilters:   &refundsFilter,
-		ReturnDocument: &after,
-		Upsert:         &upsert,
-	}
+	opts := options.FindOneAndUpdate().
+		SetArrayFilters(refundsFilter).
+		SetReturnDocument(options.After).
+		SetUpsert(true)
 
 	var patchUpdate, updatedDoc bson.M
 
 	if isRefunded {
 		patchUpdate = bson.M{
 			"$set": bson.M{
-				"refunds.$[x].status":      refundStatus,
-				"refunds.$[x].refunded_at": time.Now(),
-				"refunds.$[x].attempts":    attempts,
+				refundsStatus:     refundStatus,
+				refundsRefundedAt: time.Now(),
+				refundsAttempts:   attempts,
 			},
 		}
 	} else if isFailed {
 		patchUpdate = bson.M{
 			"$set": bson.M{
-				"refunds.$[x].status":   refundStatus,
-				"refunds.$[x].attempts": attempts,
+				refundsStatus:   refundStatus,
+				refundsAttempts: attempts,
 			},
 		}
 	} else {
 		patchUpdate = bson.M{
 			"$set": bson.M{
-				"refunds.$[x].attempts": attempts,
+				refundsAttempts: attempts,
 			},
 		}
 	}
 
 	updatedPayment := models.PaymentResourceDB{}
-	result := collection.FindOneAndUpdate(context.Background(), bson.M{"_id": id}, patchUpdate, &opts)
+	result := collection.FindOneAndUpdate(context.Background(), bson.M{"_id": id}, patchUpdate, opts)
 
 	if result.Err() != nil {
 		return updatedPayment, result.Err()
@@ -445,13 +444,11 @@ func (m *MongoService) IncrementRefundAttempts(paymentID string, paymentUpdate *
 	refunds := paymentUpdate.Refunds[0]
 	attempts := refunds.Attempts + 1
 
-	refundsFilter := options.ArrayFilters{Filters: bson.A{bson.M{"x.refund_id": refunds.RefundId}}}
-	upsert := true
+	refundsFilter := []any{bson.A{bson.M{"x.refund_id": refunds.RefundId}}}
 
-	opts := options.FindOneAndUpdateOptions{
-		ArrayFilters: &refundsFilter,
-		Upsert:       &upsert,
-	}
+	opts := options.FindOneAndUpdate().
+		SetArrayFilters(refundsFilter).
+		SetUpsert(true)
 
 	patchUpdate := bson.M{
 		"$set": bson.M{
@@ -459,7 +456,7 @@ func (m *MongoService) IncrementRefundAttempts(paymentID string, paymentUpdate *
 		},
 	}
 
-	result := collection.FindOneAndUpdate(context.Background(), bson.M{"_id": paymentID}, patchUpdate, &opts)
+	result := collection.FindOneAndUpdate(context.Background(), bson.M{"_id": paymentID}, patchUpdate, opts)
 
 	return result.Err()
 }

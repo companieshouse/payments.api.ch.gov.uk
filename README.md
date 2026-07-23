@@ -1,7 +1,6 @@
 # Companies House Payments API
 
 [![GoDoc](https://godoc.org/github.com/companieshouse/payments.api.ch.gov.uk?status.svg)](https://godoc.org/github.com/companieshouse/payments.api.ch.gov.uk)
-[![Go Report Card](https://goreportcard.com/badge/github.com/companieshouse/payments.api.ch.gov.uk)](https://goreportcard.com/report/github.com/companieshouse/payments.api.ch.gov.uk)
 
 The Companies House API for handling payments.
 
