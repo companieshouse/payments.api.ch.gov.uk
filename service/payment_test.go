@@ -758,7 +758,7 @@ func TestUnitGenerateIDForDuplicates(t *testing.T) {
 		generated[i] = ref
 	}
 
-	// check for dups by creating a map of string->int and counting the the entry values whilst
+	// check for dups by creating a map of string->int and counting the entry values whilst
 	// iterating through the generated map
 	generatedCheck := make(map[string]int)
 	var duplicates []string
