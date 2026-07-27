@@ -7,13 +7,11 @@ import (
 	"testing"
 
 	"github.com/companieshouse/payments.api.ch.gov.uk/config"
-	"github.com/golang/mock/gomock"
-
 	"github.com/companieshouse/payments.api.ch.gov.uk/dao"
-
 	"github.com/companieshouse/payments.api.ch.gov.uk/helpers"
 	"github.com/companieshouse/payments.api.ch.gov.uk/models"
 	"github.com/companieshouse/payments.api.ch.gov.uk/service"
+	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
