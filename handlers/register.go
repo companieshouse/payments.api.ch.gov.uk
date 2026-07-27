@@ -124,6 +124,7 @@ func Register(mainRouter *mux.Router, cfg config.Config, paymentsDao dao.DAO) {
 	paymentStatusRouter.Use(log.Handler, interceptors.InternalOrPaymentPrivilegesIntercept)
 	createRefundRouter.Use(log.Handler, authentication.ElevatedPrivilegesInterceptor)
 	updateRefundRouter.Use(log.Handler, authentication.ElevatedPrivilegesInterceptor)
+	getRefundRouter.Use(log.Handler, authentication.ElevatedPrivilegesInterceptor)
 	refundRouter.Use(log.Handler, interceptors.InternalOrPaymentPrivilegesIntercept)
 	privatePatchRouter.Use(log.Handler, interceptors.UserPaymentAuthenticationIntercept, pa.PaymentAuthenticationIntercept)
 	privateJourneyRouter.Use(log.Handler, interceptors.UserPaymentAuthenticationIntercept, pa.PaymentAuthenticationIntercept)
