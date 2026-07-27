@@ -348,7 +348,6 @@ func generateID() string {
 func generateEtag() string {
 	b := make([]byte, 28) // 28 bytes == 56 hex chars
 	rand.Read(b)
-	fmt.Println(hex.EncodeToString(b))
 	return hex.EncodeToString(b)
 }
 
