@@ -18,6 +18,7 @@ import (
 var govPayRequestError = "error generating request for GovPay: [%s]"
 var govPayHeaderError = "error adding GovPay headers: [%s]"
 var govPayStatusError = "error status [%v] back from GovPay: [%s]"
+var govPayResponseError = "error reading response from GovPay: [%s]"
 
 // GovPayService handles the specific functionality of integrating GovPay provider into Payment Sessions
 type GovPayService struct {
@@ -107,13 +108,13 @@ func (gp *GovPayService) CreatePaymentAndGenerateNextURL(req *http.Request, paym
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", Error, fmt.Errorf("error reading response from GovPay: [%s]", err)
+		return "", Error, fmt.Errorf(govPayResponseError, err)
 	}
 
 	govPayResponse := &models.IncomingGovPayResponse{}
 	err = json.Unmarshal(body, govPayResponse)
 	if err != nil {
-		return "", Error, fmt.Errorf("error reading response from GovPay: [%s]", err)
+		return "", Error, fmt.Errorf(govPayResponseError, err)
 	}
 	if resp.StatusCode != http.StatusCreated {
 		return "", Error, fmt.Errorf(govPayStatusError, resp.StatusCode, govPayResponse.Description)
@@ -250,13 +251,13 @@ func (gp *GovPayService) CreateRefund(paymentResource *models.PaymentResourceRes
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, Error, fmt.Errorf("error reading response from GovPay: [%s]", err)
+		return nil, Error, fmt.Errorf(govPayResponseError, err)
 	}
 
 	govPayResponse := &models.CreateRefundGovPayResponse{}
 	err = json.Unmarshal(body, govPayResponse)
 	if err != nil {
-		return nil, Error, fmt.Errorf("error reading response from GovPay: [%s]", err)
+		return nil, Error, fmt.Errorf(govPayResponseError, err)
 	}
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
 		return nil, Error, fmt.Errorf(govPayStatusError, resp.StatusCode, govPayResponse.Status)
@@ -285,14 +286,14 @@ func (gp *GovPayService) GetRefundStatus(paymentResource *models.PaymentResource
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, Error, fmt.Errorf("error reading response from GovPay: [%s]", err)
+		return nil, Error, fmt.Errorf(govPayResponseError, err)
 	}
 
 	govPayResponse := &models.CreateRefundGovPayResponse{}
 
 	err = json.Unmarshal(body, govPayResponse)
 	if err != nil {
-		return nil, Error, fmt.Errorf("error reading response from GovPay: [%s]", err)
+		return nil, Error, fmt.Errorf(govPayResponseError, err)
 	}
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
 		return nil, Error, fmt.Errorf(govPayStatusError, resp.StatusCode, govPayResponse.Status)
@@ -332,7 +333,7 @@ func callGovPay(gp *GovPayService, paymentResource *models.PaymentResourceRest) 
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error reading response from GovPay: [%s]", err)
+		return nil, fmt.Errorf(govPayResponseError, err)
 	}
 
 	govPayResponse := &models.IncomingGovPayResponse{}
