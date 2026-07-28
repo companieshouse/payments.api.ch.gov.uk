@@ -42,9 +42,6 @@ func HandleCreatePaymentSession(w http.ResponseWriter, req *http.Request) {
 		case service.InvalidData:
 			w.WriteHeader(http.StatusBadRequest)
 			return
-		case service.Error:
-			w.WriteHeader(http.StatusInternalServerError)
-			return
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
 			return

@@ -72,9 +72,6 @@ func (paymentAuthenticationInterceptor PaymentAuthenticationInterceptor) Payment
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write(jsonResponse)
 				return
-			case service.Error:
-				w.WriteHeader(http.StatusInternalServerError)
-				return
 			default:
 				w.WriteHeader(http.StatusInternalServerError)
 				return

@@ -26,9 +26,6 @@ func HandleCreateExternalPaymentJourney(externalPaymentProvidersService *service
 		if err != nil {
 			log.ErrorR(req, fmt.Errorf("error creating external payment journey: [%v]", err), log.Data{"service_response_type": responseType.String()})
 			switch responseType {
-			case service.Error:
-				w.WriteHeader(http.StatusInternalServerError)
-				return
 			case service.InvalidData:
 				w.WriteHeader(http.StatusBadRequest)
 				return
