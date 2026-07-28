@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -15,6 +16,7 @@ const (
 	contentType                 = "Content-Type"
 	applicationJsonResponseType = "application/json"
 	writingErrorResponse        = "error writing response: %v"
+	paymentIDNotSupplied        = "payment id not supplied"
 )
 
 // handleRefundMessage allows us to mock the call to produceRefundMessage for unit tests
@@ -31,7 +33,7 @@ func HandleCreateRefund(w http.ResponseWriter, req *http.Request) {
 	id := mux.Vars(req)["paymentId"]
 
 	if id == "" {
-		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
+		log.ErrorR(req, errors.New(paymentIDNotSupplied))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -87,7 +89,7 @@ func HandleGetRefunds(w http.ResponseWriter, req *http.Request) {
 	paymentId := mux.Vars(req)["paymentId"]
 
 	if paymentId == "" {
-		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
+		log.ErrorR(req, errors.New(paymentIDNotSupplied))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -118,7 +120,7 @@ func HandleUpdateRefund(w http.ResponseWriter, req *http.Request) {
 	refundId := mux.Vars(req)["refundId"]
 
 	if paymentId == "" {
-		log.ErrorR(req, fmt.Errorf("payment id not supplied"))
+		log.ErrorR(req, errors.New(paymentIDNotSupplied))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
