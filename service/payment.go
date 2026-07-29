@@ -1,13 +1,12 @@
 package service
 
 import (
-	"crypto/sha512"
+	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -327,35 +326,29 @@ func getCosts(resource string, cfg *config.Config, secAppCostsRegex *regexp.Rege
 	return costs, Success, nil
 }
 
-// Generates a string of 15 alpha numeric characters. this needs to be less than 16 characters as these id's are also
+// Generates a string of 15 alphanumeric characters. this needs to be less than 16 characters as these IDs are also
 // being sent to E5 (our finance system) when paying for late filing penalties. Although this restriction is currently
 // being imposed on us by an external system, there is enough entropy here that makes collisions highly unlikely, with
 // a total range being 15**62.
 //
-// **If you change the implementation of this test, you must run the utility test `go test ./... -run 'Util'**
+// **If you change the implementation of this function, you must run the unit test `TestUnitGenerateIDForDuplicates`
 func generateID() string {
 	idLength := 15
-	rand.Seed(time.Now().UTC().UnixNano())
-	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890")
-	id := make([]rune, idLength)
-	for i := 0; i < idLength; i++ {
-		id[i] = chars[rand.Intn(len(chars))]
+	chars := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890"
+	id := make([]byte, idLength)
+
+	rand.Read(id)
+	for i, v := range id {
+		id[i] = chars[int(v)%len(chars)]
 	}
 	return string(id)
 }
 
 // generateEtag generates a random etag which is generated on every write action on the payment session
 func generateEtag() string {
-	// Get a random number and the time in seconds and milliseconds
-	rand.Seed(time.Now().UTC().UnixNano())
-	randomNumber := fmt.Sprintf("%07d", rand.Intn(9999999))
-	timeInMillis := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
-	timeInSeconds := strconv.FormatInt(time.Now().UnixNano()/int64(time.Second), 10)
-	// Calculate a SHA-512 truncated digest
-	shaDigest := sha512.New512_224()
-	shaDigest.Write([]byte(randomNumber + timeInMillis + timeInSeconds))
-	sha1_hash := hex.EncodeToString(shaDigest.Sum(nil))
-	return sha1_hash
+	b := make([]byte, 28) // 28 bytes == 56 hex chars
+	rand.Read(b)
+	return hex.EncodeToString(b)
 }
 
 func validateIncomingPayment(incomingPaymentResourceRequest models.IncomingPaymentResourceRequest, cfg *config.Config) error {

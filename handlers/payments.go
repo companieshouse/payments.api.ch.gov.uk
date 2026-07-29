@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -13,6 +14,7 @@ import (
 )
 
 const errorWritingResponse = "error writing response: %w"
+const invalidPaymentResourceRest = "invalid PaymentResourceRest in request context"
 
 // HandleCreatePaymentSession creates a payment session and returns a journey URL for the calling app to redirect to
 func HandleCreatePaymentSession(w http.ResponseWriter, req *http.Request) {
@@ -39,9 +41,6 @@ func HandleCreatePaymentSession(w http.ResponseWriter, req *http.Request) {
 		switch responseType {
 		case service.InvalidData:
 			w.WriteHeader(http.StatusBadRequest)
-			return
-		case service.Error:
-			w.WriteHeader(http.StatusInternalServerError)
 			return
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
@@ -70,7 +69,7 @@ func HandleGetPaymentSession(w http.ResponseWriter, req *http.Request) {
 	paymentSession, ok := req.Context().Value(helpers.ContextKeyPaymentSession).(*models.PaymentResourceRest)
 
 	if !ok {
-		log.ErrorR(req, fmt.Errorf("invalid PaymentResourceRest in request context"))
+		log.ErrorR(req, errors.New(invalidPaymentResourceRest))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -104,7 +103,7 @@ func HandlePatchPaymentSession(w http.ResponseWriter, req *http.Request) {
 	// get payment resource from context, put there by PaymentAuthenticationInterceptor
 	paymentSession, ok := req.Context().Value(helpers.ContextKeyPaymentSession).(*models.PaymentResourceRest)
 	if !ok {
-		log.ErrorR(req, fmt.Errorf("invalid PaymentResourceRest in request context"))
+		log.ErrorR(req, errors.New(invalidPaymentResourceRest))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -167,7 +166,7 @@ func HandleGetPaymentDetails(externalPaymentSvc *service.ExternalPaymentProvider
 		// The payment session must be retrieved directly to enable access to metadata outside the data block
 		paymentSession, ok := req.Context().Value(helpers.ContextKeyPaymentSession).(*models.PaymentResourceRest)
 		if !ok {
-			log.ErrorR(req, fmt.Errorf("invalid PaymentResourceRest in request context"))
+			log.ErrorR(req, errors.New(invalidPaymentResourceRest))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

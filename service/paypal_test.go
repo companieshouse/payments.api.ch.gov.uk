@@ -68,13 +68,34 @@ func TestUnitGetPayPalClient(t *testing.T) {
 		So(err.Error(), ShouldEqual, "invalid paypal env in config: invalid")
 	})
 
-	Convey("Error creating paypal client", t, func() {
+	Convey("Error creating paypal client - client id missing", t, func() {
 		cfg, _ := config.Get()
 		cfg.PaypalEnv = "test"
 		c, err := GetPayPalClient(*cfg)
 		So(c, ShouldBeNil)
 		So(err.Error(), ShouldEqual,
 			"paypal client id not found in config")
+	})
+
+	Convey("Error creating paypal client - secret missing", t, func() {
+		cfg, _ := config.Get()
+		cfg.PaypalEnv = "test"
+		cfg.PaypalClientID = "test"
+		c, err := GetPayPalClient(*cfg)
+		So(c, ShouldBeNil)
+		So(err.Error(), ShouldEqual,
+			"paypal secret not found in config")
+	})
+
+	Convey("Error creating paypal client - access token error", t, func() {
+		cfg, _ := config.Get()
+		cfg.PaypalEnv = "test"
+		cfg.PaypalClientID = "test"
+		cfg.PaypalSecret = "secret"
+		c, err := GetPayPalClient(*cfg)
+		So(c, ShouldBeNil)
+		So(err.Error(), ShouldContainSubstring,
+			"error getting access token")
 	})
 }
 
