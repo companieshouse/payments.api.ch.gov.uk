@@ -74,7 +74,7 @@ func TestUnitGetPayPalClient(t *testing.T) {
 		c, err := GetPayPalClient(*cfg)
 		So(c, ShouldBeNil)
 		So(err.Error(), ShouldEqual,
-			"paypal client id not found in config")
+			"paypal secret not found in config")
 	})
 
 	Convey("Error creating paypal client - secret missing", t, func() {

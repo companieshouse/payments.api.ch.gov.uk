@@ -31,12 +31,12 @@ func GetPayPalClient(cfg config.Config) (*paypal.Client, error) {
 		return nil, fmt.Errorf("invalid paypal env in config: %s", cfg.PaypalEnv)
 	}
 
-	if cfg.PaypalClientID == "" {
-		return nil, fmt.Errorf("paypal client id not found in config")
-	}
-
 	if cfg.PaypalSecret == "" {
 		return nil, fmt.Errorf("paypal secret not found in config")
+	}
+
+	if cfg.PaypalClientID == "" {
+		return nil, fmt.Errorf("paypal client id not found in config")
 	}
 
 	c, err := paypal.NewClient(cfg.PaypalClientID, cfg.PaypalSecret, paypalAPIBase)
