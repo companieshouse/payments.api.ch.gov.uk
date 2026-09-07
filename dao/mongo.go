@@ -387,7 +387,7 @@ func (m *MongoService) PatchRefundStatus(id string, isRefunded bool, isFailed bo
 	refunds := paymentUpdate.Refunds[0]
 	attempts := refunds.Attempts + 1
 
-	refundsFilter := []any{bson.A{bson.M{"x.refund_id": refunds.RefundId}}}
+	refundsFilter := bson.A{bson.M{"x.refund_id": refunds.RefundId}}
 
 	opts := options.FindOneAndUpdate().
 		SetArrayFilters(refundsFilter).
@@ -444,7 +444,7 @@ func (m *MongoService) IncrementRefundAttempts(paymentID string, paymentUpdate *
 	refunds := paymentUpdate.Refunds[0]
 	attempts := refunds.Attempts + 1
 
-	refundsFilter := []any{bson.A{bson.M{"x.refund_id": refunds.RefundId}}}
+	refundsFilter := bson.A{bson.M{"x.refund_id": refunds.RefundId}}
 
 	opts := options.FindOneAndUpdate().
 		SetArrayFilters(refundsFilter).
