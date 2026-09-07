@@ -12,7 +12,7 @@ govulncheck   := golang.org/x/vuln/cmd/govulncheck@latest
 
 .EXPORT_ALL_VARIABLES:
 GO111MODULE = on
-GO_VERSION=go1.26.5
+GO_VERSION=go1.26.6
 
 .PHONY:
 arch:
