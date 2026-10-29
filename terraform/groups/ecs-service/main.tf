@@ -86,14 +86,29 @@ module "ecs-service" {
   eric_memory               = var.eric_memory
   eric_port                 = local.eric_port
   eric_environment_filename = local.eric_environment_filename
-  eric_secrets              = local.eric_secrets
   eric_extra_bypass_paths   = var.proxy_bypass_paths
 
-  # Service environment variable and secret configs
-  task_environment            = local.task_environment
-  task_secrets                = local.task_secrets
+  # Service environment variables
   app_environment_filename    = local.app_environment_filename
   use_set_environment_files   = local.use_set_environment_files
 
   create_service_dashboard = true
+
+  default_tags = merge(
+    module.owner_tags.tags,
+    module.iac_tags.tags
+  )
+}
+
+module "owner_tags" {
+  source = "git@github.com:companieshouse/terraform-modules//aws/tagging/owner?ref=tags/1.0.445"
+
+  platform_owner = "Platform"
+}
+
+module "iac_tags" {
+  source = "git@github.com:companieshouse/terraform-modules//aws/tagging/iac?ref=tags/1.0.445"
+
+  source_code_url = "https://github.com/companieshouse/payments.api.ch.gov.uk"
+  group           = "ecs-service"
 }
