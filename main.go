@@ -21,6 +21,16 @@ func main() {
 		return
 	}
 
+	if cfg.GovPayBearerTokenChAccount == "" {
+		log.Info("WARNING: You need to set GovPayBearerTokenChAccount")
+	}
+	if cfg.GovPayBearerTokenLegacy == "" {
+		log.Info("WARNING: You need to set GovPayBearerTokenLegacy")
+	}
+	if cfg.GovPayBearerTokenTreasury == "" {
+		log.Info("WARNING: You need to set GovPayBearerTokenTreasury")
+	}
+
 	paymentsDAO := dao.NewDAO(cfg)
 
 	// Create router
