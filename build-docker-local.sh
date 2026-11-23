@@ -38,6 +38,10 @@ COMPOSE_FILE=$(find "$COMPOSE_DIR" -name "${COMPOSE}.docker-compose.yaml" | head
 IMAGE_NAME=$(awk -F'image: ' '/image:/ {print $2}' "$COMPOSE_FILE" | xargs)
 [ -n "$IMAGE_NAME" ] || { echo "No image name found in compose"; exit 1; }
 
+if [[ "${IMAGE_NAME}" =~ \$\{[^\}]+\} ]]; then
+  IMAGE_NAME="${IMAGE_NAME%%:*}:latest"
+fi
+
 #Build image
 echo "Building $IMAGE_NAME"
 docker build -t "$IMAGE_NAME" ecs-image-build
